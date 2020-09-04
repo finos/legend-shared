@@ -1,0 +1,8 @@
+{
+  "mongoUri": "defaultMongoUri",
+  "mongoDb": "defaultMongoDb",
+  "mongoSession": {
+    "enabled": true,
+    "collection": "defaultMongoSession"
+  }
+}
