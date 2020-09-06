@@ -1,5 +1,4 @@
 [![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://finosfoundation.atlassian.net/wiki/display/FINOS/Incubating)
-![website build](https://github.com/finos/legend-shared/workflows/Docusaurus-website-build/badge.svg)
 
 # legend-shared
 
@@ -36,11 +35,7 @@ npm test
 
 ## Roadmap
 
-List the roadmap steps; alternatively link the Confluence Wiki page where the project roadmap is published.
-
-1. Item 1
-2. Item 2
-3. ....
+Visit [alloy.finos.org/docs/roadmap](https://alloy.finos.org/docs/roadmap) to know more about the roadmap.
 
 ## Contributing
 
