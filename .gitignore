@@ -3,3 +3,7 @@
 **/target
 **/surefire-reports-aggregate
 **/dependency-reduced-pom.xml
+.vscode
+.settings
+.project
+.classpath
