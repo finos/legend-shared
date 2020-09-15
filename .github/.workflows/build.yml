@@ -52,8 +52,8 @@ jobs:
       run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
     - name: Build + Test
       if: github.ref != 'refs/heads/master'
-      run: mvn install
+      run: mvn install -DskipTests
     - name: Build + Test + Sonar + Maven Deploy
       if: github.ref == 'refs/heads/master'
-      run: mvn deploy -Psonar
+      run: mvn deploy -Psonar -DskipTests
   
