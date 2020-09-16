@@ -45,5 +45,7 @@ jobs:
       run: mvn install
     - name: Build + Test + Sonar + Maven Deploy
       if: github.ref == 'refs/heads/master'
-      run: mvn deploy -Psonar
+      # TODO - enable when repo is public
+      # run: mvn deploy -Psonar
+      run: mvn deploy
   
