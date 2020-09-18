@@ -26,7 +26,7 @@
 
     <groupId>org.finos.legend</groupId>
     <artifactId>legend-shared</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
@@ -40,9 +40,9 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/finos/legend-shared</developerConnection>
-      <tag>HEAD</tag>
-  </scm>
-    
+        <tag>HEAD</tag>
+    </scm>
+
     <modules>
         <module>legend-shared-server</module>
         <module>legend-shared-pac4j</module>
@@ -54,6 +54,15 @@
     <build>
         <pluginManagement>
             <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.2.0</version>
+                    <configuration>
+                        <source>8</source>
+                    </configuration>
+                </plugin>
+
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
@@ -210,23 +219,23 @@
             <plugin>
                 <groupId>com.spotify</groupId>
                 <artifactId>dockerfile-maven-plugin</artifactId>
+                <version>1.4.13</version>
                 <configuration>
                     <skip>true</skip>
-                 </configuration>
-              </plugin>        
-
-          <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-release-plugin</artifactId>
-          <version>3.0.0-M1</version>
-          <configuration>
-            <arguments>-Dmaven.javadoc.skip=true -DskipTests</arguments>
-            <autoVersionSubmodules>true</autoVersionSubmodules>
-            <useReleaseProfile>false</useReleaseProfile>
-            <releaseProfiles>release</releaseProfiles>
-            <goals>deploy</goals>
-          </configuration>
-        </plugin>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>3.0.0-M1</version>
+                <configuration>
+                    <arguments>-DskipTests -pl !test-reports</arguments>
+                    <autoVersionSubmodules>true</autoVersionSubmodules>
+                    <useReleaseProfile>false</useReleaseProfile>
+                    <releaseProfiles>release</releaseProfiles>
+                    <goals>deploy</goals>
+                </configuration>
+            </plugin>
         </plugins>
 
     </build>
@@ -398,17 +407,17 @@
 
     <repositories>
         <repository>
-          <id>ossrh</id>
-          <name>OSSRH Public Group</name>
-          <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-          <snapshots>
-            <enabled>true</enabled>
-          </snapshots>
+            <id>ossrh</id>
+            <name>OSSRH Public Group</name>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
         <repository>
-          <id>ossrh-releases</id>
-          <name>OSSRH Public Releases Group</name>
-          <url>https://oss.sonatype.org/content/repositories/releases/</url>
+            <id>ossrh-releases</id>
+            <name>OSSRH Public Releases Group</name>
+            <url>https://oss.sonatype.org/content/repositories/releases/</url>
         </repository>
-      </repositories>
+    </repositories>
 </project>

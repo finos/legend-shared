@@ -10,6 +10,7 @@ on: [push, pull_request]
   
 jobs:
   build:
+    if: "!contains(github.event.head_commit.message, '[maven-release-plugin]')"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repo
@@ -42,10 +43,7 @@ jobs:
       run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
     - name: Build + Test
       if: github.ref != 'refs/heads/master'
-      run: mvn install
+      run: mvn install javadoc:javadoc
     - name: Build + Test + Sonar + Maven Deploy
       if: github.ref == 'refs/heads/master'
-      # TODO - enable when repo is public
-      # run: mvn deploy -Psonar
-      run: mvn deploy
-  
+      run: mvn javadoc:javadoc deploy -Psonar -pl !test-reports
