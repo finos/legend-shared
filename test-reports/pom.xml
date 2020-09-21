@@ -69,17 +69,17 @@
         <!-- Legend dependencies -->
         <dependency>
             <groupId>org.finos.legend</groupId>
-            <artifactId>legend-pac4j</artifactId>
+            <artifactId>legend-shared-pac4j</artifactId>
             <version>0.0.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.finos.legend</groupId>
-            <artifactId>legend-pac4j-gitlab</artifactId>
+            <artifactId>legend-shared-pac4j-gitlab</artifactId>
             <version>0.0.5-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.finos.legend</groupId>
-            <artifactId>legend-pac4j-kerberos</artifactId>
+            <artifactId>legend-shared-pac4j-kerberos</artifactId>
             <version>0.0.5-SNAPSHOT</version>
         </dependency>
         <dependency>
