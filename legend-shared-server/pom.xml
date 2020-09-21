@@ -38,7 +38,7 @@
     <dependencies>
         <dependency>
             <groupId>org.finos.legend</groupId>
-            <artifactId>legend-pac4j</artifactId>
+            <artifactId>legend-shared-pac4j</artifactId>
             <version>0.0.5-SNAPSHOT</version>
         </dependency>
         <dependency>
