@@ -16,7 +16,12 @@ package org.finos.legend.server.shared.bundles;
 
 import static io.opentracing.contrib.jaxrs2.internal.SpanWrapper.PROPERTY_NAME;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 
 import com.google.common.collect.ImmutableList;
 import io.opentracing.Scope;
@@ -30,6 +35,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.finos.legend.opentracing.OpenTracingFilter;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;

@@ -97,7 +97,7 @@ public class ChainFixingFilterHandler extends ServletHandler
     }
 
     mappings.sort(Comparator.comparingInt(m -> -priorities.get(m.getFilterName())));
-    setFilterMappings((FilterMapping[]) mappings.toArray());
+    setFilterMappings(mappings.toArray(new FilterMapping[0]));
 
     log.info(
         "Reordered filters as "

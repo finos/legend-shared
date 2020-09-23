@@ -147,13 +147,12 @@ public class OpenTracingFilter implements Filter
       } else
       {
         span.finish();
-
-        if (tracer.activeSpan() != null)
-        {
-          throw new RuntimeException("There is still an open ActiveTracing span. "
-              + "This probably means a scope is unclosed.");
-        }
       }
+    }
+    if (!request.isAsyncStarted() && tracer.activeSpan() != null)
+    {
+      throw new RuntimeException("There is still an open ActiveTracing span. "
+              + "This probably means a scope is unclosed.");
     }
   }
 

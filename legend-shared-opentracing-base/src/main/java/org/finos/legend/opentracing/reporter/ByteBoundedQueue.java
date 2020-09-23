@@ -88,32 +88,26 @@ final class ByteBoundedQueue<S> implements SpanWithSizeConsumer<S>
   /**
    * Blocks for up to nanosTimeout for spans to appear. Then, consume as many as possible.
    */
-  int drainTo(SpanWithSizeConsumer<S> consumer, long nanosTimeout)
+  int drainTo(SpanWithSizeConsumer<S> consumer, long nanosTimeout) throws InterruptedException
   {
+    // This may be called by multiple threads. If one is holding a lock, another is waiting. We
+    // use lockInterruptibly to ensure the one waiting can be interrupted.
+    lock.lockInterruptibly();
     try
     {
-      // This may be called by multiple threads. If one is holding a lock, another is waiting. We
-      // use lockInterruptibly to ensure the one waiting can be interrupted.
-      lock.lockInterruptibly();
-      try
+      long nanosLeft = nanosTimeout;
+      while (count == 0)
       {
-        long nanosLeft = nanosTimeout;
-        while (count == 0)
+        if (nanosLeft <= 0)
         {
-          if (nanosLeft <= 0)
-          {
-            return 0;
-          }
-          nanosLeft = available.awaitNanos(nanosLeft);
+          return 0;
         }
-        return doDrain(consumer);
-      } finally
-      {
-        lock.unlock();
+        nanosLeft = available.awaitNanos(nanosLeft);
       }
-    } catch (InterruptedException e)
+      return doDrain(consumer);
+    } finally
     {
-      return 0;
+      lock.unlock();
     }
   }
 

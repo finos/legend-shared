@@ -115,13 +115,6 @@ public abstract class AsyncReporter<S> extends Component implements Reporter<S>,
       this.queuedMaxBytes = asyncReporter.pending.maxBytes;
     }
 
-    static int onePercentOfMemory()
-    {
-      long result = (long) (Runtime.getRuntime().totalMemory() * 0.01);
-      // don't overflow in the rare case 1% of memory is larger than 2 GiB!
-      return (int) Math.max(Math.min(Integer.MAX_VALUE, result), Integer.MIN_VALUE);
-    }
-
     Builder(Sender sender)
     {
       if (sender == null)
@@ -130,6 +123,13 @@ public abstract class AsyncReporter<S> extends Component implements Reporter<S>,
       }
       this.sender = sender;
       this.messageMaxBytes = sender.messageMaxBytes();
+    }
+
+    static int onePercentOfMemory()
+    {
+      long result = (long) (Runtime.getRuntime().totalMemory() * 0.01);
+      // don't overflow in the rare case 1% of memory is larger than 2 GiB!
+      return (int) Math.max(Math.min(Integer.MAX_VALUE, result), Integer.MIN_VALUE);
     }
 
     /**
@@ -374,7 +374,13 @@ public abstract class AsyncReporter<S> extends Component implements Reporter<S>,
 
     void flush(BufferNextMessage<S> bundler)
     {
-      pending.drainTo(bundler, bundler.remainingNanos());
+      try
+      {
+        pending.drainTo(bundler, bundler.remainingNanos());
+      } catch (InterruptedException e)
+      {
+        throw new RuntimeException(e);
+      }
 
       // record after flushing reduces the amount of gauge events vs on doing this on report
       metrics.updateQueuedSpans(pending.count);

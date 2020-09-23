@@ -19,7 +19,7 @@ import org.ietf.jgss.GSSContext;
 
 public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
 {
-  private final Subject subject;
+  private Subject subject;
 
   public KerberosProfile(Subject subject, final GSSContext gssContext)
   {
@@ -31,6 +31,10 @@ public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
   {
     setId(creds.getUserId());
     this.subject = creds.getSubject();
+  }
+
+  public KerberosProfile()
+  {
   }
 
   public Subject getSubject()
