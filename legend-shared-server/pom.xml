@@ -38,6 +38,19 @@
     <dependencies>
         <dependency>
             <groupId>org.finos.legend</groupId>
+            <artifactId>legend-shared-opentracing-servlet-filter</artifactId>
+            <version>0.0.7-SNAPSHOT</version>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend</groupId>
             <artifactId>legend-shared-pac4j</artifactId>
             <version>0.0.7-SNAPSHOT</version>
         </dependency>

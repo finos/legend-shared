@@ -14,8 +14,6 @@
 
 package org.finos.legend.server.shared.bundles;
 
-import static org.finos.legend.server.shared.bundles.OpenTracingFilter.STANDARD_TAGS;
-
 import com.google.common.collect.ImmutableList;
 import io.dropwizard.Bundle;
 import io.dropwizard.setup.Bootstrap;
@@ -35,6 +33,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.DynamicFeature;
+import org.finos.legend.opentracing.OpenTracingFilter;
+import org.finos.legend.opentracing.ServerSpanDecorator;
+import org.finos.legend.opentracing.StandardSpanDecorator;
 
 @SuppressWarnings("unused")
 public class OpenTracingBundle implements Bundle
@@ -60,7 +61,7 @@ public class OpenTracingBundle implements Bundle
     this.decorators =
         ImmutableList.<ServerSpanDecorator>builder()
             .addAll(decorators)
-            .add(STANDARD_TAGS)
+            .add(new StandardSpanDecorator())
             .add(new UserNameDecorator())
             .build();
     this.skipUrls = skipUrls;

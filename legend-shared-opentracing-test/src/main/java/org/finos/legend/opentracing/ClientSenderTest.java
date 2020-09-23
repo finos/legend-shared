@@ -38,55 +38,57 @@ public abstract class ClientSenderTest
 
   protected void testSendSpans() throws IOException, InterruptedException
   {
-    MockWebServer mockWebServer = new MockWebServer();
-    mockWebServer.start();
-    mockWebServer.enqueue(new MockResponse());
-    try
+    try (MockWebServer mockWebServer = new MockWebServer())
     {
-      CookieAuthenticationProvider tokenProvider =
-          new CookieAuthenticationProvider("LegendSSO", () -> "testToken");
-      Sender sender = createSender(mockWebServer.url("/").uri(),
-          tokenProvider);
+      mockWebServer.start();
+      mockWebServer.enqueue(new MockResponse());
+      try
+      {
+        CookieAuthenticationProvider tokenProvider =
+            new CookieAuthenticationProvider("LegendSSO", () -> "testToken");
+        Sender sender = createSender(mockWebServer.url("/").uri(),
+            tokenProvider);
 
-      Span span1 = Span.newBuilder()
-          .id("abcdef")
-          .name("someName")
-          .traceId("12345678")
-          .putTag("tagKey", "tagValue")
-          .kind(Kind.CLIENT)
-          .build();
+        Span span1 = Span.newBuilder()
+            .id("abcdef")
+            .name("someName")
+            .traceId("12345678")
+            .putTag("tagKey", "tagValue")
+            .kind(Kind.CLIENT)
+            .build();
 
-      Span span2 = Span.newBuilder()
-          .id("8734568786")
-          .name("secondName")
-          .traceId("334587326589")
-          .putTag("tagKey", "tagValue")
-          .kind(Kind.CLIENT)
-          .build();
+        Span span2 = Span.newBuilder()
+            .id("8734568786")
+            .name("secondName")
+            .traceId("334587326589")
+            .putTag("tagKey", "tagValue")
+            .kind(Kind.CLIENT)
+            .build();
 
-      List<byte[]> encodedSpans = new ArrayList<>();
-      encodedSpans.add(span1.toString().getBytes());
-      encodedSpans.add(span2.toString().getBytes());
-      Call<Void> call = sender.sendSpans(encodedSpans);
-      call.execute();
-      RecordedRequest request = mockWebServer.takeRequest();
-      String cookie = request.getHeader("Cookie");
-      List<HttpCookie> cookies = HttpCookie.parse(cookie);
-      Assert.assertEquals(1, cookies.size());
-      HttpCookie httpCookie = cookies.get(0);
-      Assert.assertEquals("LegendSSO", httpCookie.getName());
-      Assert.assertEquals("testToken", httpCookie.getValue());
-      byte[] sent = request.getBody().readByteArray();
-      List<Span> results = SpanBytesDecoder.JSON_V2.decodeList(sent);
-      Assert.assertEquals(2, results.size());
-      Span testSpan1 = results.get(0);
-      Span testSpan2 = results.get(1);
-      Assert.assertEquals(span1, testSpan1);
-      Assert.assertEquals(span2, testSpan2);
+        List<byte[]> encodedSpans = new ArrayList<>();
+        encodedSpans.add(span1.toString().getBytes());
+        encodedSpans.add(span2.toString().getBytes());
+        Call<Void> call = sender.sendSpans(encodedSpans);
+        call.execute();
+        RecordedRequest request = mockWebServer.takeRequest();
+        String cookie = request.getHeader("Cookie");
+        List<HttpCookie> cookies = HttpCookie.parse(cookie);
+        Assert.assertEquals(1, cookies.size());
+        HttpCookie httpCookie = cookies.get(0);
+        Assert.assertEquals("LegendSSO", httpCookie.getName());
+        Assert.assertEquals("testToken", httpCookie.getValue());
+        byte[] sent = request.getBody().readByteArray();
+        List<Span> results = SpanBytesDecoder.JSON_V2.decodeList(sent);
+        Assert.assertEquals(2, results.size());
+        Span testSpan1 = results.get(0);
+        Span testSpan2 = results.get(1);
+        Assert.assertEquals(span1, testSpan1);
+        Assert.assertEquals(span2, testSpan2);
 
-    } finally
-    {
-      mockWebServer.shutdown();
+      } finally
+      {
+        mockWebServer.shutdown();
+      }
     }
   }
 

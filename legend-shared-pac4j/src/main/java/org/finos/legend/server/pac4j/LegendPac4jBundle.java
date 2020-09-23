@@ -26,6 +26,7 @@ import io.dropwizard.configuration.ConfigurationSourceProvider;
 import io.dropwizard.server.SimpleServerFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.servlet.DispatcherType;
+
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.eclipse.jetty.servlet.FilterMapping;
@@ -122,8 +124,10 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C>
     if (StringUtils.isNotEmpty(legendConfig.getMongoDb())
         && StringUtils.isNotEmpty(legendConfig.getMongoUri()))
     {
-      MongoClient client = new MongoClient(new MongoClientURI(legendConfig.getMongoUri()));
-      db = client.getDatabase(legendConfig.getMongoDb());
+      try (MongoClient client = new MongoClient(new MongoClientURI(legendConfig.getMongoUri())))
+      {
+        db = client.getDatabase(legendConfig.getMongoDb());
+      }
     }
     MongoDatabase finalDb = db;
     Pac4jFactory factory =
