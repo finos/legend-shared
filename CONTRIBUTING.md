@@ -1,6 +1,6 @@
-# Alloy Contribution and Governance Policies
+# Legend Contribution and Governance Policies
 
-This document describes the contribution process and governance policies of the FINOS Alloy project. The project is also governed by the [Linux Foundation Antitrust Policy](https://www.linuxfoundation.org/antitrust-policy/), and the FINOS [IP Policy](IP-Policy.pdf), [Code of Conduct](Code-of-Conduct.md), [Collaborative Principles](Collaborative-Principles.md), and [Meeting Procedures](Meeting-Procedures.md).
+This document describes the contribution process and governance policies of the FINOS {project name} project. The project is also governed by the [Linux Foundation Antitrust Policy](https://www.linuxfoundation.org/antitrust-policy/), and the FINOS [IP Policy](IP-Policy.pdf), [Code of Conduct](Code-of-Conduct.md), [Collaborative Principles](Collaborative-Principles.md), and [Meeting Procedures](Meeting-Procedures.md).
 
 ## Contribution Process
 
@@ -8,10 +8,94 @@ Before making a contribution, please take the following steps:
 1. Check whether there's already an open issue related to your proposed contribution. If there is, join the discussion and propose your contribution there.
 2. If there isn't already a relevant issue, create one, describing your contribution and the problem you're trying to solve.
 3. Respond to any questions or suggestions raised in the issue by other developers.
-4. Fork the project repository and prepare your proposed contribution.
+4. [Fork the project repository](https://github.com/finos/legend-studio/fork) and prepare your proposed contribution.
 5. Submit a pull request.
 
 NOTE: All contributors must have a contributor license agreement (CLA) on file with FINOS before their pull requests will be merged. Please review the FINOS [contribution requirements](https://finosfoundation.atlassian.net/wiki/spaces/FINOS/pages/75530375/Contribution+Compliance+Requirements) and submit (or have your employer submit) the required CLA before submitting a pull request.
+
+## Contributing Issues
+
+### Prerequisites
+
+* [ ] Have you [searched for duplicates](https://github.com/finos/legend-studio/issues?utf8=%E2%9C%93&q=)?  A simple search for exception error messages or a summary of the unexpected behaviour should suffice.
+* [ ] Are you running the latest version?
+* [ ] Are you sure this is a bug or missing capability?
+
+### Raising an Issue
+* Create your issue [here](https://github.com/finos/legend-studio/issues/new).
+* New issues contain two templates in the description: bug report and enhancement request. Please pick the most appropriate for your issue, **then delete the other**.
+  * Please also tag the new issue with either "Bug" or "Enhancement".
+* Please use [Markdown formatting](https://help.github.com/categories/writing-on-github/)
+liberally to assist in readability.
+  * [Code fences](https://help.github.com/articles/creating-and-highlighting-code-blocks/) for exception stack traces and log entries, for example, massively improve readability.
+
+## Contributing Pull Requests (Code & Docs)
+To make review of PRs easier, please:
+
+ * Please make sure your PRs will merge cleanly - PRs that don't are unlikely to be accepted.
+ * For code contributions, follow the existing code layout.
+ * For documentation contributions, follow the general structure, language, and tone of the [existing docs](https://github.com/finos/legend-studio/wiki).
+ * Keep commits small and cohesive - if you have multiple contributions, please submit them as independent commits (and ideally as independent PRs too).
+ * Reference issue #s if your PR has anything to do with an issue (even if it doesn't address it).
+ * Minimise non-functional changes (e.g. whitespace).
+ * Ensure all new files include a header comment block containing the [Apache License v2.0 and your copyright information](http://www.apache.org/licenses/LICENSE-2.0#apply).
+ * If necessary (e.g. due to 3rd party dependency licensing requirements), update the [NOTICE file](https://github.com/finos/legend-studio/blob/master/NOTICE) with any new attribution or other notices
+
+### Commit and PR Messages
+
+* **Reference issues, wiki pages, and pull requests liberally!**
+* Use the present tense ("Add feature" not "Added feature")
+* Use the imperative mood ("Move button left..." not "Moves button left...")
+* Limit the first line to 72 characters or less
+
+## Markers
+
+One of the major use case of Studio is to add support for new types, we are in the process of modularizing the app so that we can support extenions, but for now, we rely on the convention that one should look for places with marker `@MARKER: NEW ELEMENT TYPE SUPPORT` to add support for new element type.
+
+There are places that we do smart analytics similar to what the compiler does in the backend in order to provide smart-suggestion and improving UX; anywhere where these analytics have been done we will mark with `@MARKER: ACTION ANALYTICS`.
+
+## Component Organization
+
+We try to be explicit when naming components (and files in general) so we can easily look up a file globally instead of having to know its location.
+
+We also avoid using `index.ts(x)`
+
+We tend to have a couple of components within one file. This is technically not bad, however, due to the fact that we are using [react-refresh](https://reactnative.dev/docs/fast-refresh) (or `Fast Refresh`) sometimes it's better to not load up many components per file. In particular, let's say we have:
+
+```typescript
+// file A.tsx
+
+const ComponentA = () => { ... }
+const ComponentB = () => {
+  ...
+  useEffect(...)
+  ...
+}
+```
+
+If we edit `ComponentA` since `react-refresh` re-render all components from the same module file, `ComponentB` `useEffect` [will be called again](https://reactnative.dev/docs/fast-refresh#fast-refresh-and-hooks). If this `useEffect` contains critical flow in the app that does not allow another call (for example, initializing a singleton) then refreshing the app with `react-refresh` will throw error. Obviously the most straight-forward way is to have each component in a separate file, but sometimes that will pollute the codebase. Hence, be mindful where you place your components.
+
+## Typescript
+
+Needless to say, let's avoid using `any`
+
+Second, it is quite important to understand that Typescript is a [structural type system](https://github.com/microsoft/TypeScript/wiki/FAQ#what-is-structural-typing) rather than a nominal type system,
+this means that an empty class/interface are considered to be supertype of everything and will not warn us about any type error. For example:
+
+```javascript
+class AbstractType {}
+class SomeElement {
+  type: AbstractType;
+
+  setType(): void {
+    this.type = 1; // this will not be type-checked properly
+  }
+}
+```
+
+As such, we should try our best to not create empty classes. This usually happen when we create abstract classes so that we can have multiple sub-classes declared.
+
+NOTE that an empty class that extends a non-empty class will not get into this problem
 
 ## Governance
 
