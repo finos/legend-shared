@@ -21,7 +21,7 @@ Visit [alloy.finos.org/docs/roadmap](https://alloy.finos.org/docs/roadmap) to kn
 
 ## Contributing
 
-Visit Legend [Contribution Gude](https://github.com/finos/alloy/blob/master/.github/CONTRIBUTING.md) to learn how to contribute to Legend.
+Visit Legend [Contribution Gude](https://github.com/finos/alloy/blob/master/CONTRIBUTING.md) to learn how to contribute to Legend.
 
 
 ## License
