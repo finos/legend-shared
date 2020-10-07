@@ -27,7 +27,7 @@
   <artifactId>legend-shared-opentracing-servlet-filter</artifactId>
 
   <name>legend-shared-opentracing-servlet-filter</name>
-  <url>https://alloy.finos.org</url>
+  <url>https://legend.finos.org</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

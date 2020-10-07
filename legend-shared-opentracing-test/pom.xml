@@ -27,7 +27,7 @@
     <artifactId>legend-shared-opentracing-test</artifactId>
 
     <name>legend-shared-opentracing-test</name>
-    <url>https://alloy.finos.org</url>
+    <url>https://legend.finos.org</url>
 
 
     <properties>

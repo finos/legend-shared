@@ -28,7 +28,7 @@
   <artifactId>legend-shared-opentracing-jersey</artifactId>
 
   <name>legend-shared-opentracing-jersey</name>
-  <url>https://alloy.finos.org</url>
+  <url>https://legend.finos.org</url>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
