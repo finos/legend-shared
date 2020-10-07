@@ -27,7 +27,7 @@
     <artifactId>legend-server-shared</artifactId>
 
     <name>legend-server-shared</name>
-    <url>https://alloy.finos.org</url>
+    <url>https://legend.finos.org</url>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
