@@ -22,7 +22,7 @@
   <parent>
     <artifactId>legend-shared</artifactId>
     <groupId>org.finos.legend</groupId>
-    <version>0.0.7-SNAPSHOT</version>
+    <version>0.0.7</version>
   </parent>
 
   <artifactId>legend-shared-opentracing-jersey</artifactId>
@@ -53,12 +53,12 @@
     <dependency>
       <groupId>org.finos.legend</groupId>
       <artifactId>legend-shared-opentracing-base</artifactId>
-      <version>0.0.7-SNAPSHOT</version>
+      <version>0.0.7</version>
     </dependency>
     <dependency>
       <groupId>org.finos.legend</groupId>
       <artifactId>legend-shared-opentracing-test</artifactId>
-      <version>0.0.7-SNAPSHOT</version>
+      <version>0.0.7</version>
       <scope>test</scope>
     </dependency>
 

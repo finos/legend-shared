@@ -20,7 +20,7 @@
     <parent>
         <artifactId>legend-shared</artifactId>
         <groupId>org.finos.legend</groupId>
-        <version>0.0.7-SNAPSHOT</version>
+        <version>0.0.7</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -39,7 +39,7 @@
         <dependency>
             <groupId>org.finos.legend</groupId>
             <artifactId>legend-shared-opentracing-servlet-filter</artifactId>
-            <version>0.0.7-SNAPSHOT</version>
+            <version>0.0.7</version>
         </dependency>
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
@@ -52,7 +52,7 @@
         <dependency>
             <groupId>org.finos.legend</groupId>
             <artifactId>legend-shared-pac4j</artifactId>
-            <version>0.0.7-SNAPSHOT</version>
+            <version>0.0.7</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
