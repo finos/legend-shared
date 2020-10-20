@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.finos.legend</groupId>
+        <groupId>org.finos.legend.shared</groupId>
         <artifactId>legend-shared</artifactId>
         <version>0.0.8-SNAPSHOT</version>
     </parent>
@@ -67,26 +67,27 @@
     </build>
 
     <dependencies>
-        <!-- Legend dependencies -->
+        <!-- LEGEND -->
         <dependency>
-            <groupId>org.finos.legend</groupId>
+            <groupId>org.finos.legend.shared</groupId>
             <artifactId>legend-shared-pac4j</artifactId>
             <version>0.0.8-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.finos.legend</groupId>
+            <groupId>org.finos.legend.shared</groupId>
             <artifactId>legend-shared-pac4j-gitlab</artifactId>
             <version>0.0.8-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.finos.legend</groupId>
+            <groupId>org.finos.legend.shared</groupId>
             <artifactId>legend-shared-pac4j-kerberos</artifactId>
             <version>0.0.8-SNAPSHOT</version>
         </dependency>
         <dependency>
-            <groupId>org.finos.legend</groupId>
+            <groupId>org.finos.legend.shared</groupId>
             <artifactId>legend-shared-server</artifactId>
             <version>0.0.8-SNAPSHOT</version>
         </dependency>
+        <!-- LEGEND -->
     </dependencies>
 </project>
