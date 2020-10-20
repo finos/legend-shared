@@ -15,7 +15,8 @@
  limitations under the License.
 -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -47,6 +48,26 @@
         <pac4j.version>3.8.3</pac4j.version>
         <javax.activation.version>1.1.1</javax.activation.version>
         <jaxb.version>2.2.11</jaxb.version>
+
+        <!-- Plugins -->
+        <maven.deploy.plugin.version>2.5</maven.deploy.plugin.version>
+        <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
+        <maven.checkstyle.plugin>3.1.0</maven.checkstyle.plugin>
+        <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
+        <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
+        <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
+        <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
+        <maven.shade.plugin.version>3.2.1</maven.shade.plugin.version>
+        <maven.plugin.plugin.version>3.6.0</maven.plugin.plugin.version>
+        <maven.jar.plugin.version>3.1.2</maven.jar.plugin.version>
+        <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
+        <maven.release.plugin.version>3.0.0-M1</maven.release.plugin.version>
+        <versions.maven.plugin.version>2.7</versions.maven.plugin.version>
+        <!-- TODO - send PR to https://github.com/finos/finos-parent-pom (and use a mvn property to manage the version) -->
+        <sonar.maven.plugin.version>3.7.0.1746</sonar.maven.plugin.version>
+        <gitcommit.maven.plugin.version>2.2.6</gitcommit.maven.plugin.version>
+        <exec.maven.plugin.version>1.6.0</exec.maven.plugin.version>
+        <dockerfile.release.plugin.version>1.4.13</dockerfile.release.plugin.version>
     </properties>
 
     <scm>
@@ -73,10 +94,15 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.2.0</version>
+                    <version>${maven.javadoc.plugin.version}</version>
                     <configuration>
                         <source>8</source>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${maven.deploy.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -88,6 +114,7 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
                     <version>3.2.0</version>
                     <executions>
@@ -106,14 +133,27 @@
                     <version>2.22.2</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>${maven.release.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>${maven.checkstyle.plugin}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
                     <version>2.10</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>3.2.1</version>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
                     <version>3.6.0</version>
                 </plugin>
@@ -138,6 +178,11 @@
                     <artifactId>sonar-maven-plugin</artifactId>
                     <version>3.7.0.1746</version>
                 </plugin>
+                <plugin>
+                    <groupId>com.spotify</groupId>
+                    <artifactId>dockerfile-maven-plugin</artifactId>
+                    <version>${dockerfile.release.plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -149,7 +194,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
-                <version>2.5</version>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
@@ -157,7 +201,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.1.0</version>
                 <dependencies>
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
@@ -214,8 +257,8 @@
                 </executions>
             </plugin>
             <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -224,7 +267,6 @@
             <plugin>
                 <groupId>com.spotify</groupId>
                 <artifactId>dockerfile-maven-plugin</artifactId>
-                <version>1.4.13</version>
                 <configuration>
                     <skip>true</skip>
                 </configuration>
@@ -232,7 +274,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
-                <version>3.0.0-M1</version>
                 <configuration>
                     <arguments>-DskipTests</arguments>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
@@ -246,6 +287,49 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- LEGEND -->
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-pac4j</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-pac4j-kerberos</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-pac4j-gitlab</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-opentracing-base</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-opentracing-jersey</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-opentracing-test</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-opentracing-servlet-filter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- LEGEND -->
+
             <!-- API, java.xml.bind module -->
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>

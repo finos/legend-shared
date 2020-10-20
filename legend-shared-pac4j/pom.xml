@@ -72,7 +72,7 @@
             <artifactId>jackson-annotations</artifactId>
         </dependency>
 
-        <!--Test dependencies-->
+        <!-- TEST -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -88,6 +88,6 @@
             <artifactId>mongo-java-server</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- TEST -->
     </dependencies>
-
 </project>

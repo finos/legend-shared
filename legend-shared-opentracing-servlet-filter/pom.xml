@@ -29,6 +29,13 @@
   <url>https://legend.finos.org</url>
 
   <dependencies>
+    <!-- LEGEND -->
+    <dependency>
+      <groupId>org.finos.legend.shared</groupId>
+      <artifactId>legend-shared-opentracing-base</artifactId>
+    </dependency>
+    <!-- LEGEND -->
+
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
@@ -46,11 +53,6 @@
       <artifactId>guava</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.finos.legend.shared</groupId>
-      <artifactId>legend-shared-opentracing-base</artifactId>
-      <version>0.0.8-SNAPSHOT</version>
-    </dependency>
-    <dependency>
       <groupId>jakarta.xml.bind</groupId>
       <artifactId>jakarta.xml.bind-api</artifactId>
     </dependency>
@@ -59,5 +61,4 @@
       <artifactId>jaxb-runtime</artifactId>
     </dependency>
   </dependencies>
-
 </project>

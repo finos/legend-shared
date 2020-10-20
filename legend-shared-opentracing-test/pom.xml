@@ -30,6 +30,13 @@
     <url>https://legend.finos.org</url>
 
     <dependencies>
+        <!-- LEGEND -->
+        <dependency>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-opentracing-base</artifactId>
+        </dependency>
+        <!-- LEGEND -->
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -37,11 +44,6 @@
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>mockwebserver</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.finos.legend.shared</groupId>
-            <artifactId>legend-shared-opentracing-base</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
         </dependency>
     </dependencies>
 </project>

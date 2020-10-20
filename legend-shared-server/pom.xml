@@ -29,11 +29,17 @@
     <url>https://legend.finos.org</url>
 
     <dependencies>
+        <!-- LEGEND -->
         <dependency>
             <groupId>org.finos.legend.shared</groupId>
             <artifactId>legend-shared-opentracing-servlet-filter</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-pac4j</artifactId>
+        </dependency>
+        <!-- LEGEND -->
+
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
@@ -41,11 +47,6 @@
         <dependency>
             <groupId>org.glassfish.jaxb</groupId>
             <artifactId>jaxb-runtime</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.finos.legend.shared</groupId>
-            <artifactId>legend-shared-pac4j</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>io.dropwizard</groupId>
@@ -64,21 +65,7 @@
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
         </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.glassfish.jersey.test-framework.providers</groupId>
-            <artifactId>jersey-test-framework-provider-grizzly2</artifactId>
-            <scope>test</scope>
-        </dependency>
+
         <!-- JAXB - needed in java 11 -->
         <dependency>
             <groupId>javax.xml.bind</groupId>
@@ -97,5 +84,23 @@
             <artifactId>activation</artifactId>
         </dependency>
         <!-- JAXB -->
+
+        <!-- TEST -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+            <artifactId>jersey-test-framework-provider-grizzly2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- TEST -->
     </dependencies>
 </project>

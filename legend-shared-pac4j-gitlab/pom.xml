@@ -59,11 +59,12 @@
             <scope>provided</scope>
         </dependency>
 
+        <!-- TEST -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- TEST -->
     </dependencies>
-
 </project>
