@@ -24,7 +24,7 @@
         <version>0.0.8-SNAPSHOT</version>
     </parent>
 
-    <artifactId>test-reports</artifactId>
+    <artifactId>legend-shared-test-reports</artifactId>
     <name>Test Reports</name>
     <packaging>pom</packaging>
 
