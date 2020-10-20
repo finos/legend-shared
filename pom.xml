@@ -58,7 +58,7 @@
         <jersey.client.version>2.23.2</jersey.client.version>
         <jersey.test.framework.version>2.23.1</jersey.test.framework.version>
         <joda.time.version>2.10.1</joda.time.version>
-        <junit.version>4.11</junit.version>
+        <junit.version>4.13.1</junit.version>
         <slf4j.version>1.7.21</slf4j.version>
         <mimeparse.version>0.1.3.3</mimeparse.version>
         <mockwebserver.version>4.9.0</mockwebserver.version>
@@ -76,6 +76,7 @@
         <maven.deploy.plugin.version>2.5</maven.deploy.plugin.version>
         <maven.javadoc.plugin.version>3.2.0</maven.javadoc.plugin.version>
         <maven.checkstyle.plugin>3.1.0</maven.checkstyle.plugin>
+        <checkstyle.version>8.29</checkstyle.version>
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
         <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
@@ -225,7 +226,7 @@
                     <dependency>
                         <groupId>com.puppycrawl.tools</groupId>
                         <artifactId>checkstyle</artifactId>
-                        <version>8.25</version>
+                        <version>${checkstyle.version}</version>
                     </dependency>
                 </dependencies>
                 <executions>
