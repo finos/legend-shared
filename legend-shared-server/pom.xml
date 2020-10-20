@@ -15,32 +15,31 @@
  limitations under the License.
 -->
 
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>legend-shared</artifactId>
-        <groupId>org.finos.legend</groupId>
-        <version>0.0.8-SNAPSHOT</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>legend-server-shared</artifactId>
+    <parent>
+        <groupId>org.finos.legend.shared</groupId>
+        <artifactId>legend-shared</artifactId>
+        <version>0.0.8-SNAPSHOT</version>
+    </parent>
 
-    <name>legend-server-shared</name>
+    <artifactId>legend-shared-server</artifactId>
+    <name>Legend Shared - Server</name>
     <url>https://legend.finos.org</url>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
-
     <dependencies>
+        <!-- LEGEND -->
         <dependency>
-            <groupId>org.finos.legend</groupId>
+            <groupId>org.finos.legend.shared</groupId>
             <artifactId>legend-shared-opentracing-servlet-filter</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
         </dependency>
+        <dependency>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-pac4j</artifactId>
+        </dependency>
+        <!-- LEGEND -->
+
         <dependency>
             <groupId>jakarta.xml.bind</groupId>
             <artifactId>jakarta.xml.bind-api</artifactId>
@@ -50,18 +49,8 @@
             <artifactId>jaxb-runtime</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.finos.legend</groupId>
-            <artifactId>legend-shared-pac4j</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
-        </dependency>
-        <dependency>
             <groupId>io.dropwizard</groupId>
             <artifactId>dropwizard-assets</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.dropwizard</groupId>
-            <artifactId>dropwizard-testing</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.opentracing.contrib</groupId>
@@ -71,9 +60,35 @@
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
         </dependency>
+
+        <!-- JAXB - needed in java 11 -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.activation</groupId>
+            <artifactId>activation</artifactId>
+        </dependency>
+        <!-- JAXB -->
+
+        <!-- TEST -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard</groupId>
+            <artifactId>dropwizard-testing</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -86,5 +101,6 @@
             <artifactId>jersey-test-framework-provider-grizzly2</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- TEST -->
     </dependencies>
 </project>

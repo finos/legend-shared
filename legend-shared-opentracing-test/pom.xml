@@ -17,26 +17,26 @@
 
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>legend-shared</artifactId>
-        <groupId>org.finos.legend</groupId>
-        <version>0.0.8-SNAPSHOT</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>legend-shared-opentracing-test</artifactId>
+    <parent>
+        <groupId>org.finos.legend.shared</groupId>
+        <artifactId>legend-shared</artifactId>
+        <version>0.0.8-SNAPSHOT</version>
+    </parent>
 
-    <name>legend-shared-opentracing-test</name>
+    <artifactId>legend-shared-opentracing-test</artifactId>
+    <name>Legend Shared - Open Tracing - Jersey</name>
     <url>https://legend.finos.org</url>
 
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
-
     <dependencies>
+        <!-- LEGEND -->
+        <dependency>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-opentracing-base</artifactId>
+        </dependency>
+        <!-- LEGEND -->
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -45,11 +45,5 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>mockwebserver</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.finos.legend</groupId>
-            <artifactId>legend-shared-opentracing-base</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
-        </dependency>
     </dependencies>
-
 </project>

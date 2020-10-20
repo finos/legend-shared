@@ -26,18 +26,6 @@ import io.dropwizard.configuration.ConfigurationSourceProvider;
 import io.dropwizard.server.SimpleServerFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import javax.servlet.DispatcherType;
-
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.eclipse.jetty.servlet.FilterMapping;
@@ -60,9 +48,18 @@ import org.pac4j.dropwizard.Pac4jFeatureSupport;
 import org.pac4j.j2e.filter.SecurityFilter;
 import org.pac4j.jax.rs.pac4j.JaxRsContext;
 import org.pac4j.jax.rs.servlet.pac4j.ServletSessionStore;
+import javax.servlet.DispatcherType;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumSet;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
-public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C>
-    implements Pac4jFeatureSupport
+public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> implements Pac4jFeatureSupport
 {
 
   private static final String logoutSuffix = "/logout";

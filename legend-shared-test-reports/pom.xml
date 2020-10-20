@@ -16,13 +16,15 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
-        <groupId>org.finos.legend</groupId>
+        <groupId>org.finos.legend.shared</groupId>
         <artifactId>legend-shared</artifactId>
         <version>0.0.8-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
-    <artifactId>test-reports</artifactId>
+
+    <artifactId>legend-shared-test-reports</artifactId>
     <name>Test Reports</name>
     <packaging>pom</packaging>
 
@@ -64,29 +66,88 @@
         </plugins>
     </build>
 
-
     <dependencies>
-        <!-- Legend dependencies -->
+        <!-- LEGEND -->
         <dependency>
-            <groupId>org.finos.legend</groupId>
+            <groupId>org.finos.legend.shared</groupId>
             <artifactId>legend-shared-pac4j</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.finos.legend</groupId>
+            <groupId>org.finos.legend.shared</groupId>
             <artifactId>legend-shared-pac4j-gitlab</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.finos.legend</groupId>
+            <groupId>org.finos.legend.shared</groupId>
             <artifactId>legend-shared-pac4j-kerberos</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.finos.legend</groupId>
-            <artifactId>legend-server-shared</artifactId>
-            <version>0.0.8-SNAPSHOT</version>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-opentracing-base</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
+        <dependency>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-opentracing-jersey</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-opentracing-servlet-filter</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-opentracing-test</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-server</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>*</groupId>
+                    <artifactId>*</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- LEGEND -->
     </dependencies>
-
 </project>

@@ -17,33 +17,22 @@
 
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>legend-shared</artifactId>
-        <groupId>org.finos.legend</groupId>
-        <version>0.0.8-SNAPSHOT</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <groupId>org.finos.legend.shared</groupId>
+        <artifactId>legend-shared</artifactId>
+        <version>0.0.8-SNAPSHOT</version>
+    </parent>
+
     <artifactId>legend-shared-pac4j-kerberos</artifactId>
-
-    <name>legend-shared-pac4j-kerberos</name>
+    <name>Legend Shared - Pac4j - Kerberos</name>
     <url>https://legend.finos.org</url>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
-    </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.pac4j</groupId>
             <artifactId>pac4j-kerberos</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>javax.servlet</groupId>
@@ -54,6 +43,13 @@
             <artifactId>jackson-annotations</artifactId>
             <scope>provided</scope>
         </dependency>
-    </dependencies>
 
+        <!-- TEST -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- TEST -->
+    </dependencies>
 </project>
