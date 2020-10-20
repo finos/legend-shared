@@ -16,12 +16,14 @@
 -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.finos.legend</groupId>
         <artifactId>legend-shared</artifactId>
         <version>0.0.8-SNAPSHOT</version>
     </parent>
-    <modelVersion>4.0.0</modelVersion>
+
     <artifactId>test-reports</artifactId>
     <name>Test Reports</name>
     <packaging>pom</packaging>
@@ -64,7 +66,6 @@
         </plugins>
     </build>
 
-
     <dependencies>
         <!-- Legend dependencies -->
         <dependency>
@@ -84,9 +85,8 @@
         </dependency>
         <dependency>
             <groupId>org.finos.legend</groupId>
-            <artifactId>legend-server-shared</artifactId>
+            <artifactId>legend-shared-server</artifactId>
             <version>0.0.8-SNAPSHOT</version>
         </dependency>
     </dependencies>
-
 </project>

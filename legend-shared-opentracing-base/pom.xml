@@ -15,10 +15,8 @@
  limitations under the License.
 -->
 
-
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-
   <parent>
     <artifactId>legend-shared</artifactId>
     <groupId>org.finos.legend</groupId>
@@ -26,8 +24,7 @@
   </parent>
 
   <artifactId>legend-shared-opentracing-base</artifactId>
-
-  <name>legend-shared-opentracing-base</name>
+  <name>Legend Shared - Open Tracing - Base</name>
   <url>https://legend.finos.org</url>
 
   <properties>

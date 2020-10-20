@@ -25,8 +25,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>legend-shared-pac4j-kerberos</artifactId>
-
-    <name>legend-shared-pac4j-kerberos</name>
+    <name>Legend Shared - Pac4j - Kerberos</name>
     <url>https://legend.finos.org</url>
 
     <properties>

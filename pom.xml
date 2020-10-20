@@ -29,6 +29,9 @@
     <version>0.0.8-SNAPSHOT</version>
     <packaging>pom</packaging>
 
+    <name>Legend Shared</name>
+    <url>https://legend.finos.org</url>
+
     <properties>
         <sonar.projectKey>legend-shared</sonar.projectKey>
         <sonar.moduleKey>${project.groupId}:${project.artifactId}</sonar.moduleKey>
@@ -52,11 +55,12 @@
         <module>legend-shared-pac4j</module>
         <module>legend-shared-pac4j-kerberos</module>
         <module>legend-shared-pac4j-gitlab</module>
-        <module>test-reports</module>
         <module>legend-shared-opentracing-base</module>
         <module>legend-shared-opentracing-jersey</module>
         <module>legend-shared-opentracing-test</module>
         <module>legend-shared-opentracing-servlet-filter</module>
+
+        <module>test-reports</module>
     </modules>
 
     <build>
