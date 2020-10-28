@@ -44,7 +44,7 @@
 
         <!-- Dependencies -->
         <commons.lang.version>2.6</commons.lang.version>
-        <dropwizard.version>1.3.26</dropwizard.version>
+        <dropwizard.version>1.3.27</dropwizard.version>
         <dropwizard.pac4j.version>3.0.0</dropwizard.pac4j.version>
         <guava.version>28.1-jre</guava.version>
         <jackson.annotations.version>2.10.1</jackson.annotations.version>
@@ -518,16 +518,6 @@
                 <version>${jersey.client.version}</version>
             </dependency>
             <!-- Jersey -->
-
-            <!-- Jetty -->
-            <!-- The following Jetty dependencies are added to address security issues, this can be removed once we upgrade dropwizard -->
-            <!-- See https://nvd.nist.gov/vuln/detail/CVE-2020-27216 -->
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-webapp</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <!-- Jetty -->
 
             <!-- Mongo -->
             <dependency>
