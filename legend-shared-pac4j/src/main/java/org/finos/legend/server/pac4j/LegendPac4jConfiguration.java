@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.util.List;
 import org.pac4j.core.authorization.authorizer.Authorizer;
 import org.pac4j.core.client.Client;
+import org.pac4j.core.client.finder.ClientFinder;
+import org.pac4j.core.client.finder.DefaultSecurityClientFinder;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class LegendPac4jConfiguration
@@ -31,6 +33,7 @@ public final class LegendPac4jConfiguration
   private String defaults;
   private List<Authorizer> authorizers = ImmutableList.of();
   private List<Client> clients;
+  private String defaultClient;
   private String mongoUri;
   private String mongoDb;
   private MongoSessionConfiguration mongoSession = new MongoSessionConfiguration();
@@ -89,6 +92,19 @@ public final class LegendPac4jConfiguration
     this.clients = clients;
   }
 
+  public ClientFinder getDefaultSecurityClient()
+  {
+    ClientFinder f;
+    if (this.defaultClient != null)
+    {
+      f = new LegendClientFinder(this.defaultClient);
+    } else
+    {
+      f = new LegendClientFinder();
+    }
+    return f;
+  }
+
   private void defaultClients(List<Client> clients)
   {
     if (this.clients == null || this.clients.isEmpty())
@@ -133,6 +149,11 @@ public final class LegendPac4jConfiguration
   public String getMongoUri()
   {
     return mongoUri;
+  }
+
+  public void setDefaultClient(String defaultClient)
+  {
+    this.defaultClient = defaultClient;
   }
 
   public void setMongoUri(String mongoUri)
