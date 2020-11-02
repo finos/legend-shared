@@ -28,6 +28,7 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
+import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.FilterMapping;
 import org.finos.legend.server.pac4j.internal.AcceptHeaderAjaxRequestResolver;
 import org.finos.legend.server.pac4j.internal.SecurityFilterHandler;
@@ -160,7 +161,6 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     factory.setCallbackUrl(clientCallbackUrl);
     factory.setAjaxRequestResolver(new AcceptHeaderAjaxRequestResolver());
     factory.setUrlResolver(new DefaultUrlResolver());
-
     Pac4jFactory.ServletConfiguration servletConfiguration =
         new Pac4jFactory.ServletConfiguration();
     Pac4jFactory.ServletSecurityFilterConfiguration securityFilterConfiguration =
@@ -193,7 +193,9 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     factory.setAuthorizers(legendConfig.getAuthorizers().stream()
         .collect(Collectors.toMap(a -> a.getClass().getName(), a -> a)));
     securityFilterConfiguration.setAuthorizers(String.join(",", factory.getAuthorizers().keySet()));
-
+    DefaultSecurityLogic s = new DefaultSecurityLogic();
+    s.setClientFinder(legendConfig.getDefaultSecurityClient());
+    factory.setSecurityLogic(s);
     factory.setServlet(servletConfiguration);
 
     PathMatcher matcher = new PathMatcher();
@@ -240,6 +242,17 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                 mapping.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
               }
             });
+    for (FilterHolder h: environment.getApplicationContext().getServletHandler().getFilters())
+    {
+      if (h.getFilter() instanceof SecurityFilter)
+      {
+        SecurityFilter filter = (SecurityFilter) h.getFilter();
+        DefaultSecurityLogic securityLogic = (DefaultSecurityLogic) filter.getSecurityLogic();
+        securityLogic.setClientFinder(((DefaultSecurityLogic)this.getConfig().getSecurityLogic()).getClientFinder());
+        filter.setSecurityLogic(securityLogic);
+        h.setFilter(filter);
+      }
+    }
   }
 
   @Override
