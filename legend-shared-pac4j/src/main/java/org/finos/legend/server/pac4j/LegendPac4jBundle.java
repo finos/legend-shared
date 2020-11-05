@@ -122,10 +122,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     if (StringUtils.isNotEmpty(legendConfig.getMongoDb())
         && StringUtils.isNotEmpty(legendConfig.getMongoUri()))
     {
-      try (MongoClient client = new MongoClient(new MongoClientURI(legendConfig.getMongoUri())))
-      {
-        db = client.getDatabase(legendConfig.getMongoDb());
-      }
+      MongoClient client = new MongoClient(new MongoClientURI(legendConfig.getMongoUri()));
+      db = client.getDatabase(legendConfig.getMongoDb());
     }
     MongoDatabase finalDb = db;
     Pac4jFactory factory =
