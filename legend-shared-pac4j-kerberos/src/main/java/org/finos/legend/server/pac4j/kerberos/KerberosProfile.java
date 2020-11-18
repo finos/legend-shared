@@ -14,11 +14,19 @@
 
 package org.finos.legend.server.pac4j.kerberos;
 
-import javax.security.auth.Subject;
 import org.ietf.jgss.GSSContext;
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosTicket;
+import java.io.IOException;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Collections;
 
 public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
 {
+  private static final long serialVersionUID = -8691865551996919736L;
+
   private Subject subject;
 
   public KerberosProfile(Subject subject, final GSSContext gssContext)
@@ -40,5 +48,20 @@ public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
   public Subject getSubject()
   {
     return subject;
+  }
+
+  public void readExternal(ObjectInput in) throws ClassNotFoundException, IOException
+  {
+    super.readExternal(in);
+    KerberosPrincipal principal = new KerberosPrincipal(in.readUTF());
+    KerberosTicket tgt = (KerberosTicket) in.readObject();
+    subject = new Subject(true, Collections.singleton(principal), Collections.emptySet(), Collections.singleton(tgt));
+  }
+
+  public void writeExternal(ObjectOutput out) throws IOException
+  {
+    super.writeExternal(out);
+    out.writeUTF(subject.getPrincipals().iterator().next().getName());
+    out.writeObject(subject.getPrivateCredentials(KerberosTicket.class).iterator().next());
   }
 }
