@@ -22,6 +22,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.bson.Document;
+import org.finos.legend.server.pac4j.LegendPac4jBundle;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
@@ -37,7 +38,7 @@ public class MongoDbSessionStore extends HttpSessionStore
   private final MongoCollection<Document> userSessions;
   private final SessionCrypt sessionCrypt;
   private final int maxSessionLength;
-  private final JavaSerializationHelper serializationHelper = new JavaSerializationHelper();
+  private final JavaSerializationHelper serializationHelper = LegendPac4jBundle.getSerializationHelper();
 
   /**
    * Create MongoDb session store.
@@ -52,7 +53,6 @@ public class MongoDbSessionStore extends HttpSessionStore
       Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
   {
     super(underlyingStores);
-    serializationHelper.addTrustedPackage("org.finos.legend.server.pac4j.kerberos.");
     sessionCrypt = new SessionCrypt(algorithm);
     this.maxSessionLength = maxSessionLength;
     userSessions.createIndex(

@@ -43,6 +43,7 @@ import org.pac4j.core.engine.decision.AlwaysUseSessionProfileStorageDecision;
 import org.pac4j.core.http.url.DefaultUrlResolver;
 import org.pac4j.core.matching.Matcher;
 import org.pac4j.core.matching.PathMatcher;
+import org.pac4j.core.util.JavaSerializationHelper;
 import org.pac4j.dropwizard.Pac4jBundle;
 import org.pac4j.dropwizard.Pac4jFactory;
 import org.pac4j.dropwizard.Pac4jFeatureSupport;
@@ -193,6 +194,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     securityFilterConfiguration.setAuthorizers(String.join(",", factory.getAuthorizers().keySet()));
     DefaultSecurityLogic s = new DefaultSecurityLogic();
     s.setClientFinder(legendConfig.getDefaultSecurityClient());
+    s.setProfileStorageDecision(new AlwaysUseSessionProfileStorageDecision());
     factory.setSecurityLogic(s);
     factory.setServlet(servletConfiguration);
 
@@ -247,6 +249,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
         SecurityFilter filter = (SecurityFilter) h.getFilter();
         DefaultSecurityLogic securityLogic = (DefaultSecurityLogic) filter.getSecurityLogic();
         securityLogic.setClientFinder(((DefaultSecurityLogic)this.getConfig().getSecurityLogic()).getClientFinder());
+        securityLogic.setProfileStorageDecision(new AlwaysUseSessionProfileStorageDecision());
         filter.setSecurityLogic(securityLogic);
         h.setFilter(filter);
       }
@@ -266,5 +269,16 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     Collection<Pac4jFeatureSupport> supportedFeatures = super.supportedFeatures();
     supportedFeatures.add(this);
     return supportedFeatures;
+  }
+
+  public static JavaSerializationHelper getSerializationHelper()
+  {
+    JavaSerializationHelper helper = new JavaSerializationHelper();
+    helper.addTrustedPackage("org.finos.legend.server.pac4j."); // Required to serialize KerberosProfile
+    helper.addTrustedPackage("org.pac4j.core.profile."); // Required to serialize UserProfile
+    helper.addTrustedPackage("javax.security.auth."); // Required to serialize KerberosTicket
+    helper.addTrustedPackage("[B"); // byte[] - Required to serialize KerberosTicket
+    helper.addTrustedPackage("[Z"); // boolean[] - Required to serialize KerberosTicket
+    return helper;
   }
 }
