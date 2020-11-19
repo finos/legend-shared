@@ -14,19 +14,6 @@ public class SerializationTest
   private final static JavaSerializationHelper helper = LegendPac4jBundle.getSerializationHelper();
   private final static SerializbaleThing serializableThing = new SerializbaleThing("A random string");
 
-  @Test
-  public void testJavaSerialization()
-  {
-    byte[] bytes = helper.serializeToBytes(serializableThing);
-    try (final ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-         final ObjectInputStream ois = new ObjectInputStream(bais)) {
-      Object output = ois.readObject();
-      Assert.assertEquals(serializableThing, output);
-    } catch (final IOException | ClassNotFoundException e) {
-      e.printStackTrace();
-    }
-  }
-
   @Test()
   public void testPac4jSerialization()
   {
