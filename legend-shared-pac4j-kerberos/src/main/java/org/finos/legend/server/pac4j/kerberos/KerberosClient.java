@@ -15,9 +15,11 @@
 package org.finos.legend.server.pac4j.kerberos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.finos.legend.server.pac4j.SerializableProfile;
 import org.pac4j.kerberos.client.direct.DirectKerberosClient;
 
 @SuppressWarnings("unused")
+@SerializableProfile
 public class KerberosClient extends DirectKerberosClient
 {
   @JsonProperty

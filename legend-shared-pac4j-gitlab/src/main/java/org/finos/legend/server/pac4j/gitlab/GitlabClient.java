@@ -22,6 +22,7 @@ import java.net.Proxy;
 import java.security.GeneralSecurityException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
+import org.finos.legend.server.pac4j.SerializableProfile;
 import org.finos.legend.server.pac4j.gitlab.ssl.TrustManagerComposite;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.http.url.DefaultUrlResolver;
@@ -35,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unused")
+@SerializableProfile
 public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
 {
   private static final Logger logger = LoggerFactory.getLogger(GitlabClient.class);

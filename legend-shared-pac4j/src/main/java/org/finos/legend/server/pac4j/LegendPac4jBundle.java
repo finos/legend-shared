@@ -194,7 +194,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     securityFilterConfiguration.setAuthorizers(String.join(",", factory.getAuthorizers().keySet()));
     DefaultSecurityLogic s = new DefaultSecurityLogic();
     s.setClientFinder(legendConfig.getDefaultSecurityClient());
-    s.setProfileStorageDecision(new AlwaysUseSessionProfileStorageDecision());
+    s.setProfileStorageDecision(new LegendUserProfileStorageDecision());
     factory.setSecurityLogic(s);
     factory.setServlet(servletConfiguration);
 
@@ -249,7 +249,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
         SecurityFilter filter = (SecurityFilter) h.getFilter();
         DefaultSecurityLogic securityLogic = (DefaultSecurityLogic) filter.getSecurityLogic();
         securityLogic.setClientFinder(((DefaultSecurityLogic)this.getConfig().getSecurityLogic()).getClientFinder());
-        securityLogic.setProfileStorageDecision(new AlwaysUseSessionProfileStorageDecision());
+        securityLogic.setProfileStorageDecision(new LegendUserProfileStorageDecision());
         filter.setSecurityLogic(securityLogic);
         h.setFilter(filter);
       }
