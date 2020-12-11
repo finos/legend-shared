@@ -56,7 +56,7 @@ public class MongoDbSessionStore extends HttpSessionStore
       String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
       Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
   {
-    this(algorithm, maxSessionLength, userSessions, underlyingStores, null);
+    this(algorithm, maxSessionLength, userSessions, underlyingStores, new SubjectExecutor(null));
   }
 
   /**
