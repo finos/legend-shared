@@ -16,19 +16,22 @@ package org.finos.legend.server.pac4j.mongostore;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.model.IndexOptions;
-import java.io.Serializable;
-import java.security.GeneralSecurityException;
-import java.util.Date;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 import org.bson.Document;
 import org.finos.legend.server.pac4j.LegendPac4jBundle;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
+import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.util.JavaSerializationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.io.Serializable;
+import java.security.GeneralSecurityException;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.util.Date;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class MongoDbSessionStore extends HttpSessionStore
 {
@@ -39,6 +42,7 @@ public class MongoDbSessionStore extends HttpSessionStore
   private final SessionCrypt sessionCrypt;
   private final int maxSessionLength;
   private final JavaSerializationHelper serializationHelper = LegendPac4jBundle.getSerializationHelper();
+  private final SubjectExecutor subjectExecutor;
 
   /**
    * Create MongoDb session store.
@@ -52,12 +56,34 @@ public class MongoDbSessionStore extends HttpSessionStore
       String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
       Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
   {
+    this(algorithm, maxSessionLength, userSessions, underlyingStores, null);
+  }
+
+  /**
+   * Create MongoDb session store.
+   *
+   * @param algorithm        Crypto Algorithm for serialized data
+   * @param maxSessionLength Expire data after
+   * @param userSessions     Mongo Collection
+   * @param underlyingStores Fallback stores
+   * @param subjectExecutor  Execute DB actions using a Subject
+   */
+  public MongoDbSessionStore(
+          String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
+          Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores,
+          SubjectExecutor subjectExecutor)
+  {
     super(underlyingStores);
+    this.subjectExecutor = subjectExecutor;
     sessionCrypt = new SessionCrypt(algorithm);
     this.maxSessionLength = maxSessionLength;
-    userSessions.createIndex(
-        new Document(CREATED_FIELD, 1),
-        new IndexOptions().name("ttl").expireAfter((long) maxSessionLength, TimeUnit.SECONDS));
+    this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
+    {
+      userSessions.createIndex(
+          new Document(CREATED_FIELD, 1),
+          new IndexOptions().name("ttl").expireAfter((long) maxSessionLength, TimeUnit.SECONDS));
+      return null;
+    });
     this.userSessions = userSessions;
   }
 
@@ -68,7 +94,12 @@ public class MongoDbSessionStore extends HttpSessionStore
     {
       token = SessionToken.generate();
       token.saveInContext(context, maxSessionLength);
-      userSessions.insertOne(getSearchSpec(token).append(CREATED_FIELD, new Date()));
+      SessionToken finalToken = token;
+      this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
+      {
+        userSessions.insertOne(getSearchSpec(finalToken).append(CREATED_FIELD, new Date()));
+        return null;
+      });
     }
     return token;
   }
@@ -91,8 +122,8 @@ public class MongoDbSessionStore extends HttpSessionStore
     Object res = super.get(context, key);
     if (res == null)
     {
-      SessionToken token = getOrCreateSsoKey(context);
-      Document doc = userSessions.find(getSearchSpec(token)).first();
+      final SessionToken token = getOrCreateSsoKey(context);
+      Document doc = this.subjectExecutor.execute(() -> userSessions.find(getSearchSpec(token)).first());
       if (doc != null)
       {
         String serialized = doc.getString(key);
@@ -120,16 +151,15 @@ public class MongoDbSessionStore extends HttpSessionStore
   {
     if (value instanceof Serializable)
     {
-      SessionToken token = getOrCreateSsoKey(context);
+      final SessionToken token = getOrCreateSsoKey(context);
       Serializable serializable = (Serializable) value;
       byte[] serialized = new JavaSerializationHelper().serializeToBytes(serializable);
       try
       {
-        userSessions.updateOne(
-            getSearchSpec(token),
-            new Document(
-                "$set", new Document(key, sessionCrypt.toCryptedString(serialized, token))));
-      } catch (GeneralSecurityException e)
+        this.subjectExecutor.executeWithException(() -> userSessions.updateOne(
+              getSearchSpec(token),
+              new Document("$set", new Document(key, sessionCrypt.toCryptedString(serialized, token)))));
+      } catch (PrivilegedActionException e)
       {
         logger.warn("Unable to serialize session data for user", e);
       }
@@ -140,9 +170,9 @@ public class MongoDbSessionStore extends HttpSessionStore
   @Override
   public boolean destroySession(WebContext context)
   {
-    SessionToken token = getOrCreateSsoKey(context);
+    final SessionToken token = getOrCreateSsoKey(context);
     token.saveInContext(context, 0);
-    userSessions.deleteMany(getSearchSpec(token));
+    this.subjectExecutor.execute(() -> userSessions.deleteMany(getSearchSpec(token)));
     return super.destroySession(context);
   }
 }

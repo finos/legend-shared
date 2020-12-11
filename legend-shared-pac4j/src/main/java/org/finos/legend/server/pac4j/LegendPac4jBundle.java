@@ -26,6 +26,8 @@ import io.dropwizard.configuration.ConfigurationSourceProvider;
 import io.dropwizard.server.SimpleServerFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import javax.security.auth.Subject;
+import javax.servlet.DispatcherType;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.eclipse.jetty.servlet.FilterHolder;
@@ -33,6 +35,7 @@ import org.eclipse.jetty.servlet.FilterMapping;
 import org.finos.legend.server.pac4j.internal.AcceptHeaderAjaxRequestResolver;
 import org.finos.legend.server.pac4j.internal.SecurityFilterHandler;
 import org.finos.legend.server.pac4j.internal.UsernameFilter;
+import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
 import org.finos.legend.server.pac4j.mongostore.MongoDbSessionStore;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.config.Config;
@@ -50,7 +53,6 @@ import org.pac4j.dropwizard.Pac4jFeatureSupport;
 import org.pac4j.j2e.filter.SecurityFilter;
 import org.pac4j.jax.rs.pac4j.JaxRsContext;
 import org.pac4j.jax.rs.servlet.pac4j.ServletSessionStore;
-import javax.servlet.DispatcherType;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -58,7 +60,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> implements Pac4jFeatureSupport
@@ -69,13 +73,22 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
   private static final String callbackMatcher = "notCallback";
   private static final String bypassMatcher = "bypassPaths";
   private final Function<C, LegendPac4jConfiguration> configSupplier;
+  private final Function<C, Supplier<Subject>> subjectSupplierSupplier;
   private ConfigurationSourceProvider configurationSourceProvider;
   private ObjectMapper objectMapper;
 
   @SuppressWarnings("WeakerAccess")
   public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier)
   {
+    this(configSupplier, null);
+  }
+
+  @SuppressWarnings("WeakerAccess")
+  public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier,
+                           Function<C, Supplier<Subject>> subjectSupplierSupplier)
+  {
     this.configSupplier = configSupplier;
+    this.subjectSupplierSupplier = subjectSupplierSupplier;
   }
 
   private static String cleanUrl(String inUrl)
@@ -119,13 +132,17 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     String callbackFilterUrl = cleanUrl(legendConfig.getCallbackPrefix() + callBackSuffix);
     String clientCallbackUrl = cleanUrl(applicationContextPath + callbackFilterUrl);
 
+    final SubjectExecutor subjectExecutor = new SubjectExecutor(
+        Objects.isNull(this.subjectSupplierSupplier) ? null : this.subjectSupplierSupplier.apply(configuration));
+
     MongoDatabase db = null;
     if (StringUtils.isNotEmpty(legendConfig.getMongoDb())
         && StringUtils.isNotEmpty(legendConfig.getMongoUri()))
     {
       MongoClient client = new MongoClient(new MongoClientURI(legendConfig.getMongoUri()));
-      db = client.getDatabase(legendConfig.getMongoDb());
+      db = subjectExecutor.execute(() -> client.getDatabase(legendConfig.getMongoDb()));
     }
+
     MongoDatabase finalDb = db;
     Pac4jFactory factory =
         new Pac4jFactory()
@@ -139,20 +156,23 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                 && legendConfig.getMongoSession().isEnabled())
             {
 
-              if (finalDb == null)
+              if (Objects.isNull(finalDb))
               {
                 throw new RuntimeException(
                     "MongoDB needs to be configured if MongoSession is used");
               }
-              MongoCollection<Document> userSessions =
-                  finalDb.getCollection(legendConfig.getMongoSession().getCollection());
+
+              MongoCollection<Document> userSessions = subjectExecutor.execute(
+                  () -> finalDb.getCollection(legendConfig.getMongoSession().getCollection()));
+
               config.setSessionStore(
                   new MongoDbSessionStore(
                       legendConfig.getMongoSession().getCryptoAlgorithm(),
                       legendConfig.getMongoSession().getMaxSessionLength(),
                       userSessions, ImmutableMap.of(
                       J2EContext.class, new J2ESessionStore(),
-                      JaxRsContext.class, new ServletSessionStore())));
+                      JaxRsContext.class, new ServletSessionStore()),
+                      subjectExecutor));
             }
             return config;
           }
