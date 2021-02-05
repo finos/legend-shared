@@ -251,9 +251,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
               @Override
               protected void handleSecurityFilter(SecurityFilter filter)
               {
-                DefaultSecurityLogic<Object, J2EContext> logic =
-                    (DefaultSecurityLogic<Object, J2EContext>) filter.getSecurityLogic();
-                logic.setProfileStorageDecision(new AlwaysUseSessionProfileStorageDecision());
+                  // No-op, required to meet SecurityFilterHandler interface
               }
 
               @Override
