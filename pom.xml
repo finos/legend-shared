@@ -66,6 +66,7 @@
         <mongo.driver.version>3.12.8</mongo.driver.version>
         <mongo.server.version>1.21.0</mongo.server.version>
         <nimbus.jwt.version>8.0</nimbus.jwt.version>
+        <opentracing.version>0.32.0</opentracing.version>
         <opentracing.jaxrs2.version>0.5.0</opentracing.jaxrs2.version>
         <opentracing.brave.version>0.37.2</opentracing.brave.version>
         <pac4j.version>3.8.3</pac4j.version>
@@ -158,6 +159,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven.shade.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -487,6 +493,11 @@
             <!-- Dropwizard -->
 
             <!-- Open Tracing -->
+            <dependency>
+                <groupId>io.opentracing</groupId>
+                <artifactId>opentracing-noop</artifactId>
+                <version>${opentracing.version}</version>
+            </dependency>
             <dependency>
                 <groupId>io.opentracing.contrib</groupId>
                 <artifactId>opentracing-jaxrs2</artifactId>
