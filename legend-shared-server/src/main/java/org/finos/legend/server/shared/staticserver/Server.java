@@ -20,17 +20,39 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.Enumeration;
+import java.util.Objects;
+import java.util.Scanner;
 import java.util.function.Function;
 import java.util.jar.Manifest;
 
 public class Server extends Application<org.finos.legend.server.shared.staticserver.StaticServerConfiguration>
 {
-
   public static void main(String[] args) throws Exception
   {
+    if (args.length > 1 && !Files.exists(new File(args[1]).toPath()))
+    {
+      System.out.println("WARNING '" + args[1] + "' can't be found ");
+      System.out.println("Please use -v option to map the 'config' folder to an external folder containing config.json.\n"
+                         + "Example: docker run --name shared --publish 8080:8080 -v ~/work/code/legend-shared/legend-shared-server/src/main/resources/:/config -d finos/legend-shared-server:0.6.0-SNAPSHOT");
+
+      URL resource = Server.class.getClassLoader().getResource("config.json");
+      System.out.println("Using the default config sourced from :\n" + Objects.requireNonNull(resource).getPath());
+
+      String content = new Scanner(resource.openStream()).useDelimiter("\\A").next();
+      System.out.println("Content:\n" + content);
+
+      File file = File.createTempFile("tempConfig", ".json");
+      new FileOutputStream(file).write(content.getBytes());
+      System.out.println("Writing to temp file:" + file.getAbsolutePath());
+
+      args[1] = file.getAbsolutePath();
+    }
     new org.finos.legend.server.shared.staticserver.Server().run(args);
   }
 
