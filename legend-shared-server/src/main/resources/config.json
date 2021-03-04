@@ -1,0 +1,27 @@
+{
+  "server": {
+    "type": "simple",
+    "applicationContextPath": "/",
+    "adminContextPath": "/admin",
+    "connector": {
+      "port": 8080,
+      "type": "http"
+    }
+  },
+  "logging": {
+    "level": "INFO",
+    "appenders": [
+      {
+        "type": "console"
+      }
+    ]
+  },
+  "uiPath": "",
+  "pac4j": {
+    "clients": [
+      {
+        "org.pac4j.core.client.direct.AnonymousClient": {}
+      }
+    ]
+  }
+}

@@ -286,13 +286,6 @@
                 <artifactId>versions-maven-plugin</artifactId>
             </plugin>
             <plugin>
-                <groupId>com.spotify</groupId>
-                <artifactId>dockerfile-maven-plugin</artifactId>
-                <configuration>
-                    <skip>true</skip>
-                </configuration>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
                 <configuration>
@@ -491,12 +484,6 @@
                 <groupId>io.opentracing.contrib</groupId>
                 <artifactId>opentracing-jaxrs2</artifactId>
                 <version>${opentracing.jaxrs2.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>io.opentracing</groupId>
-                        <artifactId>opentracing-noop</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>io.opentracing.brave</groupId>
@@ -673,4 +660,23 @@
             <url>https://oss.sonatype.org/content/repositories/releases/</url>
         </repository>
     </repositories>
+
+    <profiles>
+        <profile>
+            <id>docker</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>dockerfile-maven-plugin</artifactId>
+                        <version>1.4.13</version>
+                        <inherited>false</inherited>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
