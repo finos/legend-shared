@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v2
       - name: Build simplified Docker image for checks
         # NOTE: if this gets more complicated, consider having this as a bash script
-        run: mkdir -p ./legend-shared-server/target && touch ./legend-shared-server/target/legend-shared-server-dummy.jar && docker build --quiet --tag local/legend-server-shared:${{ github.sha }} ./legend-shared-server
+        run: mkdir -p ./legend-shared-server/target && touch ./legend-shared-server/target/legend-shared-server-dummy.jar && docker build --quiet --tag local/legend-shared-server:${{ github.sha }} ./legend-shared-server
       - name: Scan image for security issues
         uses: Azure/container-scan@v0
         env:
@@ -25,5 +25,5 @@ jobs:
           # See https://github.com/Azure/container-scan/issues/61
           TRIVY_IGNORE_UNFIXED: true
         with:
-          image-name: local/legend-server-shared:${{ github.sha }}
+          image-name: local/legend-shared-server:${{ github.sha }}
           severity-threshold: CRITICAL
