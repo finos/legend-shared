@@ -16,6 +16,8 @@ package org.finos.legend.server.pac4j.mongostore;
 
 import com.google.common.base.Strings;
 import java.util.UUID;
+
+import org.eclipse.jetty.http.HttpCookie;
 import org.pac4j.core.context.Cookie;
 import org.pac4j.core.context.WebContext;
 
@@ -88,7 +90,9 @@ class SessionToken
     cookie.setPath("/");
     cookie.setHttpOnly(true);
     cookie.setMaxAge(ttl);
+    cookie.setComment(HttpCookie.SAME_SITE_NONE_COMMENT);
     context.addResponseCookie(cookie);
     context.setRequestAttribute(SESSION_COOKIE_NAME, cookie.getValue());
+    context.setRequestAttribute(HttpCookie.SAME_SITE_DEFAULT_ATTRIBUTE, HttpCookie.SameSite.NONE);
   }
 }
