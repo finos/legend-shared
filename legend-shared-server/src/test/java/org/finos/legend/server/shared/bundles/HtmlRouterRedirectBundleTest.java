@@ -45,7 +45,6 @@ public class HtmlRouterRedirectBundleTest
     testUrl("/ui/index.html", 200, "TEST INDEX.HTML");
     testUrl("/ui/some/route", 200, "TEST INDEX.HTML");
     testUrl("/ui/some/route/with/some.periods", 200, "TEST INDEX.HTML");
-    testUrl("/ui/gs.svg", 200, "<svg");
     testUrl("/ui/static/blah.html", 404, null);
   }
 
