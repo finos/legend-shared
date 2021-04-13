@@ -24,6 +24,8 @@ import com.mongodb.client.MongoDatabase;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 import javax.servlet.http.Cookie;
 import org.junit.AfterClass;
@@ -63,7 +65,9 @@ public class MongoDbSessionStoreTest
   @Before
   public void before()
   {
-    store = new MongoDbSessionStore("AES", 100, db.getCollection("sessionData"), ImmutableMap.of(J2EContext.class, new J2ESessionStore()));
+    List<String> testTrustedPackages = new ArrayList<>();
+    testTrustedPackages.add("test.trusted.package");
+    store = new MongoDbSessionStore("AES", 100, db.getCollection("sessionData"), ImmutableMap.of(J2EContext.class, new J2ESessionStore()), testTrustedPackages);
   }
 
   @Test
@@ -93,6 +97,12 @@ public class MongoDbSessionStoreTest
     store.set(requestContext, "testKey4", "testValue");
     Cookie[] cookies = response.getCookies();
     assertEquals(1, cookies.length);
+  }
+
+  @Test
+  public void testTrustedPackageAdded()
+  {
+    assertTrue(this.store.getSerializationHelper().getTrustedPackages().contains("test.trusted.package"));
   }
 
   @Test

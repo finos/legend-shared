@@ -30,6 +30,7 @@ import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -41,7 +42,7 @@ public class MongoDbSessionStore extends HttpSessionStore
   private final MongoCollection<Document> userSessions;
   private final SessionCrypt sessionCrypt;
   private final int maxSessionLength;
-  private final JavaSerializationHelper serializationHelper = LegendPac4jBundle.getSerializationHelper();
+  private final JavaSerializationHelper serializationHelper;
   private final SubjectExecutor subjectExecutor;
 
   /**
@@ -54,9 +55,9 @@ public class MongoDbSessionStore extends HttpSessionStore
    */
   public MongoDbSessionStore(
       String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
-      Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
+      Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores, List<String> extraTrustedPackages)
   {
-    this(algorithm, maxSessionLength, userSessions, underlyingStores, new SubjectExecutor(null));
+    this(algorithm, maxSessionLength, userSessions, underlyingStores, new SubjectExecutor(null),extraTrustedPackages);
   }
 
   /**
@@ -71,12 +72,13 @@ public class MongoDbSessionStore extends HttpSessionStore
   public MongoDbSessionStore(
           String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
           Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores,
-          SubjectExecutor subjectExecutor)
+          SubjectExecutor subjectExecutor, List<String> extraTrustedPackages)
   {
     super(underlyingStores);
     this.subjectExecutor = subjectExecutor;
     sessionCrypt = new SessionCrypt(algorithm);
     this.maxSessionLength = maxSessionLength;
+    this.serializationHelper = LegendPac4jBundle.getSerializationHelper(extraTrustedPackages);
     this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
     {
       userSessions.createIndex(
@@ -174,5 +176,10 @@ public class MongoDbSessionStore extends HttpSessionStore
     token.saveInContext(context, 0);
     this.subjectExecutor.execute(() -> userSessions.deleteMany(getSearchSpec(token)));
     return super.destroySession(context);
+  }
+
+  public JavaSerializationHelper getSerializationHelper()
+  {
+    return serializationHelper;
   }
 }
