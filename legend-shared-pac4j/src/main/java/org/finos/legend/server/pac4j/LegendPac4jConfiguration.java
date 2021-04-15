@@ -40,6 +40,7 @@ public final class LegendPac4jConfiguration
   private String callbackPrefix = "";
   private List<String> bypassPaths = ImmutableList.of();
   private List<String> bypassBranches = ImmutableList.of();
+  private List<String> trustedPackages = ImmutableList.of();
 
   public void setDefaults(String defaults)
   {
@@ -67,6 +68,11 @@ public final class LegendPac4jConfiguration
   public List<String> getBypassBranches()
   {
     return bypassBranches;
+  }
+
+  public List<String> getTrustedPackages()
+  {
+    return trustedPackages;
   }
 
   public void setBypassBranches(List<String> bypassBranches)

@@ -59,6 +59,7 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
@@ -172,7 +173,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                       userSessions, ImmutableMap.of(
                       J2EContext.class, new J2ESessionStore(),
                       JaxRsContext.class, new ServletSessionStore()),
-                      subjectExecutor));
+                      subjectExecutor, legendConfig.getTrustedPackages()));
             }
             return config;
           }
@@ -289,7 +290,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     return supportedFeatures;
   }
 
-  public static JavaSerializationHelper getSerializationHelper()
+  public static JavaSerializationHelper getSerializationHelper(List<String> extraPackages)
   {
     JavaSerializationHelper helper = new JavaSerializationHelper();
     helper.addTrustedPackage("org.finos.legend.server.pac4j."); // Required to serialize KerberosProfile
@@ -297,6 +298,10 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     helper.addTrustedPackage("javax.security.auth."); // Required to serialize KerberosTicket
     helper.addTrustedPackage("[B"); // byte[] - Required to serialize KerberosTicket
     helper.addTrustedPackage("[Z"); // boolean[] - Required to serialize KerberosTicket
+    for (String p:extraPackages)
+    {
+      helper.addTrustedPackage(p);
+    }
     return helper;
   }
 }

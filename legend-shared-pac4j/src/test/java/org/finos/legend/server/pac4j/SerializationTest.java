@@ -8,10 +8,11 @@ import org.pac4j.core.util.JavaSerializationHelper;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.ArrayList;
 
 public class SerializationTest
 {
-  private final static JavaSerializationHelper helper = LegendPac4jBundle.getSerializationHelper();
+  private final static JavaSerializationHelper helper = LegendPac4jBundle.getSerializationHelper(new ArrayList<>());
   private final static SerializbaleThing serializableThing = new SerializbaleThing("A random string");
 
   @Test()
