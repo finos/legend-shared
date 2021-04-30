@@ -15,87 +15,115 @@
 package org.finos.legend.server.pac4j.kerberos;
 
 import com.sun.security.jgss.GSSUtil;
+import org.finos.legend.server.pac4j.kerberos.local.SystemAccountLoginConfiguration;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
+import org.pac4j.core.context.WebContext;
+import org.pac4j.core.credentials.authenticator.Authenticator;
+import org.pac4j.core.exception.BadCredentialsException;
+import org.pac4j.core.exception.CredentialsException;
+import org.pac4j.kerberos.credentials.KerberosCredentials;
+
+import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
-import org.finos.legend.server.pac4j.kerberos.local.SystemAccountLoginConfiguration;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSCredential;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.Oid;
-import org.pac4j.core.context.WebContext;
-import org.pac4j.core.credentials.authenticator.Authenticator;
-import org.pac4j.core.exception.BadCredentialsException;
-import org.pac4j.kerberos.credentials.KerberosCredentials;
+import javax.security.auth.login.LoginException;
 
 public class DelegationKerberosAuthenticator implements Authenticator<KerberosCredentials>
 {
-  private final String servicePrincipal;
-  private final String keytabLocation;
+    private final String servicePrincipal;
+    private final String keytabLocation;
 
-  public DelegationKerberosAuthenticator(
-      String servicePrincipal, String keytabLocation, boolean debug)
-  {
-    this.servicePrincipal = servicePrincipal;
-    this.keytabLocation = keytabLocation;
-  }
-
-  private Subject getSubject()
-  {
-    try
+    public DelegationKerberosAuthenticator(String servicePrincipal, String keytabLocation, boolean debug)
     {
-      Configuration config =
-          new SystemAccountLoginConfiguration(keytabLocation, servicePrincipal, false);
-      LoginContext loginContext = new LoginContext("", null, null, config);
-      loginContext.login();
-      return loginContext.getSubject();
-    } catch (Exception e)
-    {
-      throw new RuntimeException(e);
+        this.servicePrincipal = servicePrincipal;
+        this.keytabLocation = keytabLocation;
     }
-  }
 
-  @Override
-  public void validate(KerberosCredentials credentials, WebContext webContext)
-  {
-    try
+    private Subject getSubject() throws LoginException
     {
-      final GSSManager MANAGER = GSSManager.getInstance();
+        Configuration config = new SystemAccountLoginConfiguration(this.keytabLocation, this.servicePrincipal, false);
+        LoginContext loginContext = new LoginContext("", null, null, config);
+        loginContext.login();
+        return loginContext.getSubject();
+    }
 
-      PrivilegedExceptionAction<GSSCredential> action =
-          () ->
-              MANAGER.createCredential(
-                  null,
-                  GSSCredential.DEFAULT_LIFETIME,
-                  new Oid("1.3.6.1.5.5.2"),
-                  GSSCredential.ACCEPT_ONLY);
-      GSSCredential cred = Subject.doAs(getSubject(), action);
+    @Override
+    public void validate(KerberosCredentials credentials, WebContext webContext)
+    {
+        try
+        {
+            GSSManager manager = GSSManager.getInstance();
 
-      GSSContext context = MANAGER.createContext(cred);
-      context.requestCredDeleg(true);
-      byte[] resToken = context.acceptSecContext(
-          credentials.getKerberosTicket(), 0, credentials.getKerberosTicket().length);
-      String name = context.getSrcName().toString();
-      name = name.substring(0, name.indexOf('@'));
-      if (context.getCredDelegState())
-      {
-        Subject delegationSubject =
-            GSSUtil.createSubject(context.getSrcName(), context.getDelegCred());
+            PrivilegedExceptionAction<GSSCredential> action = () ->
+                    manager.createCredential(
+                            null,
+                            GSSCredential.DEFAULT_LIFETIME,
+                            new Oid("1.3.6.1.5.5.2"),
+                            GSSCredential.ACCEPT_ONLY);
+            GSSCredential cred = Subject.doAs(getSubject(), action);
+
+            GSSContext context = manager.createContext(cred);
+            context.requestCredDeleg(true);
+            byte[] resToken = context.acceptSecContext(credentials.getKerberosTicket(), 0, credentials.getKerberosTicket().length);
+
+            // delegation is required, so reject credentials without delegation
+            if (!context.getCredDelegState())
+            {
+                String baseMessage = "Delegation is turned off";
+                String message;
+                try
+                {
+                    String name = context.getSrcName().toString();
+                    message = baseMessage + " in credentials for " + name;
+                }
+                catch (Exception ignore)
+                {
+                    // ignore errors building the message
+                    message = baseMessage;
+                }
+                webContext.writeResponseContent(baseMessage);
+                throw new BadCredentialsException(message);
+            }
+
+            KerberosProfile profile = createProfile(context);
+            credentials.setUserProfile(profile);
+            webContext.setResponseHeader("WWW-Authenticate", "Negotiate " + Base64.getEncoder().encodeToString(resToken));
+        }
+        catch (CredentialsException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            Throwable cause = (e instanceof PrivilegedActionException) ? e.getCause() : e;
+            String message = "Kerberos validation not successful";
+            String exMessage = cause.getMessage();
+            if (exMessage != null)
+            {
+                message = message + ": " + exMessage;
+            }
+            throw new BadCredentialsException(message, cause);
+        }
+    }
+
+    private KerberosProfile createProfile(GSSContext context) throws GSSException
+    {
+        GSSName gssName = context.getSrcName();
+        Subject delegationSubject = GSSUtil.createSubject(gssName, context.getDelegCred());
         KerberosProfile profile = new KerberosProfile(delegationSubject, context);
-        profile.setId(name);
-        credentials.setUserProfile(profile);
-        webContext.setResponseHeader("WWW-Authenticate",
-            "Negotiate " + Base64.getEncoder().encodeToString(resToken));
-      } else
-      {
-        webContext.writeResponseContent("Delegation is turned off");
-        throw new BadCredentialsException("Delegation is turned off");
-      }
-    } catch (Exception e)
-    {
-      throw new BadCredentialsException("Kerberos validation not successful", e);
+
+        String nameString = gssName.toString();
+        int atIndex = nameString.indexOf('@');
+        String profileId = (atIndex < 0) ? nameString : nameString.substring(0, atIndex);
+        profile.setId(profileId);
+        return profile;
     }
-  }
 }
