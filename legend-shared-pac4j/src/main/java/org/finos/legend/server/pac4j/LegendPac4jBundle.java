@@ -32,6 +32,7 @@ import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.FilterMapping;
+import org.eclipse.jetty.servlet.ServletHandler;
 import org.finos.legend.server.pac4j.internal.AcceptHeaderAjaxRequestResolver;
 import org.finos.legend.server.pac4j.internal.SecurityFilterHandler;
 import org.finos.legend.server.pac4j.internal.UsernameFilter;
@@ -261,16 +262,32 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                 mapping.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
               }
             });
+    swapClientFinderAndStorageDecision(environment);
+  }
+
+  public void swapClientFinderAndStorageDecision(Environment environment)
+  {
     for (FilterHolder h: environment.getApplicationContext().getServletHandler().getFilters())
     {
-      if (h.getFilter() instanceof SecurityFilter)
+      if (h.getHeldClass().equals(SecurityFilter.class))
       {
-        SecurityFilter filter = (SecurityFilter) h.getFilter();
-        DefaultSecurityLogic securityLogic = (DefaultSecurityLogic) filter.getSecurityLogic();
-        securityLogic.setClientFinder(((DefaultSecurityLogic)this.getConfig().getSecurityLogic()).getClientFinder());
-        securityLogic.setProfileStorageDecision(new LegendUserProfileStorageDecision());
-        filter.setSecurityLogic(securityLogic);
-        h.setFilter(filter);
+        ServletHandler s =  new ServletHandler();
+        s.addFilter(h);
+        try
+        {
+          s.initialize();
+          SecurityFilter filter = (SecurityFilter)  s.getFilters()[0].getFilter();
+          DefaultSecurityLogic securityLogic = (DefaultSecurityLogic) filter.getSecurityLogic();
+          securityLogic.setClientFinder(((DefaultSecurityLogic)this.getConfig().getSecurityLogic()).getClientFinder());
+          securityLogic.setProfileStorageDecision(new LegendUserProfileStorageDecision());
+          filter.setSecurityLogic(securityLogic);
+          h.stop();
+          h.setFilter(filter);
+        }
+        catch (Exception e)
+        {
+          e.printStackTrace();
+        }
       }
     }
   }
