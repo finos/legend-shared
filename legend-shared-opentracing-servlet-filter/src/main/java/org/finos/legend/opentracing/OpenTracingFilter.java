@@ -100,70 +100,68 @@ public class OpenTracingFilter implements Filter
 
         spanBuilder.asChildOf(this.tracer.extract(Format.Builtin.HTTP_HEADERS, new ServerHeadersExtractTextMap(headerMap)));
 
-        Scope scope = spanBuilder.startActive(false);
-        Span span = scope.span();
-        try
+        try (Scope scope = spanBuilder.startActive(false))
         {
-            // Update request
+            Span span = scope.span();
             try
             {
-                this.spanDecorators.forEach(d -> d.decorateRequest(httpRequest, span));
+                // Update request
+                try
+                {
+                    this.spanDecorators.forEach(d -> d.decorateRequest(httpRequest, span));
 
-                httpRequest.setAttribute(SCOPE_PROPERTY, scope);
-                httpRequest.setAttribute(SpanWrapper.PROPERTY_NAME, new SpanWrapper(span, scope));
+                    httpRequest.setAttribute(SCOPE_PROPERTY, scope);
+                    httpRequest.setAttribute(SpanWrapper.PROPERTY_NAME, new SpanWrapper(span, scope));
 
-                Map<String, String> props = new HashMap<>();
-                this.tracer.inject(span.context(), Format.Builtin.HTTP_HEADERS, new TextMapAdapter(props));
-                props.forEach(httpResponse::addHeader);
+                    Map<String, String> props = new HashMap<>();
+                    this.tracer.inject(span.context(), Format.Builtin.HTTP_HEADERS, new TextMapAdapter(props));
+                    props.forEach(httpResponse::addHeader);
+                }
+                catch (Throwable t)
+                {
+                    LOGGER.warn("Error updating request (trace id: {})", span.context().toTraceId(), t);
+                    throw t;
+                }
+
+                // Handle request
+                chain.doFilter(request, response);
+
+                // Update response
+                try
+                {
+                    this.spanDecorators.forEach(d -> d.decorateResponse(httpResponse, span));
+                }
+                catch (Throwable t)
+                {
+                    LOGGER.warn("Error updating response (trace id: {})", span.context().toTraceId(), t);
+                    throw t;
+                }
             }
             catch (Throwable t)
             {
-                LOGGER.error("Error updating request (trace id: {})", span.context().toTraceId(), t);
+                Tags.HTTP_STATUS.set(span, httpResponse.getStatus());
+                addExceptionLogs(span, t);
                 throw t;
             }
-
-            // Handle request
-            chain.doFilter(request, response);
-
-            // Update response
-            try
+            finally
             {
-                this.spanDecorators.forEach(d -> d.decorateResponse(httpResponse, span));
-            }
-            catch (Throwable t)
-            {
-                LOGGER.error("Error updating response (trace id: {})", span.context().toTraceId(), t);
-                throw t;
-            }
-        }
-        catch (Throwable t)
-        {
-            Tags.HTTP_STATUS.set(span, httpResponse.getStatus());
-            addExceptionLogs(span, t);
-            throw t;
-        }
-        finally
-        {
-            scope.close();
-            if (request.isAsyncStarted())
-            {
-                LOGGER.debug("Async request with span (trace id: {}), not finishing the span now", span.context().toTraceId());
-                request.getAsyncContext().addListener(new SpanFinisher(span), request, response);
-            }
-            else
-            {
-                span.finish();
+                if (request.isAsyncStarted())
+                {
+                    LOGGER.debug("Async request, not finishing the span now (trace id: {})", span.context().toTraceId());
+                    request.getAsyncContext().addListener(new SpanFinisher(span), request, response);
+                }
+                else
+                {
+                    span.finish();
+                }
             }
         }
 
         // Check if there is a lingering active span
-        if (!request.isAsyncStarted())
+        Span activeSpan = this.tracer.activeSpan();
+        if (activeSpan != null)
         {
-            Span activeSpan = this.tracer.activeSpan();
-            if (activeSpan != null)
-            {
-                LOGGER.error("There is still an open ActiveTracing span (trace id: {}). This probably means a scope is unclosed.", activeSpan.context().toTraceId());
-            }
+            LOGGER.error("There is still an open ActiveTracing span (trace id: {}). This probably means a scope is unclosed.", activeSpan.context().toTraceId());
         }
     }
 
