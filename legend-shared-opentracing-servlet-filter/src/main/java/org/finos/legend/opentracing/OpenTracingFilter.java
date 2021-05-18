@@ -48,8 +48,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 @SuppressWarnings("WeakerAccess")
 public class OpenTracingFilter implements Filter
 {
-    public static final String SCOPE_PROPERTY = OpenTracingFilter.class.getName() + ".Scope";
-
+    private static final String SCOPE_PROPERTY = OpenTracingFilter.class.getName() + ".Scope";
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenTracingFilter.class);
 
     private final Tracer tracer;
@@ -105,17 +104,37 @@ public class OpenTracingFilter implements Filter
         Span span = scope.span();
         try
         {
-            this.spanDecorators.forEach(d -> d.decorateRequest(httpRequest, span));
+            // Update request
+            try
+            {
+                this.spanDecorators.forEach(d -> d.decorateRequest(httpRequest, span));
 
-            httpRequest.setAttribute(SCOPE_PROPERTY, scope);
-            httpRequest.setAttribute(SpanWrapper.PROPERTY_NAME, new SpanWrapper(span, scope));
+                httpRequest.setAttribute(SCOPE_PROPERTY, scope);
+                httpRequest.setAttribute(SpanWrapper.PROPERTY_NAME, new SpanWrapper(span, scope));
 
-            Map<String, String> props = new HashMap<>();
-            this.tracer.inject(span.context(), Format.Builtin.HTTP_HEADERS, new TextMapAdapter(props));
-            props.forEach(httpResponse::addHeader);
+                Map<String, String> props = new HashMap<>();
+                this.tracer.inject(span.context(), Format.Builtin.HTTP_HEADERS, new TextMapAdapter(props));
+                props.forEach(httpResponse::addHeader);
+            }
+            catch (Throwable t)
+            {
+                LOGGER.error("Error updating request (trace id: {})", span.context().toTraceId(), t);
+                throw t;
+            }
 
+            // Handle request
             chain.doFilter(request, response);
-            this.spanDecorators.forEach(d -> d.decorateResponse(httpResponse, span));
+
+            // Update response
+            try
+            {
+                this.spanDecorators.forEach(d -> d.decorateResponse(httpResponse, span));
+            }
+            catch (Throwable t)
+            {
+                LOGGER.error("Error updating response (trace id: {})", span.context().toTraceId(), t);
+                throw t;
+            }
         }
         catch (Throwable t)
         {
@@ -128,6 +147,7 @@ public class OpenTracingFilter implements Filter
             scope.close();
             if (request.isAsyncStarted())
             {
+                LOGGER.debug("Async request with span (trace id: {}), not finishing the span now", span.context().toTraceId());
                 request.getAsyncContext().addListener(new SpanFinisher(span), request, response);
             }
             else
@@ -142,7 +162,7 @@ public class OpenTracingFilter implements Filter
             Span activeSpan = this.tracer.activeSpan();
             if (activeSpan != null)
             {
-                LOGGER.error("There is still an open ActiveTracing span (traceId: {}). This probably means a scope is unclosed.", activeSpan.context().toTraceId());
+                LOGGER.error("There is still an open ActiveTracing span (trace id: {}). This probably means a scope is unclosed.", activeSpan.context().toTraceId());
             }
         }
     }
