@@ -135,9 +135,15 @@ public class OpenTracingFilter implements Filter
                 span.finish();
             }
         }
-        if (!request.isAsyncStarted() && (this.tracer.activeSpan() != null))
+
+        // Check if there is a lingering active span
+        if (!request.isAsyncStarted())
         {
-            LOGGER.error("There is still an open ActiveTracing span. This probably means a scope is unclosed.");
+            Span activeSpan = this.tracer.activeSpan();
+            if (activeSpan != null)
+            {
+                LOGGER.error("There is still an open ActiveTracing span (traceId: {}). This probably means a scope is unclosed.", activeSpan.context().toTraceId());
+            }
         }
     }
 
