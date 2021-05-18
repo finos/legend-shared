@@ -103,20 +103,17 @@ public class OpenTracingFilter implements Filter
 
         Scope scope = spanBuilder.startActive(false);
         Span span = scope.span();
-        this.spanDecorators.forEach(d -> d.decorateRequest(httpRequest, span));
-
-        httpRequest.setAttribute(SCOPE_PROPERTY, scope);
-        httpRequest.setAttribute(SpanWrapper.PROPERTY_NAME, new SpanWrapper(span, scope));
-
-        Map<String, String> props = new HashMap<>();
-        this.tracer.inject(span.context(), Format.Builtin.HTTP_HEADERS, new TextMapAdapter(props));
-        for (Map.Entry<String, String> propEntry : props.entrySet())
-        {
-            ((HttpServletResponse) response).addHeader(propEntry.getKey(), propEntry.getValue());
-        }
-
         try
         {
+            this.spanDecorators.forEach(d -> d.decorateRequest(httpRequest, span));
+
+            httpRequest.setAttribute(SCOPE_PROPERTY, scope);
+            httpRequest.setAttribute(SpanWrapper.PROPERTY_NAME, new SpanWrapper(span, scope));
+
+            Map<String, String> props = new HashMap<>();
+            this.tracer.inject(span.context(), Format.Builtin.HTTP_HEADERS, new TextMapAdapter(props));
+            props.forEach(httpResponse::addHeader);
+
             chain.doFilter(request, response);
             this.spanDecorators.forEach(d -> d.decorateResponse(httpResponse, span));
         }
