@@ -82,7 +82,7 @@ public class OpenTracingBundle implements Bundle
               .servlets()
               .addFilter(
                   "OpenTracing",
-                  new OpenTracingFilter(GlobalTracer.get(), this.decorators).withSkipPaths(skipUrls));
+                  new OpenTracingFilter(GlobalTracer.get(), this.decorators, this.skipUrls));
       openTracing.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
       environment
           .jersey()
