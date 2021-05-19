@@ -71,6 +71,7 @@
         <opentracing.jaxrs2.version>0.5.0</opentracing.jaxrs2.version>
         <opentracing.brave.version>0.37.2</opentracing.brave.version>
         <pac4j.version>3.8.3</pac4j.version>
+        <prometheus.version>0.8.1</prometheus.version>
         <spring.test.version>4.3.24.RELEASE</spring.test.version>
         <spring.boot.autoconfigure.version>2.3.3.RELEASE</spring.boot.autoconfigure.version>
         <json-smart.version>2.4.2</json-smart.version>
@@ -500,6 +501,14 @@
                 <version>${opentracing.brave.version}</version>
             </dependency>
             <!-- Open Tracing -->
+
+            <!-- Metrics -->
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient</artifactId>
+                <version>${prometheus.version}</version>
+            </dependency>
+            <!-- Metrics -->
 
             <!-- Jersey -->
             <dependency>

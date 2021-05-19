@@ -22,6 +22,7 @@ import io.opentracing.contrib.jaxrs2.server.ServerHeadersExtractTextMap;
 import io.opentracing.propagation.Format;
 import io.opentracing.propagation.TextMapAdapter;
 import io.opentracing.tag.Tags;
+import io.prometheus.client.Gauge;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +51,7 @@ public class OpenTracingFilter implements Filter
 {
     private static final String SCOPE_PROPERTY = OpenTracingFilter.class.getName() + ".Scope";
     private static final Logger LOGGER = LoggerFactory.getLogger(OpenTracingFilter.class);
+    private static final Gauge ACTIVE_SPAN_EXCEPTION = Gauge.build().name("activeSpan_exceptions").help("Metric for open active span errors").register();
 
     private final Tracer tracer;
     private final List<ServerSpanDecorator> spanDecorators;
@@ -162,6 +164,14 @@ public class OpenTracingFilter implements Filter
         if (activeSpan != null)
         {
             LOGGER.error("There is still an open ActiveTracing span (trace id: {}). This probably means a scope is unclosed.", activeSpan.context().toTraceId());
+            try
+            {
+                ACTIVE_SPAN_EXCEPTION.inc();
+            }
+            catch (Exception e)
+            {
+                LOGGER.error("Failed to update activeSpanException gauge", e);
+            }
         }
     }
 
