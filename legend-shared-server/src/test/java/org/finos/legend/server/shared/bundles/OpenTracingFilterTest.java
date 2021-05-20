@@ -14,20 +14,15 @@
 
 package org.finos.legend.server.shared.bundles;
 
-import static io.opentracing.contrib.jaxrs2.internal.SpanWrapper.PROPERTY_NAME;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-
-import com.google.common.collect.ImmutableList;
 import io.opentracing.Scope;
 import io.opentracing.Span;
 import io.opentracing.Tracer;
 import io.opentracing.contrib.jaxrs2.internal.SpanWrapper;
+import org.finos.legend.opentracing.OpenTracingFilter;
+import org.junit.Assert;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
@@ -35,10 +30,14 @@ import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.finos.legend.opentracing.OpenTracingFilter;
-import org.junit.Assert;
-import org.junit.Test;
-import org.mockito.ArgumentCaptor;
+
+import static io.opentracing.contrib.jaxrs2.internal.SpanWrapper.PROPERTY_NAME;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class OpenTracingFilterTest
 {
@@ -61,7 +60,7 @@ public class OpenTracingFilterTest
     when(builder.startActive(false)).thenReturn(scope);
     when(scope.span()).thenReturn(span);
 
-    OpenTracingFilter filter = new OpenTracingFilter(tracer, ImmutableList.of());
+    OpenTracingFilter filter = new OpenTracingFilter(tracer);
     filter.doFilter(httpRequest, httpResponse, chain);
     verify(chain).doFilter(httpRequest, httpResponse);
     ArgumentCaptor<SpanWrapper> spanCaptor = ArgumentCaptor.forClass(SpanWrapper.class);
@@ -92,7 +91,7 @@ public class OpenTracingFilterTest
         .when(chain)
         .doFilter(httpRequest, httpResponse);
 
-    OpenTracingFilter filter = new OpenTracingFilter(tracer, ImmutableList.of());
+    OpenTracingFilter filter = new OpenTracingFilter(tracer);
     try
     {
       filter.doFilter(httpRequest, httpResponse, chain);
