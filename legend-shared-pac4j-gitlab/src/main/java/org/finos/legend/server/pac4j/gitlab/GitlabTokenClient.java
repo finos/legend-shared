@@ -29,6 +29,12 @@ public class GitlabTokenClient extends DirectClient<GitlabAuthUserCredentials, G
     public String headerTokenName;
 
     @Override
+    public String getName()
+    {
+        return "gitlabToken";
+    }
+
+    @Override
     protected void clientInit()
     {
         defaultAuthenticator(new GitlabUserAuthenticator());
