@@ -14,13 +14,19 @@
 
 package org.finos.legend.server.pac4j.gitlab;
 
-import org.pac4j.core.context.WebContext;
-import org.pac4j.core.credentials.authenticator.Authenticator;
+import org.pac4j.core.profile.CommonProfile;
 
-public class GitlabUserAuthenticator implements Authenticator<GitlabAuthUserCredentials>
+public class GitlabPersonalAccessTokenProfile extends CommonProfile
 {
-    @Override
-    public void validate(GitlabAuthUserCredentials gitlabAuthUserCredentials, WebContext webContext)
+    private String personalAccessToken;
+
+    public GitlabPersonalAccessTokenProfile(String token)
     {
+        this.personalAccessToken = token;
+    }
+
+    public String getPersonalAccessToken()
+    {
+        return this.personalAccessToken;
     }
 }

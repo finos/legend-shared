@@ -17,14 +17,11 @@ package org.finos.legend.server.pac4j.gitlab;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.finos.legend.server.pac4j.SerializableProfile;
 import org.pac4j.core.client.DirectClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 
 @SerializableProfile
-public class GitlabTokenClient extends DirectClient<GitlabAuthUserCredentials, GitlabUserProfile>
+public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonalAccessTokenCredentials, GitlabPersonalAccessTokenProfile>
 {
-    private static final Logger logger = LoggerFactory.getLogger(GitlabTokenClient.class);
-
     @JsonProperty
     public String headerTokenName;
 
@@ -37,8 +34,8 @@ public class GitlabTokenClient extends DirectClient<GitlabAuthUserCredentials, G
     @Override
     protected void clientInit()
     {
-        defaultAuthenticator(new GitlabUserAuthenticator());
-        defaultCredentialsExtractor(new GitlabAccessTokenExtractor(headerTokenName));
-        defaultProfileCreator(new GitlabAuthUserProfileCreator());
+        defaultAuthenticator(new GitlabPersonalAccessTokenAuthenticator());
+        defaultCredentialsExtractor(new GitlabPersonalAccessTokenExtractor(this.headerTokenName));
+        defaultProfileCreator(new GitlabPersonalAccessTokenProfileCreator());
     }
 }

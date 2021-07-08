@@ -14,24 +14,14 @@
 
 package org.finos.legend.server.pac4j.gitlab;
 
-import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.context.WebContext;
+import org.pac4j.core.profile.creator.ProfileCreator;
 
-public class GitlabUserProfile extends CommonProfile
+public class GitlabPersonalAccessTokenProfileCreator implements ProfileCreator<GitlabPersonalAccessTokenCredentials, GitlabPersonalAccessTokenProfile>
 {
-    private String token;
-
-    public GitlabUserProfile(String token)
+    @Override
+    public GitlabPersonalAccessTokenProfile create(GitlabPersonalAccessTokenCredentials gitlabPersonalAccessTokenCredentials, WebContext webContext)
     {
-        this.token = token;
-    }
-
-    public String getToken()
-    {
-        return token;
-    }
-
-    public void setToken(String token)
-    {
-        this.token = token;
+        return new GitlabPersonalAccessTokenProfile(gitlabPersonalAccessTokenCredentials.getPersonalAccessToken());
     }
 }

@@ -15,13 +15,25 @@
 package org.finos.legend.server.pac4j.gitlab;
 
 import org.pac4j.core.context.WebContext;
-import org.pac4j.core.profile.creator.ProfileCreator;
+import org.pac4j.core.credentials.extractor.CredentialsExtractor;
 
-public class GitlabAuthUserProfileCreator implements ProfileCreator<GitlabAuthUserCredentials, GitlabUserProfile>
+public class GitlabPersonalAccessTokenExtractor implements CredentialsExtractor<GitlabPersonalAccessTokenCredentials>
 {
-    @Override
-    public GitlabUserProfile create(GitlabAuthUserCredentials gitlabAuthUserCredentials, WebContext webContext)
+    private final String headerTokenName;
+
+    public GitlabPersonalAccessTokenExtractor(String headerTokenName)
     {
-        return new GitlabUserProfile(gitlabAuthUserCredentials.getPersonalAccessToken());
+        this.headerTokenName = headerTokenName;
+    }
+
+    @Override
+    public GitlabPersonalAccessTokenCredentials extract(WebContext webContext)
+    {
+        String personalAccessToken = webContext.getRequestHeader(this.headerTokenName);
+         if (personalAccessToken != null)
+         {
+             return new GitlabPersonalAccessTokenCredentials(personalAccessToken);
+         }
+         return null;
     }
 }

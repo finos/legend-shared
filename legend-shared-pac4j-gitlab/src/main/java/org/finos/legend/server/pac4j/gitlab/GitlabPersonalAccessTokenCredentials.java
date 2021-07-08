@@ -15,20 +15,19 @@
 package org.finos.legend.server.pac4j.gitlab;
 
 import org.pac4j.core.credentials.Credentials;
-import java.util.Objects;
 
-public class GitlabAuthUserCredentials extends Credentials
+public class GitlabPersonalAccessTokenCredentials extends Credentials
 {
-    private final String personalAccessToken;
+    private String personalAccessToken;
 
-    public GitlabAuthUserCredentials(String personalAccessToken)
+    public GitlabPersonalAccessTokenCredentials(String personalAccessToken)
     {
         this.personalAccessToken = personalAccessToken;
     }
 
     public String getPersonalAccessToken()
     {
-        return personalAccessToken;
+        return this.personalAccessToken;
     }
 
     @Override
@@ -42,13 +41,13 @@ public class GitlabAuthUserCredentials extends Credentials
         {
             return false;
         }
-        GitlabAuthUserCredentials that = (GitlabAuthUserCredentials) o;
-        return personalAccessToken.equals(that.personalAccessToken);
+        GitlabPersonalAccessTokenCredentials that = (GitlabPersonalAccessTokenCredentials) o;
+        return this.personalAccessToken.equals(that.personalAccessToken);
     }
 
     @Override
     public int hashCode()
     {
-        return Objects.hash(personalAccessToken);
+        return this.personalAccessToken.hashCode();
     }
 }

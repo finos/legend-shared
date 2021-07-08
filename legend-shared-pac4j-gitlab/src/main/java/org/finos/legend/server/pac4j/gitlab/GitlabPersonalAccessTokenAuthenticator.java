@@ -15,23 +15,16 @@
 package org.finos.legend.server.pac4j.gitlab;
 
 import org.pac4j.core.context.WebContext;
-import org.pac4j.core.credentials.extractor.CredentialsExtractor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.pac4j.core.credentials.authenticator.Authenticator;
 
-public class GitlabAccessTokenExtractor implements CredentialsExtractor<GitlabAuthUserCredentials>
+public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<GitlabPersonalAccessTokenCredentials>
 {
-    public static final Logger logger = LoggerFactory.getLogger(GitlabAccessTokenExtractor.class);
-    private final String headerTokenName;
-
-    public GitlabAccessTokenExtractor(String headerTokenName)
-    {
-        this.headerTokenName = headerTokenName;
-    }
-
     @Override
-    public GitlabAuthUserCredentials extract(WebContext webContext)
+    public void validate(GitlabPersonalAccessTokenCredentials gitlabPersonalAccessTokenCredentials, WebContext webContext)
     {
-        return new GitlabAuthUserCredentials(webContext.getRequestHeader(headerTokenName));
+        if (gitlabPersonalAccessTokenCredentials == null)
+        {
+            throw new NullPointerException("The attribute name for token is not present in the header");
+        }
     }
 }
