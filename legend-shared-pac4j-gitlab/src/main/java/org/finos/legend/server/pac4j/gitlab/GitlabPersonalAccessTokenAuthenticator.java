@@ -55,9 +55,7 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
             }
             ObjectMapper mapper = new ObjectMapper();
             Map<String, Object> jsonMap = mapper.readValue(connection.getInputStream(), Map.class);
-            credentials.setState((String) jsonMap.get("state"));
-            credentials.setUserName((String) jsonMap.get("username"));
-            credentials.setUserId(jsonMap.get("id").toString());
+            credentials.setCredentialWithResponse(jsonMap);
         }
         catch (IOException e)
         {

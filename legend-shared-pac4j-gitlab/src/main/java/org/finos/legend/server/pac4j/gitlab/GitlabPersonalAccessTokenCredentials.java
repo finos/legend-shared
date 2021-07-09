@@ -18,6 +18,8 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.pac4j.core.credentials.Credentials;
 
+import java.util.Map;
+
 public class GitlabPersonalAccessTokenCredentials extends Credentials
 {
     private String personalAccessToken;
@@ -40,7 +42,7 @@ public class GitlabPersonalAccessTokenCredentials extends Credentials
         return this.userId;
     }
 
-    protected void setUserId(String userId)
+    private void setUserId(String userId)
     {
         this.userId = userId;
     }
@@ -50,7 +52,7 @@ public class GitlabPersonalAccessTokenCredentials extends Credentials
         return this.state;
     }
 
-    protected void setState(String state)
+    private void setState(String state)
     {
         this.state = state;
     }
@@ -60,10 +62,18 @@ public class GitlabPersonalAccessTokenCredentials extends Credentials
         return this.userName;
     }
 
-    protected void setUserName(String userName)
+    private void setUserName(String userName)
     {
         this.userName = userName;
     }
+
+    protected void setCredentialWithResponse(Map<String, Object> jsonMap)
+    {
+        setState((String) jsonMap.get("state"));
+        setUserName((String) jsonMap.get("username"));
+        setUserId(jsonMap.get("id").toString());
+    }
+
 
     @Override
     public boolean equals(Object o)
