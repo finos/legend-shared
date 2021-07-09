@@ -14,17 +14,61 @@
 
 package org.finos.legend.server.pac4j.gitlab;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.credentials.authenticator.Authenticator;
+import org.pac4j.core.exception.CredentialsException;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Map;
 
 public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<GitlabPersonalAccessTokenCredentials>
 {
-    @Override
-    public void validate(GitlabPersonalAccessTokenCredentials gitlabPersonalAccessTokenCredentials, WebContext webContext)
+
+    private String apiVersion;
+    private String host;
+    private String scheme;
+
+    public GitlabPersonalAccessTokenAuthenticator(String scheme, String gitlabHost, String gitlabApiVersion)
     {
-        if (gitlabPersonalAccessTokenCredentials == null)
+        this.scheme = scheme;
+        this.host = gitlabHost;
+        this.apiVersion = gitlabApiVersion;
+    }
+
+    @Override
+    public void validate(GitlabPersonalAccessTokenCredentials credentials, WebContext webContext)
+    {
+        HttpURLConnection connection = null;
+        try
         {
-            throw new NullPointerException("The attribute name for token is not present in the header");
+            URL url = new URL(this.scheme, this.host, "/api/" + this.apiVersion + "/user?private_token=" + credentials.getPersonalAccessToken());
+            HttpURLConnection.setFollowRedirects(false);
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("GET");
+            connection.setRequestProperty("Content-Type","application/json");
+            if (connection.getResponseCode() != 200)
+            {
+                throw new CredentialsException("Status Code: " + connection.getResponseCode() + " and Error Message: " + connection.getResponseMessage());
+            }
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, Object> jsonMap = mapper.readValue(connection.getInputStream(), Map.class);
+            credentials.setState((String) jsonMap.get("state"));
+            credentials.setUserName((String) jsonMap.get("username"));
+            credentials.setUserId(jsonMap.get("id").toString());
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e.getMessage());
+        }
+        finally
+        {
+            if (connection != null)
+            {
+                connection.disconnect();
+            }
         }
     }
 }

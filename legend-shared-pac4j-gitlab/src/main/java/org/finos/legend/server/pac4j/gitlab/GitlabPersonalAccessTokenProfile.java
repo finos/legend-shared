@@ -18,15 +18,21 @@ import org.pac4j.core.profile.CommonProfile;
 
 public class GitlabPersonalAccessTokenProfile extends CommonProfile
 {
-    private String personalAccessToken;
-
-    public GitlabPersonalAccessTokenProfile(String token)
+    public GitlabPersonalAccessTokenProfile(String token, String userId, String username, String state)
     {
-        this.personalAccessToken = token;
+        super.setId(userId);
+        super.addAttribute("username", username);
+        super.addAttribute("personalAccessToken", token);
+        super.addAttribute("state",state);
     }
 
     public String getPersonalAccessToken()
     {
-        return this.personalAccessToken;
+        return (String) this.getAttribute("personalAccessToken");
+    }
+
+    public String getState()
+    {
+        return (String) this.getAttribute("state");
     }
 }

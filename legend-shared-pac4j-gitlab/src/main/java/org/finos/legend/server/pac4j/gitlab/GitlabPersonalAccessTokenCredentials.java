@@ -14,13 +14,18 @@
 
 package org.finos.legend.server.pac4j.gitlab;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.pac4j.core.credentials.Credentials;
 
 public class GitlabPersonalAccessTokenCredentials extends Credentials
 {
     private String personalAccessToken;
+    private String userId;
+    private String state;
+    private String userName;
 
-    public GitlabPersonalAccessTokenCredentials(String personalAccessToken)
+    protected GitlabPersonalAccessTokenCredentials(String personalAccessToken)
     {
         this.personalAccessToken = personalAccessToken;
     }
@@ -30,24 +35,45 @@ public class GitlabPersonalAccessTokenCredentials extends Credentials
         return this.personalAccessToken;
     }
 
+    public String getUserId()
+    {
+        return this.userId;
+    }
+
+    protected void setUserId(String userId)
+    {
+        this.userId = userId;
+    }
+
+    public String getState()
+    {
+        return this.state;
+    }
+
+    protected void setState(String state)
+    {
+        this.state = state;
+    }
+
+    public String getUserName()
+    {
+        return this.userName;
+    }
+
+    protected void setUserName(String userName)
+    {
+        this.userName = userName;
+    }
+
     @Override
     public boolean equals(Object o)
     {
-        if (this == o)
-        {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass())
-        {
-            return false;
-        }
-        GitlabPersonalAccessTokenCredentials that = (GitlabPersonalAccessTokenCredentials) o;
-        return this.personalAccessToken.equals(that.personalAccessToken);
+        return EqualsBuilder.reflectionEquals(this, o);
     }
 
     @Override
     public int hashCode()
     {
-        return this.personalAccessToken.hashCode();
+        return HashCodeBuilder.reflectionHashCode(this);
     }
 }

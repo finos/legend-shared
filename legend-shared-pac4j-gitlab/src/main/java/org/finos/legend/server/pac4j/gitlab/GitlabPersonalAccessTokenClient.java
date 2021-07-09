@@ -25,6 +25,15 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     @JsonProperty
     public String headerTokenName;
 
+    @JsonProperty
+    public String scheme;
+
+    @JsonProperty
+    public String gitlabHost;
+
+    @JsonProperty
+    public String gitlabApiVersion;
+
     @Override
     public String getName()
     {
@@ -34,7 +43,7 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     @Override
     protected void clientInit()
     {
-        defaultAuthenticator(new GitlabPersonalAccessTokenAuthenticator());
+        defaultAuthenticator(new GitlabPersonalAccessTokenAuthenticator(this.scheme, this.gitlabHost, this.gitlabApiVersion));
         defaultCredentialsExtractor(new GitlabPersonalAccessTokenExtractor(this.headerTokenName));
         defaultProfileCreator(new GitlabPersonalAccessTokenProfileCreator());
     }

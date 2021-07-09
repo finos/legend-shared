@@ -16,6 +16,7 @@ package org.finos.legend.server.pac4j.gitlab;
 
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.credentials.extractor.CredentialsExtractor;
+import org.pac4j.core.exception.CredentialsException;
 
 public class GitlabPersonalAccessTokenExtractor implements CredentialsExtractor<GitlabPersonalAccessTokenCredentials>
 {
@@ -30,10 +31,10 @@ public class GitlabPersonalAccessTokenExtractor implements CredentialsExtractor<
     public GitlabPersonalAccessTokenCredentials extract(WebContext webContext)
     {
         String personalAccessToken = webContext.getRequestHeader(this.headerTokenName);
-         if (personalAccessToken != null)
-         {
-             return new GitlabPersonalAccessTokenCredentials(personalAccessToken);
-         }
-         return null;
+        if (personalAccessToken == null)
+        {
+            throw new CredentialsException("Unable to retrieve token from the header with the mentioned header");
+        }
+        return new GitlabPersonalAccessTokenCredentials(personalAccessToken);
     }
 }
