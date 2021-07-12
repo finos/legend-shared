@@ -14,16 +14,17 @@
 
 package org.finos.legend.server.pac4j.gitlab;
 
+import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.profile.CommonProfile;
 
 public class GitlabPersonalAccessTokenProfile extends CommonProfile
 {
-    public GitlabPersonalAccessTokenProfile(String token, String userId, String username, String state)
+    public GitlabPersonalAccessTokenProfile(String token, String userId, String username, String gitlabHost)
     {
         super.setId(userId);
-        super.addAttribute("username", username);
+        super.addAttribute(Pac4jConstants.USERNAME, username);
         super.addAttribute("personalAccessToken", token);
-        super.addAttribute("state",state);
+        super.addAttribute("gitlabHost", gitlabHost);
     }
 
     public String getPersonalAccessToken()
@@ -31,8 +32,8 @@ public class GitlabPersonalAccessTokenProfile extends CommonProfile
         return (String) this.getAttribute("personalAccessToken");
     }
 
-    public String getState()
+    public String getGitlabHost()
     {
-        return (String) this.getAttribute("state");
+        return (String) this.getAttribute("gitlabHost");
     }
 }

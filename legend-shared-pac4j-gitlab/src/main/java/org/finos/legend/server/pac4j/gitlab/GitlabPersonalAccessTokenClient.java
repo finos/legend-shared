@@ -45,6 +45,6 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     {
         defaultAuthenticator(new GitlabPersonalAccessTokenAuthenticator(this.scheme, this.gitlabHost, this.gitlabApiVersion));
         defaultCredentialsExtractor(new GitlabPersonalAccessTokenExtractor(this.headerTokenName));
-        defaultProfileCreator(new GitlabPersonalAccessTokenProfileCreator());
+        defaultProfileCreator(new GitlabPersonalAccessTokenProfileCreator(this.gitlabHost));
     }
 }

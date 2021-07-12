@@ -19,9 +19,16 @@ import org.pac4j.core.profile.creator.ProfileCreator;
 
 public class GitlabPersonalAccessTokenProfileCreator implements ProfileCreator<GitlabPersonalAccessTokenCredentials, GitlabPersonalAccessTokenProfile>
 {
+    private final String gitlabHost;
+
+    public GitlabPersonalAccessTokenProfileCreator(String gitlabHost)
+    {
+        this.gitlabHost = gitlabHost;
+    }
+
     @Override
     public GitlabPersonalAccessTokenProfile create(GitlabPersonalAccessTokenCredentials credentials, WebContext webContext)
     {
-        return new GitlabPersonalAccessTokenProfile(credentials.getPersonalAccessToken(), credentials.getUserId(), credentials.getUserName(), credentials.getState());
+        return new GitlabPersonalAccessTokenProfile(credentials.getPersonalAccessToken(), credentials.getUserId(), credentials.getUserName(), this.gitlabHost);
     }
 }

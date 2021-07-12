@@ -14,15 +14,19 @@
 
 package org.finos.legend.server.pac4j.gitlab;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Charsets;
+import com.google.common.io.ByteSource;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.credentials.authenticator.Authenticator;
 import org.pac4j.core.exception.CredentialsException;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Map;
 
 public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<GitlabPersonalAccessTokenCredentials>
 {
@@ -30,6 +34,7 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
     private String apiVersion;
     private String host;
     private String scheme;
+    private static final ObjectMapper mapper = new ObjectMapper();
 
     public GitlabPersonalAccessTokenAuthenticator(String scheme, String gitlabHost, String gitlabApiVersion)
     {
@@ -44,22 +49,32 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
         HttpURLConnection connection = null;
         try
         {
-            URL url = new URL(this.scheme, this.host, "/api/" + this.apiVersion + "/user?private_token=" + credentials.getPersonalAccessToken());
+            URL url = new URL(this.scheme, this.host, "/api/" + this.apiVersion + "/user");
             HttpURLConnection.setFollowRedirects(false);
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
-            connection.setRequestProperty("Content-Type","application/json");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("PRIVATE-TOKEN", credentials.getPersonalAccessToken());
             if (connection.getResponseCode() != 200)
             {
-                throw new CredentialsException("Status Code: " + connection.getResponseCode() + " and Error Message: " + connection.getResponseMessage());
+                HttpURLConnection tempConnection = connection;
+                ByteSource byteSource = new ByteSource()
+                {
+                    @Override
+                    public InputStream openStream()
+                    {
+                        return tempConnection.getErrorStream();
+                    }
+                };
+                throw new CredentialsException("Status Code: " + tempConnection.getResponseCode() + " and Error Message: " + byteSource.asCharSource(Charsets.UTF_8).read());
             }
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, Object> jsonMap = mapper.readValue(connection.getInputStream(), Map.class);
-            credentials.setCredentialWithResponse(jsonMap);
+            UserInformation userInfo = mapper.readValue(connection.getInputStream(), UserInformation.class);
+            credentials.setUserId(userInfo.getId());
+            credentials.setUserName(userInfo.getUsername());
         }
         catch (IOException e)
         {
-            throw new RuntimeException(e.getMessage());
+            throw new RuntimeException(e);
         }
         finally
         {
@@ -67,6 +82,26 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
             {
                 connection.disconnect();
             }
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    private class UserInformation
+    {
+        @JsonProperty("username")
+        private String username;
+
+        @JsonProperty("id")
+        private String id;
+
+        private String getUsername()
+        {
+            return this.username;
+        }
+
+        private String getId()
+        {
+            return this.id;
         }
     }
 }

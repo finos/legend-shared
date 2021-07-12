@@ -33,7 +33,7 @@ public class GitlabPersonalAccessTokenExtractor implements CredentialsExtractor<
         String personalAccessToken = webContext.getRequestHeader(this.headerTokenName);
         if (personalAccessToken == null)
         {
-            throw new CredentialsException("Unable to retrieve token from the header with the mentioned header");
+            throw new CredentialsException("Unable to retrieve token from the header with token name: " + this.headerTokenName);
         }
         return new GitlabPersonalAccessTokenCredentials(personalAccessToken);
     }
