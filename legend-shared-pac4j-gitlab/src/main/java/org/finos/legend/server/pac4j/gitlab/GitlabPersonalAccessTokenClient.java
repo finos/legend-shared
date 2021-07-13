@@ -37,8 +37,8 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     @Override
     public String getName()
     {
-        return "gitlabToken";
-    }
+        return "gitlabPATAuth";
+    }   //PAT-Personal Access Token
 
     @Override
     protected void clientInit()

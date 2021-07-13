@@ -17,14 +17,11 @@ package org.finos.legend.server.pac4j.gitlab;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Charsets;
-import com.google.common.io.ByteSource;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.credentials.authenticator.Authenticator;
 import org.pac4j.core.exception.CredentialsException;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -57,16 +54,7 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
             connection.setRequestProperty("PRIVATE-TOKEN", credentials.getPersonalAccessToken());
             if (connection.getResponseCode() != 200)
             {
-                HttpURLConnection tempConnection = connection;
-                ByteSource byteSource = new ByteSource()
-                {
-                    @Override
-                    public InputStream openStream()
-                    {
-                        return tempConnection.getErrorStream();
-                    }
-                };
-                throw new CredentialsException("Status Code: " + tempConnection.getResponseCode() + " and Error Message: " + byteSource.asCharSource(Charsets.UTF_8).read());
+                throw new CredentialsException("Status Code: " + connection.getResponseCode());
             }
             UserInformation userInfo = mapper.readValue(connection.getInputStream(), UserInformation.class);
             credentials.setUserId(userInfo.getId());
@@ -86,7 +74,7 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
     }
 
     @JsonIgnoreProperties(ignoreUnknown = true)
-    private class UserInformation
+    private static class UserInformation
     {
         @JsonProperty("username")
         private String username;
