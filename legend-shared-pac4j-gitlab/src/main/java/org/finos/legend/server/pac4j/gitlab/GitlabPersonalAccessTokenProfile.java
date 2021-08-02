@@ -19,6 +19,11 @@ import org.pac4j.core.profile.CommonProfile;
 
 public class GitlabPersonalAccessTokenProfile extends CommonProfile
 {
+    public GitlabPersonalAccessTokenProfile()
+    {
+        // no-arg constructor for Externalizable
+    }
+
     public GitlabPersonalAccessTokenProfile(String token, String userId, String username, String gitlabHost)
     {
         super.setId(userId);
