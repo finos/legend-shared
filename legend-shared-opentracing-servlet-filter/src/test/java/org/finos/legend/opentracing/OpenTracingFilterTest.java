@@ -12,27 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.server.shared.bundles;
+package org.finos.legend.opentracing;
 
-import io.opentracing.Scope;
-import io.opentracing.Span;
-import io.opentracing.Tracer;
 import io.opentracing.contrib.jaxrs2.internal.SpanWrapper;
-import org.finos.legend.opentracing.OpenTracingFilter;
+import io.opentracing.mock.MockSpan;
+import io.opentracing.mock.MockTracer;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.io.IOException;
 import java.util.Collections;
-import java.util.Map;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static io.opentracing.contrib.jaxrs2.internal.SpanWrapper.PROPERTY_NAME;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -50,19 +46,13 @@ public class OpenTracingFilterTest
     FilterChain chain = mock(FilterChain.class);
     when(httpRequest.getHeaderNames()).thenReturn(Collections.emptyEnumeration());
 
-    Tracer tracer = mock(Tracer.class);
-    Tracer.SpanBuilder builder = mock(Tracer.SpanBuilder.class);
-    when(tracer.buildSpan(any())).thenReturn(builder);
-    when(builder.ignoreActiveSpan()).thenReturn(builder);
-    when(builder.withTag((String) any(), (String) any())).thenReturn(builder);
-    Scope scope = mock(Scope.class);
-    Span span = mock(Span.class);
-    when(builder.startActive(false)).thenReturn(scope);
-    when(scope.span()).thenReturn(span);
+    MockTracer tracer = new MockTracer();
 
     OpenTracingFilter filter = new OpenTracingFilter(tracer);
     filter.doFilter(httpRequest, httpResponse, chain);
     verify(chain).doFilter(httpRequest, httpResponse);
+    Assert.assertEquals(1, tracer.finishedSpans().size());
+    MockSpan span = tracer.finishedSpans().get(0);
     ArgumentCaptor<SpanWrapper> spanCaptor = ArgumentCaptor.forClass(SpanWrapper.class);
     verify(httpRequest).setAttribute(eq(PROPERTY_NAME), spanCaptor.capture());
     Assert.assertEquals(span, spanCaptor.getValue().get());
@@ -76,15 +66,7 @@ public class OpenTracingFilterTest
     FilterChain chain = mock(FilterChain.class);
     when(httpRequest.getHeaderNames()).thenReturn(Collections.emptyEnumeration());
 
-    Tracer tracer = mock(Tracer.class);
-    Tracer.SpanBuilder builder = mock(Tracer.SpanBuilder.class);
-    when(tracer.buildSpan(any())).thenReturn(builder);
-    when(builder.ignoreActiveSpan()).thenReturn(builder);
-    when(builder.withTag((String) any(), (String) any())).thenReturn(builder);
-    Scope scope = mock(Scope.class);
-    Span span = mock(Span.class);
-    when(builder.startActive(false)).thenReturn(scope);
-    when(scope.span()).thenReturn(span);
+    MockTracer tracer = new MockTracer();
 
     ServletException exception = new ServletException("Stuff went wrong");
     doThrow(exception)
@@ -99,12 +81,14 @@ public class OpenTracingFilterTest
     {
     }
     verify(chain).doFilter(httpRequest, httpResponse);
+    Assert.assertEquals(1, tracer.finishedSpans().size());
+    MockSpan span = tracer.finishedSpans().get(0);
     ArgumentCaptor<SpanWrapper> spanCaptor = ArgumentCaptor.forClass(SpanWrapper.class);
     verify(httpRequest).setAttribute(eq(PROPERTY_NAME), spanCaptor.capture());
     Assert.assertEquals(span, spanCaptor.getValue().get());
-    verify(span).setTag("error", true);
-    ArgumentCaptor<Map<String, Object>> logMsgCaptor = ArgumentCaptor.forClass(Map.class);
-    verify(span).log(logMsgCaptor.capture());
-    Assert.assertEquals(exception, logMsgCaptor.getValue().get("error.object"));
+    Assert.assertEquals(Boolean.TRUE, span.tags().get("error"));
+    Assert.assertEquals(1, span.logEntries().size());
+    MockSpan.LogEntry logEntry = span.logEntries().get(0);
+    Assert.assertEquals(exception, logEntry.fields().get("error.object"));
   }
 }

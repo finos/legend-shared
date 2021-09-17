@@ -42,15 +42,6 @@
     <module name="FileTabCharacter">
         <property name="eachLine" value="true"/>
     </module>
-    <module name="RegexpMultiline">
-        <property name="minimum" value="1" />
-        <property name="maximum" value="2" />
-        <property name="message" value="File does not contain a valid Copyright header."/>
-        <property
-                name="format"
-                value=".* Copyright .*|\n.*www.apache.org/licenses/LICENSE-2.0"/>
-    </module>
-
     <module name="TreeWalker">
         <module name="OuterTypeFilename"/>
         <module name="IllegalTokenText">
