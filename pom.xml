@@ -108,6 +108,7 @@
         <module>legend-shared-pac4j</module>
         <module>legend-shared-pac4j-kerberos</module>
         <module>legend-shared-pac4j-gitlab</module>
+        <module>legend-shared-pac4j-ping</module>
 
         <module>legend-shared-opentracing-base</module>
         <module>legend-shared-opentracing-jersey</module>
