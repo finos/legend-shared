@@ -56,21 +56,12 @@ public class PingDirectClient extends DirectBearerAuthClient
     @JsonProperty
     private Map<String, String> customParams;
 
-    @JsonProperty
-    private String name;
-
-    @Override
-    public String getName()
-    {
-        return name;
-    }
-
     @Override
     protected void clientInit()
     {
         OidcConfiguration config = new OidcConfiguration();
         config.setClientId(clientId);
-        config.setScope(secret);
+        config.setSecret(secret);
         config.setDiscoveryURI(discoveryUri);
         config.setCustomParams(customParams);
 
