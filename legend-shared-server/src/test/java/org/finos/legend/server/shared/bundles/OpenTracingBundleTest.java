@@ -77,6 +77,10 @@ public class OpenTracingBundleTest
   public static final DropwizardAppRule<TestConfig> RULE =
       new DropwizardAppRule<>(TestApp.class, ResourceHelpers.resourceFilePath("testConfig.json"));
 
+  @ClassRule
+  public static final DropwizardAppRule<TestConfig> RULE_THAT_LOG_READ_WRITE_ERRORS =
+          new DropwizardAppRule<>(TestAppThatLogReadWriteErrors.class, ResourceHelpers.resourceFilePath("testConfig.json"));
+
   @After
   public void tearDown()
   {
@@ -88,7 +92,7 @@ public class OpenTracingBundleTest
   public void testNoTracesOnSkippedPath() throws Exception
   {
     String methodPath = "skipped";
-    try(Response response = execPostCall(methodPath, 200))
+    try(Response response = execPostCall(RULE, methodPath, 200))
     {
       assertEquals(response.readEntity(String.class), "Hello World!");
 
@@ -104,7 +108,7 @@ public class OpenTracingBundleTest
   public void testTracesOnHappyPath() throws Exception
   {
     String methodPath = "happyPath";
-    try(Response response = execPostCall(methodPath, 200))
+    try(Response response = execPostCall(RULE_THAT_LOG_READ_WRITE_ERRORS, methodPath, 200))
     {
       assertEquals(response.readEntity(String.class), "Hello World!");
 
@@ -143,10 +147,57 @@ public class OpenTracingBundleTest
   }
 
   @Test
+  public void testTracesWhenFailingSerializingWithDefaultInterceptors() throws Exception
+  {
+    String methodPath = "failSerializing";
+    try(Response response = execPostCall(RULE, methodPath, 500))
+    {
+      Assert.assertNotNull(response.getHeaderString("traceid"));
+      Assert.assertNotNull(response.getHeaderString("spanid"));
+
+      // is a list of spans in the order they were close/finish
+      // deserialization, serialization (response), serialization (error msg), and root
+      List<MockSpan> finishedSpans = MOCK_TRACER.finishedSpans();
+      Assert.assertEquals(4, finishedSpans.size());
+
+      MockSpan deserializationSpan = finishedSpans.get(0);
+      Assert.assertEquals("deserialize", deserializationSpan.operationName());
+      Assert.assertEquals(2, deserializationSpan.tags().size());
+      Assert.assertNotNull(deserializationSpan.tags().get("entity.type"));
+      Assert.assertEquals(MediaType.TEXT_PLAIN, deserializationSpan.tags().get("media.type"));
+      Assert.assertEquals(0, deserializationSpan.logEntries().size());
+
+      MockSpan serializationSpan = finishedSpans.get(1);
+      Assert.assertEquals("serialize", serializationSpan.operationName());
+      Assert.assertEquals(3, serializationSpan.tags().size());
+      Assert.assertNotNull(serializationSpan.tags().get("entity.type"));
+      Assert.assertEquals(MediaType.TEXT_PLAIN, serializationSpan.tags().get("media.type"));
+      Assert.assertEquals(true, serializationSpan.tags().get(Tags.ERROR.getKey()));
+      Assert.assertEquals("Default interceptor does not log error on span", 0, serializationSpan.logEntries().size());
+
+      MockSpan serializationErrorSpan = finishedSpans.get(2);
+      Assert.assertEquals("serialize", serializationErrorSpan.operationName());
+      Assert.assertEquals(2, serializationErrorSpan.tags().size());
+      Assert.assertEquals("io.dropwizard.jersey.errors.ErrorMessage", serializationErrorSpan.tags().get("entity.type"));
+
+      MockSpan rootSpan = finishedSpans.get(3);
+      Assert.assertEquals("/test/" + methodPath, rootSpan.operationName());
+      Assert.assertEquals(5, rootSpan.tags().size());
+      Assert.assertNotNull(rootSpan.tags().get("serverHost"));
+      Assert.assertEquals("server", rootSpan.tags().get("span.kind"));
+      Assert.assertEquals("/api/test/" + methodPath, rootSpan.tags().get("http.url"));
+      Assert.assertEquals(500, rootSpan.tags().get("http.status_code"));
+      Assert.assertEquals("POST", rootSpan.tags().get("http.method"));
+      Assert.assertNull("Default does not flag root span as error", rootSpan.tags().get(Tags.ERROR.getKey()));
+      Assert.assertEquals("Default does not log on root span on error", 0, rootSpan.logEntries().size());
+    }
+  }
+
+  @Test
   public void testTracesWhenFailingSerializing() throws Exception
   {
     String methodPath = "failSerializing";
-    try(Response response = execPostCall(methodPath, 500))
+    try(Response response = execPostCall(RULE_THAT_LOG_READ_WRITE_ERRORS, methodPath, 500))
     {
       Assert.assertNotNull(response.getHeaderString("traceid"));
       Assert.assertNotNull(response.getHeaderString("spanid"));
@@ -199,7 +250,7 @@ public class OpenTracingBundleTest
   public void testTracesWhenFailingDeserializing() throws Exception
   {
     String methodPath = "failDeserializing";
-    try(Response response = execPostCall(methodPath, 415))
+    try(Response response = execPostCall(RULE_THAT_LOG_READ_WRITE_ERRORS, methodPath, 415))
     {
       Assert.assertNotNull(response.getHeaderString("traceid"));
       Assert.assertNotNull(response.getHeaderString("spanid"));
@@ -241,12 +292,12 @@ public class OpenTracingBundleTest
     }
   }
 
-  private Response execPostCall(String methodPath, int status) throws Exception
+  private Response execPostCall(DropwizardAppRule<TestConfig> appRule, String methodPath, int status) throws Exception
   {
-    Client client = RULE.client();
+    Client client = appRule.client();
     Response response =
         client
-            .target(String.format("http://localhost:%d/api/test/%s", RULE.getLocalPort(), methodPath))
+            .target(String.format("http://localhost:%d/api/test/%s", appRule.getLocalPort(), methodPath))
             .request(MediaType.TEXT_PLAIN_TYPE)
             .post(Entity.text("Hello World!"));
 
@@ -266,9 +317,14 @@ public class OpenTracingBundleTest
     @Override
     public void initialize(Bootstrap<TestConfig> bootstrap)
     {
-      Assert.assertTrue("Other tracker already registered: " + GlobalTracer.get().toString(), GlobalTracer.registerIfAbsent(MOCK_TRACER));
+      GlobalTracer.registerIfAbsent(MOCK_TRACER);
       super.initialize(bootstrap);
-      bootstrap.addBundle(new OpenTracingBundle(Collections.emptyList(), Collections.singletonList("/api/test/skipped")));
+      bootstrap.addBundle(getOpenTracingBundle());
+    }
+
+    public OpenTracingBundle getOpenTracingBundle()
+    {
+      return new OpenTracingBundle(Collections.emptyList(), Collections.singletonList("/api/test/skipped"));
     }
 
     @Override
@@ -276,6 +332,19 @@ public class OpenTracingBundleTest
     {
       environment.jersey().setUrlPattern("/api/*");
       environment.jersey().register(new Resource());
+    }
+  }
+
+  public static class TestAppThatLogReadWriteErrors extends TestApp
+  {
+    @Override
+    public OpenTracingBundle getOpenTracingBundle()
+    {
+      return new OpenTracingBundle(
+              Collections.emptyList(),
+              Collections.singletonList(new OpenTracingBundle.LogErrorsInterceptorSpanDecorator()),
+              Collections.singletonList("/api/test/skipped")
+      );
     }
   }
 

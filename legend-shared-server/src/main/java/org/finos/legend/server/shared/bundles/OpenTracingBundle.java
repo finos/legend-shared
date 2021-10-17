@@ -29,7 +29,6 @@ import io.opentracing.util.GlobalTracer;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.security.Principal;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -53,8 +52,8 @@ import static io.opentracing.contrib.jaxrs2.internal.SpanWrapper.PROPERTY_NAME;
 @SuppressWarnings("unused")
 public class OpenTracingBundle implements Bundle
 {
-
-  private final List<ServerSpanDecorator> decorators;
+  private final List<ServerSpanDecorator> serverSpanDecorators;
+  private final List<InterceptorSpanDecorator> interceptorSpanDecorators;
   private final List<String> skipUrls;
 
   public OpenTracingBundle()
@@ -71,12 +70,32 @@ public class OpenTracingBundle implements Bundle
   @SuppressWarnings("WeakerAccess")
   public OpenTracingBundle(Iterable<ServerSpanDecorator> decorators, List<String> skipUrls)
   {
-    this.decorators =
-        ImmutableList.<ServerSpanDecorator>builder()
-            .addAll(decorators)
-            .add(new StandardSpanDecorator())
-            .add(new UserNameDecorator())
-            .build();
+    this(decorators, ImmutableList.of(), skipUrls);
+  }
+
+  /**
+   * Create OpenTracingBundle.
+   *
+   * @param serverSpanDecorators Additional server span decorators to add, executed around each request/response
+   * @param interceptorSpanDecorators Additional interceptor span decorators to add, executed around each request read and response write
+   * @param skipUrls   URLs to skip tracing on
+   */
+  @SuppressWarnings("WeakerAccess")
+  public OpenTracingBundle(Iterable<ServerSpanDecorator> serverSpanDecorators, Iterable<InterceptorSpanDecorator> interceptorSpanDecorators, List<String> skipUrls)
+  {
+    this.serverSpanDecorators =
+            ImmutableList.<ServerSpanDecorator>builder()
+                    .addAll(serverSpanDecorators)
+                    .add(new StandardSpanDecorator())
+                    .add(new UserNameDecorator())
+                    .build();
+
+    this.interceptorSpanDecorators =
+            ImmutableList.<InterceptorSpanDecorator>builder()
+                    .addAll(interceptorSpanDecorators)
+                    .add(InterceptorSpanDecorator.STANDARD_TAGS)
+                    .build();
+
     this.skipUrls = skipUrls;
   }
 
@@ -95,7 +114,7 @@ public class OpenTracingBundle implements Bundle
               .servlets()
               .addFilter(
                   "OpenTracing",
-                  new OpenTracingFilter(GlobalTracer.get(), this.decorators, this.skipUrls));
+                  new OpenTracingFilter(GlobalTracer.get(), this.serverSpanDecorators, this.skipUrls));
       openTracing.addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), false, "/*");
       environment
           .jersey()
@@ -104,29 +123,28 @@ public class OpenTracingBundle implements Bundle
                   context.register(
                       new ServerTracingInterceptor(
                           GlobalTracer.get(),
-                          Collections.singletonList(new LegendInterceptorSpanDecorator())),
+                          this.interceptorSpanDecorators),
                       Priorities.ENTITY_CODER));
     }
   }
 
-  private static class LegendInterceptorSpanDecorator implements InterceptorSpanDecorator
+  public static class LogErrorsInterceptorSpanDecorator implements InterceptorSpanDecorator
   {
     @Override
     public void decorateRead(InterceptorContext context, Span span)
     {
-      InterceptorSpanDecorator.STANDARD_TAGS.decorateRead(context, span);
+
     }
 
     @Override
     public void decorateWrite(InterceptorContext context, Span span)
     {
-      InterceptorSpanDecorator.STANDARD_TAGS.decorateWrite(context, span);
+
     }
 
     @Override
     public void decorateReadException(Exception e, ReaderInterceptorContext context, Span span)
     {
-      InterceptorSpanDecorator.STANDARD_TAGS.decorateReadException(e, context, span);
       this.logException(span, e);
       this.errorRootSpan("deserialize", context);
     }
@@ -134,7 +152,6 @@ public class OpenTracingBundle implements Bundle
     @Override
     public void decorateWriteException(Exception e, WriterInterceptorContext context, Span span)
     {
-      InterceptorSpanDecorator.STANDARD_TAGS.decorateWriteException(e, context, span);
       this.logException(span, e);
       this.errorRootSpan("serialize", context);
     }
