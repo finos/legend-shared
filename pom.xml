@@ -109,6 +109,7 @@
         <module>legend-shared-pac4j</module>
         <module>legend-shared-pac4j-kerberos</module>
         <module>legend-shared-pac4j-gitlab</module>
+        <module>legend-shared-pac4j-ping</module>
 
         <module>legend-shared-opentracing-base</module>
         <module>legend-shared-opentracing-jersey</module>
@@ -451,6 +452,17 @@
                     <exclusion>
                         <groupId>com.nimbusds</groupId>
                         <artifactId>nimbus-jose-jwt</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.pac4j</groupId>
+                <artifactId>pac4j-http</artifactId>
+                <version>${pac4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.core</groupId>
+                        <artifactId>jackson-databind</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>
