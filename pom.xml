@@ -70,6 +70,7 @@
         <nimbus.jwt.version>8.0</nimbus.jwt.version>
         <opentracing.jaxrs2.version>0.5.0</opentracing.jaxrs2.version>
         <opentracing.brave.version>0.37.2</opentracing.brave.version>
+        <opentracing.api.version>0.32.0</opentracing.api.version>
         <pac4j.version>3.8.3</pac4j.version>
         <prometheus.version>0.8.1</prometheus.version>
         <spring.test.version>4.3.24.RELEASE</spring.test.version>
@@ -530,6 +531,11 @@
                 <groupId>io.opentracing.brave</groupId>
                 <artifactId>brave-opentracing</artifactId>
                 <version>${opentracing.brave.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentracing</groupId>
+                <artifactId>opentracing-mock</artifactId>
+                <version>${opentracing.api.version}</version>
             </dependency>
             <!-- Open Tracing -->
 
