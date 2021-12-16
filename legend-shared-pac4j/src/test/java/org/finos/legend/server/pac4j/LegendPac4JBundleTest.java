@@ -29,6 +29,8 @@ import org.pac4j.core.engine.decision.ProfileStorageDecision;
 import org.pac4j.dropwizard.Pac4jFactory;
 import org.pac4j.j2e.filter.SecurityFilter;
 
+import javax.validation.Validation;
+
 import static org.junit.Assert.*;
 
 public class LegendPac4JBundleTest
@@ -57,7 +59,7 @@ public class LegendPac4JBundleTest
     LegendPac4jBundle<Configuration> bundle = new LegendPac4jBundle<>(c -> config);
     Pac4jFactory factory = bundle.getPac4jFactory(new Configuration());
     Config builtConfig = factory.build();
-    Environment e = new Environment("serverEnv", null, null, new MetricRegistry(), null, new HealthCheckRegistry());
+    Environment e = new Environment("serverEnv", null, Validation.buildDefaultValidatorFactory(), new MetricRegistry(), null, new HealthCheckRegistry(), new Configuration());
     bundle.run(new Configuration(),e);
     assertEquals("/test/callback", factory.getCallbackUrl());
     assertEquals(config.getClients(), factory.getClients());
