@@ -56,7 +56,7 @@
         <jakarta.servlet.api.version>4.0.4</jakarta.servlet.api.version>
         <jaxb.version>2.3.3</jaxb.version>
         <jaxb.runtime.version>2.3.5</jaxb.runtime.version>
-        <jersey.version>2.33</jersey.version>
+        <jersey.version>2.35</jersey.version>
         <jetty.version>9.4.44.v20210927</jetty.version>
         <joda.time.version>2.10.1</joda.time.version>
         <junit.version>4.13.1</junit.version>
@@ -577,6 +577,16 @@
             <dependency>
                 <groupId>org.glassfish.jersey.core</groupId>
                 <artifactId>jersey-client</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-common</artifactId>
+                <version>${jersey.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
                 <version>${jersey.version}</version>
             </dependency>
             <dependency>
