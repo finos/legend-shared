@@ -45,7 +45,7 @@
 
         <!-- Dependencies -->
         <commons.lang.version>2.6</commons.lang.version>
-        <dropwizard.version>2.0.21</dropwizard.version>
+        <dropwizard.version>2.0.28</dropwizard.version>
         <dropwizard.pac4j.version>3.0.0</dropwizard.pac4j.version>
         <jersay.pac4j.version>3.0.3</jersay.pac4j.version>
         <guava.version>30.0-jre</guava.version>
@@ -74,7 +74,7 @@
         <prometheus.version>0.8.1</prometheus.version>
         <spring.test.version>4.3.24.RELEASE</spring.test.version>
         <spring.boot.autoconfigure.version>2.3.3.RELEASE</spring.boot.autoconfigure.version>
-        <json-smart.version>2.4.2</json-smart.version>
+        <json-smart.version>2.4.7</json-smart.version>
 
         <!-- Plugins -->
         <maven.javadoc.plugin.version>3.3.1</maven.javadoc.plugin.version>
