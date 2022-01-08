@@ -71,7 +71,7 @@
         <opentracing.jaxrs2.version>0.5.0</opentracing.jaxrs2.version>
         <opentracing.brave.version>0.37.2</opentracing.brave.version>
         <opentracing.api.version>0.32.0</opentracing.api.version>
-        <pac4j.version>3.8.3</pac4j.version>
+        <pac4j.version>5.2.0</pac4j.version>
         <prometheus.version>0.8.1</prometheus.version>
         <spring.test.version>4.3.24.RELEASE</spring.test.version>
         <spring.boot.autoconfigure.version>2.3.3.RELEASE</spring.boot.autoconfigure.version>
