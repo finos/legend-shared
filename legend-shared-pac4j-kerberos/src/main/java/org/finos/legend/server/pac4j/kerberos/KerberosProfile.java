@@ -64,4 +64,9 @@ public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
     out.writeUTF(subject.getPrincipals().iterator().next().getName());
     out.writeObject(subject.getPrivateCredentials(KerberosTicket.class).iterator().next());
   }
+    @Override
+  public boolean isExpired() 
+  {
+    return subject.getPrivateCredentials(KerberosTicket.class).iterator().next().getEndTime().before(new Date(Instant.now().toEpochMilli()));
+  }
 }
