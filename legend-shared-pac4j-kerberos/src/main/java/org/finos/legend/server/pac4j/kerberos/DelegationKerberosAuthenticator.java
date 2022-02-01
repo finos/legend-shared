@@ -77,7 +77,7 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
             GSSCredential cred = Subject.doAs(subject, action);
 
             GSSContext context = manager.createContext(cred);
-            LOGGER.debug("validate subject {} context lifetim {}e",subject.getPrincipals().iterator().next().getName(),context.getLifetime());
+       
             context.requestCredDeleg(true);
             byte[] resToken = context.acceptSecContext(credentials.getKerberosTicket(), 0, credentials.getKerberosTicket().length);
 
