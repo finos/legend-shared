@@ -38,6 +38,7 @@ import javax.security.auth.login.LoginException;
 
 public class DelegationKerberosAuthenticator implements Authenticator<KerberosCredentials>
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(DelegationKerberosAuthenticator.class);
     private final String servicePrincipal;
     private final String keytabLocation;
 
@@ -68,9 +69,12 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
                             GSSCredential.DEFAULT_LIFETIME,
                             new Oid("1.3.6.1.5.5.2"),
                             GSSCredential.ACCEPT_ONLY);
-            GSSCredential cred = Subject.doAs(getSubject(), action);
+            Subject subject = getSubject();
+            LOGGER.debug("validate subject {} credentials",subject.getPrincipals().iterator().next().getName(), credentials.getKerberosTicketAsString());
+            GSSCredential cred = Subject.doAs(subject, action);
 
             GSSContext context = manager.createContext(cred);
+            LOGGER.debug("validate subject {} context lifetime",subject.getPrincipals().iterator().next().getName(),context.getLifetime());
             context.requestCredDeleg(true);
             byte[] resToken = context.acceptSecContext(credentials.getKerberosTicket(), 0, credentials.getKerberosTicket().length);
 
@@ -90,6 +94,7 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
                     message = baseMessage;
                 }
                 webContext.writeResponseContent(baseMessage);
+                LOGGER.error("validate failed: context has no delegate {}",message);
                 throw new BadCredentialsException(message);
             }
 
@@ -99,6 +104,7 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
         }
         catch (CredentialsException e)
         {
+            LOGGER.error("validate failed {}", e.getMessage());
             throw e;
         }
         catch (Exception e)
@@ -110,6 +116,7 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
             {
                 message = message + ": " + exMessage;
             }
+            LOGGER.error("Validate failed:  {} {}",message,cause);
             throw new BadCredentialsException(message, cause);
         }
     }
@@ -118,6 +125,8 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
     {
         GSSName gssName = context.getSrcName();
         Subject delegationSubject = GSSUtil.createSubject(gssName, context.getDelegCred());
+        KerberosTicket kerberosTicket = delegationSubject.getPrivateCredentials(KerberosTicket.class).iterator().next();
+        LOGGER.debug("Create profile {} : start {}, end {}, current?{}",gssName,kerberosTicket.getStartTime(),kerberosTicket.getEndTime(),kerberosTicket.isCurrent());
         KerberosProfile profile = new KerberosProfile(delegationSubject, context);
 
         String nameString = gssName.toString();
