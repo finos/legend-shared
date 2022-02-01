@@ -73,11 +73,11 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
                             new Oid("1.3.6.1.5.5.2"),
                             GSSCredential.ACCEPT_ONLY);
             Subject subject = getSubject();
-            LOGGER.debug("validate subject {} credentials",subject.getPrincipals().iterator().next().getName(), credentials.getKerberosTicketAsString());
+            LOGGER.debug("validate subject {} credentials {}",subject.getPrincipals().iterator().next().getName(), credentials.getKerberosTicketAsString());
             GSSCredential cred = Subject.doAs(subject, action);
 
             GSSContext context = manager.createContext(cred);
-            LOGGER.debug("validate subject {} context lifetime",subject.getPrincipals().iterator().next().getName(),context.getLifetime());
+            LOGGER.debug("validate subject {} context lifetim {}e",subject.getPrincipals().iterator().next().getName(),context.getLifetime());
             context.requestCredDeleg(true);
             byte[] resToken = context.acceptSecContext(credentials.getKerberosTicket(), 0, credentials.getKerberosTicket().length);
 
