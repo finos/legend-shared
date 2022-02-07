@@ -76,8 +76,7 @@ public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
     {
         KerberosTicket kerberosTicket = subject.getPrivateCredentials(KerberosTicket.class).iterator().next();
         boolean expired = kerberosTicket == null || !kerberosTicket.isCurrent();
-        boolean started = kerberosTicket.getStartTime() == null || kerberosTicket.getStartTime().getTime() <= System.currentTimeMillis();
-        logger.info("profile {} expired {} {}, started {} ", subject.getPrincipals().iterator().next().getName(),expired,kerberosTicket.getEndTime(),started);
-        return  !started || expired;
+        logger.debug("profile {}: starts {}, ends {} expired? {}", subject.getPrincipals().iterator().next().getName(),kerberosTicket.getStartTime(),kerberosTicket.getEndTime(),expired);
+        return expired;
     }
 }
