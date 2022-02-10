@@ -63,7 +63,7 @@ public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
         KerberosTicket tgt = (KerberosTicket)in.readObject();
         subject = new Subject(true, Collections.singleton(principal), Collections.emptySet(), Collections.singleton(tgt));
     }
-
+    
     public void writeExternal(ObjectOutput out) throws IOException
     {
         super.writeExternal(out);
@@ -74,9 +74,20 @@ public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
     @Override
     public boolean isExpired()
     {
-        KerberosTicket kerberosTicket = subject.getPrivateCredentials(KerberosTicket.class).iterator().next();
-        boolean expired = kerberosTicket == null || !kerberosTicket.isCurrent();
-        logger.debug("profile {}: starts {}, ends {} expired? {}", subject.getPrincipals().iterator().next().getName(),kerberosTicket.getStartTime(),kerberosTicket.getEndTime(),expired);
-        return expired;
+      if (subject != null && subject.getPrivateCredentials(KerberosTicket.class) != null)
+        {
+            KerberosTicket kerberosTicket = subject.getPrivateCredentials(KerberosTicket.class).iterator().next();
+            boolean expired = kerberosTicket == null || !kerberosTicket.isCurrent();
+            if (kerberosTicket != null)
+            {
+                logger.debug("profile {}: starts {}, ends {} expired? {}", subject.getPrincipals().iterator().next().getName(),kerberosTicket.getStartTime(),kerberosTicket.getEndTime(),expired);
+            }
+            else 
+            {
+                logger.debug("profile {} has no kerberos ticket", subject.getPrincipals().iterator().next().getName());
+            }
+            return expired;
+        }
+            return false;
     }
 }
