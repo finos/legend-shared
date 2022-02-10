@@ -15,6 +15,9 @@
 package org.finos.legend.server.pac4j.kerberos;
 
 import org.ietf.jgss.GSSContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
@@ -25,43 +28,55 @@ import java.util.Collections;
 
 public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
 {
-  private static final long serialVersionUID = -8691865551996919736L;
 
-  private Subject subject;
+    private static final Logger logger = LoggerFactory.getLogger(KerberosProfile.class);
+    private static final long serialVersionUID = -8691865551996919736L;
 
-  public KerberosProfile(Subject subject, final GSSContext gssContext)
-  {
-    super(gssContext);
-    this.subject = subject;
-  }
+    private Subject subject;
 
-  public KerberosProfile(LocalCredentials creds)
-  {
-    setId(creds.getUserId());
-    this.subject = creds.getSubject();
-  }
 
-  public KerberosProfile()
-  {
-  }
+    public KerberosProfile(Subject subject, final GSSContext gssContext)
+    {
+        super(gssContext);
+        this.subject = subject;
+    }
 
-  public Subject getSubject()
-  {
-    return subject;
-  }
+    public KerberosProfile(LocalCredentials creds)
+    {
+        setId(creds.getUserId());
+        this.subject = creds.getSubject();
+    }
 
-  public void readExternal(ObjectInput in) throws ClassNotFoundException, IOException
-  {
-    super.readExternal(in);
-    KerberosPrincipal principal = new KerberosPrincipal(in.readUTF());
-    KerberosTicket tgt = (KerberosTicket) in.readObject();
-    subject = new Subject(true, Collections.singleton(principal), Collections.emptySet(), Collections.singleton(tgt));
-  }
+    public KerberosProfile()
+    {
+    }
 
-  public void writeExternal(ObjectOutput out) throws IOException
-  {
-    super.writeExternal(out);
-    out.writeUTF(subject.getPrincipals().iterator().next().getName());
-    out.writeObject(subject.getPrivateCredentials(KerberosTicket.class).iterator().next());
-  }
+    public Subject getSubject()
+    {
+        return subject;
+    }
+
+    public void readExternal(ObjectInput in) throws ClassNotFoundException, IOException
+    {
+        super.readExternal(in);
+        KerberosPrincipal principal = new KerberosPrincipal(in.readUTF());
+        KerberosTicket tgt = (KerberosTicket)in.readObject();
+        subject = new Subject(true, Collections.singleton(principal), Collections.emptySet(), Collections.singleton(tgt));
+    }
+
+    public void writeExternal(ObjectOutput out) throws IOException
+    {
+        super.writeExternal(out);
+        out.writeUTF(subject.getPrincipals().iterator().next().getName());
+        out.writeObject(subject.getPrivateCredentials(KerberosTicket.class).iterator().next());
+    }
+
+    @Override
+    public boolean isExpired()
+    {
+        KerberosTicket kerberosTicket = subject.getPrivateCredentials(KerberosTicket.class).iterator().next();
+        boolean expired = kerberosTicket == null || !kerberosTicket.isCurrent();
+        logger.debug("profile {}: starts {}, ends {} expired? {}", subject.getPrincipals().iterator().next().getName(),kerberosTicket.getStartTime(),kerberosTicket.getEndTime(),expired);
+        return expired;
+    }
 }
