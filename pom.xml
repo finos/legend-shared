@@ -75,7 +75,7 @@
         <prometheus.version>0.8.1</prometheus.version>
         <spring.test.version>4.3.24.RELEASE</spring.test.version>
         <spring.boot.autoconfigure.version>2.3.3.RELEASE</spring.boot.autoconfigure.version>
-        <json-smart.version>2.4.2</json-smart.version>
+        <json-smart.version>2.4.5</json-smart.version>
 
         <!-- Plugins -->
         <maven.javadoc.plugin.version>3.3.1</maven.javadoc.plugin.version>
