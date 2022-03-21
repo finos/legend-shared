@@ -19,6 +19,9 @@ import org.pac4j.core.profile.CommonProfile;
 
 public class GitlabPersonalAccessTokenProfile extends CommonProfile
 {
+    private static final String PERSONAL_ACCESS_TOKEN = "personalAccessToken";
+    private static final String GITLAB_HOST = "gitlabHost";
+
     public GitlabPersonalAccessTokenProfile()
     {
         // no-arg constructor for Externalizable
@@ -26,19 +29,19 @@ public class GitlabPersonalAccessTokenProfile extends CommonProfile
 
     public GitlabPersonalAccessTokenProfile(String token, String userId, String username, String gitlabHost)
     {
-        super.setId(userId);
-        super.addAttribute(Pac4jConstants.USERNAME, username);
-        super.addAttribute("personalAccessToken", token);
-        super.addAttribute("gitlabHost", gitlabHost);
+        setId(userId);
+        addAttribute(Pac4jConstants.USERNAME, username);
+        addAttribute(PERSONAL_ACCESS_TOKEN, token);
+        addAttribute(GITLAB_HOST, gitlabHost);
     }
 
     public String getPersonalAccessToken()
     {
-        return (String) this.getAttribute("personalAccessToken");
+        return (String) getAttribute(PERSONAL_ACCESS_TOKEN);
     }
 
     public String getGitlabHost()
     {
-        return (String) this.getAttribute("gitlabHost");
+        return (String) getAttribute(GITLAB_HOST);
     }
 }
