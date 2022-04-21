@@ -1,0 +1,59 @@
+{
+  "pac4j": {
+    "callbackPrefix": "/studio/log.in",
+    "bypassPaths": ["/studio/admin/healthcheck"],
+    "mongoUri": "__MONGO_URI__",
+    "mongoDb": "legend",
+    "clients": [
+      {
+        "org.finos.legend.server.pac4j.gitlab.GitlabClient": {
+          "name" : "gitlab",
+          "clientId" : "xxx",
+          "secret": "xxxx",
+          "discoveryUri": "https://gitlab.com/.well-known/openid-configuration",
+          "scope": "openid profile api"
+        }
+      }
+    ],
+    "mongoSession": {
+      "enabled": true,
+      "collection": "userSessions"
+    }
+  },
+  "html5Router": true,
+  "routerExemptPaths": [
+    "/editor.worker.js",
+    "/json.worker.js",
+    "/editor.worker.js.map",
+    "/json.worker.js.map",
+    "/version.json",
+    "/config.json",
+    "/favicon.ico",
+    "/static"
+  ],
+  "localAssetPaths": {
+    "/studio/config.json" : "/config/uiConfig.json"
+  },
+  "uiPath": "/studio",
+  "server": {
+    "type": "simple",
+    "applicationContextPath": "/",
+    "adminContextPath": "/studio/admin",
+    "connector": {
+      "type": "http",
+      "port": __SERVER_PORT__
+    }
+  },
+  "logging": {
+    "level": "info",
+    "loggers" : {
+      "root": { "level": "info"},
+      "org.pac4j": { "level": "debug"}
+    },
+    "appenders": [
+      {
+        "type": "console"
+      }
+    ]
+  }
+}
