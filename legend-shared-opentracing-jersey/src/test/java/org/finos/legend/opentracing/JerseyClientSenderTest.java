@@ -19,6 +19,8 @@ import java.net.URI;
 import org.junit.Test;
 import zipkin2.reporter.Sender;
 
+import static org.junit.Assert.assertEquals;
+
 public class JerseyClientSenderTest extends ClientSenderTest
 {
 
@@ -32,4 +34,8 @@ public class JerseyClientSenderTest extends ClientSenderTest
     super.testSendSpans();
   }
 
+  @Test
+  public void dummyTest() {
+    assertEquals("", "123124");
+  }
 }

@@ -38,5 +38,6 @@ public class LegendPac4JConfigurationTest
     Assert.assertEquals("defaultMongoUri", config.getMongoUri());
     Assert.assertEquals("defaultMongoSession", config.getMongoSession().getCollection());
 
+    throw new RuntimeException("Testing");
   }
 }
