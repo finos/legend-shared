@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: legend-build
+name: Build CI
 
 env:
   CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
@@ -24,6 +24,7 @@ on: [push, pull_request]
   
 jobs:
   build:
+    name: Build
     if: "!contains(github.event.head_commit.message, '[maven-release-plugin]')"
     runs-on: ubuntu-latest
     steps:
@@ -61,3 +62,15 @@ jobs:
     - name: Build + Test + Sonar + Maven Deploy
       if: (github.repository == 'finos/legend-shared') && (github.ref == 'refs/heads/master')
       run: mvn javadoc:javadoc deploy -Psonar -pl !legend-shared-test-reports
+    - name: Upload Test Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results
+        path: legend-shared-test-reports/surefire-reports-aggregate/*.xml
+    - name: Upload CI Event
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: event-file
+        path: ${{ github.event_path }}

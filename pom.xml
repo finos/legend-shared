@@ -291,6 +291,8 @@
                 <configuration>
                     <useSystemClassLoader>true</useSystemClassLoader>
                     <useManifestOnlyJar>false</useManifestOnlyJar>
+                    <testFailureIgnore>true</testFailureIgnore>
+                    <trimStackTrace>false</trimStackTrace>
                     <reportsDirectory>${project.parent.basedir}/legend-shared-test-reports/surefire-reports-aggregate
                     </reportsDirectory>
                 </configuration>
