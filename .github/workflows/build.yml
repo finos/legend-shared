@@ -58,10 +58,10 @@ jobs:
       run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
     - name: Build + Test
       if: (github.repository != 'finos/legend-shared') || (github.ref != 'refs/heads/master')
-      run: mvn --fail-at-end install javadoc:javadoc
+      run: mvn install javadoc:javadoc -Dmaven.test.failure.ignore=true
     - name: Build + Test + Sonar + Maven Deploy
       if: (github.repository == 'finos/legend-shared') && (github.ref == 'refs/heads/master')
-      run: mvn javadoc:javadoc deploy -Psonar -pl !legend-shared-test-reports
+      run: mvn javadoc:javadoc deploy -Dmaven.test.failure.ignore=true -Psonar -pl !legend-shared-test-reports
     - name: Upload Test Results
       if: always()
       uses: actions/upload-artifact@v3
