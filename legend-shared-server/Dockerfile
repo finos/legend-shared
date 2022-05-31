@@ -1,4 +1,4 @@
-FROM openjdk:11.0.14.1-bullseye
+FROM openjdk:11.0.15-bullseye
 COPY target/legend-shared-server-*.jar /app/bin/
 CMD java -cp /app/bin/*-shaded.jar \
 -Xmx2G \
