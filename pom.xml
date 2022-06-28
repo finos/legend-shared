@@ -24,13 +24,11 @@
         <version>4</version>
     </parent>
 
+    <name>Legend Shared</name>
     <groupId>org.finos.legend.shared</groupId>
     <artifactId>legend-shared</artifactId>
     <version>0.22.1-SNAPSHOT</version>
     <packaging>pom</packaging>
-
-    <name>Legend Shared</name>
-    <url>https://legend.finos.org</url>
 
     <properties>
         <sonar.projectKey>legend-shared</sonar.projectKey>
@@ -89,12 +87,9 @@
         <maven.plugin.plugin.version>3.6.0</maven.plugin.plugin.version>
         <maven.jar.plugin.version>3.1.2</maven.jar.plugin.version>
         <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
-        <maven.release.plugin.version>3.0.0-M1</maven.release.plugin.version>
         <nexus.staging.maven.plugin.version>1.6.8</nexus.staging.maven.plugin.version>
         <versions.maven.plugin.version>2.7</versions.maven.plugin.version>
         <jacoco.maven.plugin.version>0.8.5</jacoco.maven.plugin.version>
-        <gitcommit.maven.plugin.version>2.2.6</gitcommit.maven.plugin.version>
-        <exec.maven.plugin.version>1.6.0</exec.maven.plugin.version>
         <dockerfile.release.plugin.version>1.4.13</dockerfile.release.plugin.version>
         <!-- TODO: - send PR to https://github.com/finos/finos-parent-pom (and use a mvn property to manage the version of sonar) -->
         <sonar.maven.plugin.version>3.7.0.1746</sonar.maven.plugin.version>
@@ -102,7 +97,7 @@
 
     <scm>
         <developerConnection>scm:git:https://github.com/finos/legend-shared</developerConnection>
-        <tag>legend-shared-0.20.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <modules>
@@ -165,11 +160,6 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>${maven.release.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -322,49 +312,6 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>versions-maven-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <configuration>
-                    <pushChanges>false</pushChanges>
-                    <arguments>-DskipTests</arguments>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <useReleaseProfile>false</useReleaseProfile>
-                    <releaseProfiles>release</releaseProfiles>
-                    <completionGoals>-DreleaseTag=${tag} -N exec:exec@git-push exec:exec@git-push-tag</completionGoals>
-                    <goals>deploy exec:exec@git-push</goals>
-                </configuration>
-            </plugin>
-            <plugin>
-                <!-- Push new poms to release branch after release.
-                     Ideally we'd use maven-scm-plugin for this, but it doesn't support force pushing to a branch
-                -->
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.0.0</version>
-                <executions>
-                    <execution>
-                        <id>git-push</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>git</executable>
-                            <commandlineArgs>push -f origin HEAD:release</commandlineArgs>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>git-push-tag</id>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                        <configuration>
-                            <executable>git</executable>
-                            <commandlineArgs>push origin tag ${releaseTag}</commandlineArgs>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>
