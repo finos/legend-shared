@@ -1,4 +1,5 @@
 [![FINOS - Incubating](https://cdn.jsdelivr.net/gh/finos/contrib-toolbox@master/images/badge-incubating.svg)](https://finosfoundation.atlassian.net/wiki/display/FINOS/Incubating)
+[![Maven Central](https://img.shields.io/maven-central/v/org.finos.legend.shared/legend-shared-server.svg?maxAge=2592000)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22legend-shared)
 ![Build CI](https://github.com/finos/legend-shared/workflows/Build%20CI/badge.svg)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=legend-shared&metric=security_rating&token=4c3f5479f7a32d754c947207987569fc14c7bba9)](https://sonarcloud.io/dashboard?id=legend-shared)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=legend-shared&metric=bugs&token=4c3f5479f7a32d754c947207987569fc14c7bba9)](https://sonarcloud.io/dashboard?id=legend-shared)
