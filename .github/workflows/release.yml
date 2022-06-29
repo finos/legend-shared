@@ -38,7 +38,7 @@ jobs:
 
       - name: Configure git
         run: |
-          git config --global user.email "infra@finos.org"
+          git config --global user.email "37706051+finos-admin@users.noreply.github.com"
           git config --global user.name "FINOS Administrator"
 
       - name: Set up Maven Central
