@@ -20,8 +20,11 @@ import org.bson.Document;
 import org.finos.legend.server.pac4j.LegendPac4jBundle;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
 import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
+import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
+import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.profile.ProfileHelper;
 import org.pac4j.core.util.JavaSerializationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +33,7 @@ import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -94,15 +98,22 @@ public class MongoDbSessionStore extends HttpSessionStore
     SessionToken token = SessionToken.fromContext(context);
     if (token == null)
     {
-      token = SessionToken.generate();
-      token.saveInContext(context, maxSessionLength);
-      SessionToken finalToken = token;
-      this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
-      {
-        userSessions.insertOne(getSearchSpec(finalToken).append(CREATED_FIELD, new Date()));
-        return null;
-      });
+      token = createSsoKey(context);
     }
+    return token;
+  }
+
+  private SessionToken createSsoKey(WebContext context)
+  {
+    SessionToken token;
+    token = SessionToken.generate();
+    token.saveInContext(context, maxSessionLength);
+    SessionToken finalToken = token;
+    this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
+    {
+      userSessions.insertOne(getSearchSpec(finalToken).append(CREATED_FIELD, new Date()));
+      return null;
+    });
     return token;
   }
 
@@ -143,6 +154,16 @@ public class MongoDbSessionStore extends HttpSessionStore
             logger.warn("Unable to deserialize session data for user", e);
           }
         }
+      }
+    }
+    else if (SessionToken.fromContext(context) == null)
+    {
+      //if res is not null ,this means we still have an active Session but an expired SSO cookie we need to recreate one and add it to the context request/response.
+      createSsoKey(context);
+      if (res instanceof LinkedHashMap)
+      {
+        ProfileHelper.flatIntoAProfileList((LinkedHashMap<String, CommonProfile>)res);
+        set(context, Pac4jConstants.USER_PROFILES, ProfileHelper.flatIntoAProfileList((LinkedHashMap<String, CommonProfile>)res));
       }
     }
     return res;

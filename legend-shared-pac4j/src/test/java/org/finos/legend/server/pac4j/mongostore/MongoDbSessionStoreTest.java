@@ -16,6 +16,7 @@ package org.finos.legend.server.pac4j.mongostore;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNotEquals;
 
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
@@ -141,6 +142,28 @@ public class MongoDbSessionStoreTest
     requestContext = new J2EContext(newRequest, newResponse);
 
     assertEquals("testValue", store.get(requestContext, "testKey"));
+
+  }
+
+  @Test
+  public void testSimulateCookieExpiryThenGetFromSession()
+  {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    MockHttpServletResponse response = new MockHttpServletResponse();
+    J2EContext requestContext = new J2EContext(request, response);
+    store.set(requestContext, "testKey", "testValue");
+
+    assertEquals("testValue", store.get(requestContext, "testKey"));
+    Cookie[] initialResponseCookies = response.getCookies();
+    // Copy the session to the new request but not the cookie. This should force creation of a new cookie;
+    MockHttpServletRequest newRequest = new MockHttpServletRequest();
+    newRequest.setSession(request.getSession());
+    MockHttpServletResponse newResponse = new MockHttpServletResponse();
+    requestContext = new J2EContext(newRequest, newResponse);
+
+    assertEquals("testValue", store.get(requestContext, "testKey"));
+    Cookie[] secondaryResponseCookies = newResponse.getCookies();
+    assertNotEquals(secondaryResponseCookies, initialResponseCookies);
 
   }
 
