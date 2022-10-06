@@ -20,6 +20,7 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import org.eclipse.jetty.server.session.SessionHandler;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -106,5 +107,11 @@ public class Server extends Application<org.finos.legend.server.shared.staticser
     public void run(org.finos.legend.server.shared.staticserver.StaticServerConfiguration staticServerConfiguration,
                     Environment environment)
     {
+        SessionHandler sessionHandler = new SessionHandler();
+        if (staticServerConfiguration.getSessionCookie() != null)
+        {
+            sessionHandler.setSessionCookie(staticServerConfiguration.getSessionCookie());
+        }
+        environment.servlets().setSessionHandler(sessionHandler);
     }
 }

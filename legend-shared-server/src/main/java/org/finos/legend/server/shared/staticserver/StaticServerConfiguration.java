@@ -24,7 +24,9 @@ import org.finos.legend.server.pac4j.LegendPac4jConfiguration;
 @SuppressWarnings({"unused", "FieldMayBeFinal"})
 public class StaticServerConfiguration extends Configuration
 {
-
+  // This can be set to avoid Jetty session cookie name collision between multiple servers running on `localhost` during development
+  // See https://stackoverflow.com/questions/16789495/two-applications-on-the-same-server-use-the-same-jsessionid
+  private String sessionCookie;
   private String uiPath;
   private boolean html5Router;
 
@@ -35,6 +37,11 @@ public class StaticServerConfiguration extends Configuration
   public List<String> getRouterExemptPaths()
   {
     return routerExemptPaths;
+  }
+
+  public String getSessionCookie()
+  {
+    return sessionCookie;
   }
 
   public String getUiPath()
