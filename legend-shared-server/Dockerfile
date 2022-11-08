@@ -1,4 +1,4 @@
-FROM openjdk:11.0.16-bullseye
+FROM eclipse-temurin:11.0.17_8-jdk-jammy
 COPY target/legend-shared-server-*.jar /app/bin/
 CMD java -cp /app/bin/*-shaded.jar \
 -Xmx2G \
