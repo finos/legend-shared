@@ -114,6 +114,7 @@
         <module>legend-shared-opentracing-servlet-filter</module>
 
         <module>legend-shared-server</module>
+        <module>legend-shared-utility-interfaces</module>
     </modules>
 
     <build>
@@ -322,6 +323,11 @@
             <dependency>
                 <groupId>org.finos.legend.shared</groupId>
                 <artifactId>legend-shared-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-utility-interfaces</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
