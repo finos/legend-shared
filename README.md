@@ -4,7 +4,7 @@
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=legend-shared&metric=security_rating&token=4c3f5479f7a32d754c947207987569fc14c7bba9)](https://sonarcloud.io/dashboard?id=legend-shared)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=legend-shared&metric=bugs&token=4c3f5479f7a32d754c947207987569fc14c7bba9)](https://sonarcloud.io/dashboard?id=legend-shared)
 
-# legend-shared
+# legend-shared 
 
 Shared code used across Legend applications for universal server-side functionality - hosting static files, performing authentication etc.
 
