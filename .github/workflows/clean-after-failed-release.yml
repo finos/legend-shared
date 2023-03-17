@@ -14,7 +14,8 @@
 
 
 # This action deletes the last two commits made on the master branch and the latest tag
-# This should only be run if a release failed and the remote staging repo has been dropped
+# This should only be run if a release failed and the remote staging repo has been dropped:
+# [ERROR]  * Dropping failed staging repository with ID "orgfinoslegend-..." ...
 name: Clean repo after failed release
 
 on: [workflow_dispatch]
