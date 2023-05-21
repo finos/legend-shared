@@ -30,15 +30,22 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
 {
     private final String apiVersion;
     private final String host;
+    private final String port;
     private final String scheme;
     private final ObjectReader reader;
 
-    public GitlabPersonalAccessTokenAuthenticator(String scheme, String gitlabHost, String gitlabApiVersion)
+    public GitlabPersonalAccessTokenAuthenticator(String scheme, String host, String port, String gitlabApiVersion)
     {
         this.scheme = scheme;
-        this.host = gitlabHost;
+        this.host = host;
+        this.port = port;
         this.apiVersion = gitlabApiVersion;
         this.reader = JsonMapper.builder().build().readerFor(UserInformation.class);
+    }
+
+    public GitlabPersonalAccessTokenAuthenticator(String scheme, String host, String gitlabApiVersion)
+    {
+        this(scheme, host, null, gitlabApiVersion);
     }
 
     @Override
@@ -54,7 +61,7 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
         HttpURLConnection connection = null;
         try
         {
-            URL url = new URL(this.scheme, this.host, "/api/" + this.apiVersion + "/user");
+            URL url = new URL(this.scheme, this.host + ((this.port == null) ? "" : (":" + this.port)), "/api/" + this.apiVersion + "/user");
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Content-Type", "application/json");

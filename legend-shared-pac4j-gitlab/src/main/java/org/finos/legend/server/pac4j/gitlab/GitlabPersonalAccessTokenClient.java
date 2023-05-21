@@ -29,7 +29,14 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     public String scheme;
 
     @JsonProperty
+    @Deprecated
     public String gitlabHost;
+
+    @JsonProperty
+    public String host;
+
+    @JsonProperty
+    public String port;
 
     @JsonProperty
     public String gitlabApiVersion;
@@ -38,12 +45,12 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     public String getName()
     {
         return "gitlabPAToken";
-    }   //PA-Personal Access 
+    }
 
     @Override
     protected void clientInit()
     {
-        defaultAuthenticator(new GitlabPersonalAccessTokenAuthenticator(this.scheme, this.gitlabHost, this.gitlabApiVersion));
+        defaultAuthenticator(new GitlabPersonalAccessTokenAuthenticator(this.scheme, this.host == null ? this.gitlabHost : this.host, this.port, this.gitlabApiVersion));
         defaultCredentialsExtractor(new GitlabPersonalAccessTokenExtractor(this.headerTokenName));
         defaultProfileCreator(new GitlabPersonalAccessTokenProfileCreator(this.gitlabHost));
     }
