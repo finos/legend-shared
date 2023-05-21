@@ -36,7 +36,7 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     public String host;
 
     @JsonProperty
-    public String port;
+    public Integer port;
 
     @JsonProperty
     public String gitlabApiVersion;

@@ -30,11 +30,11 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
 {
     private final String apiVersion;
     private final String host;
-    private final String port;
+    private final Integer port;
     private final String scheme;
     private final ObjectReader reader;
 
-    public GitlabPersonalAccessTokenAuthenticator(String scheme, String host, String port, String gitlabApiVersion)
+    public GitlabPersonalAccessTokenAuthenticator(String scheme, String host, Integer port, String gitlabApiVersion)
     {
         this.scheme = scheme;
         this.host = host;
