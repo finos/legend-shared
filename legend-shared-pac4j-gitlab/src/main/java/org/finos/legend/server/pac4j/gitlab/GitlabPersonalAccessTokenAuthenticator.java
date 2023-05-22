@@ -61,7 +61,9 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
         HttpURLConnection connection = null;
         try
         {
-            URL url = new URL(this.scheme, this.host + ((this.port == null) ? "" : (":" + this.port)), "/api/" + this.apiVersion + "/user");
+            URL url = this.port != null
+                    ? new URL(this.scheme, this.host, this.port, "/api/" + this.apiVersion + "/user")
+                    : new URL(this.scheme, this.host, "/api/" + this.apiVersion + "/user");
             connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("GET");
             connection.setRequestProperty("Content-Type", "application/json");

@@ -61,6 +61,6 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
                 this.apiVersion != null ? this.apiVersion : this.gitlabApiVersion
         ));
         defaultCredentialsExtractor(new GitlabPersonalAccessTokenExtractor(this.headerTokenName));
-        defaultProfileCreator(new GitlabPersonalAccessTokenProfileCreator(this.gitlabHost));
+        defaultProfileCreator(new GitlabPersonalAccessTokenProfileCreator(this.host != null ? this.host : this.gitlabHost));
     }
 }
