@@ -76,21 +76,20 @@
         <json-smart.version>2.4.2</json-smart.version>
 
         <!-- Plugins -->
-        <maven.javadoc.plugin.version>3.3.1</maven.javadoc.plugin.version>
-        <maven.checkstyle.plugin>3.1.0</maven.checkstyle.plugin>
         <checkstyle.version>8.29</checkstyle.version>
-        <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
-        <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
-        <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-        <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
-        <maven.shade.plugin.version>3.2.1</maven.shade.plugin.version>
-        <maven.plugin.plugin.version>3.6.0</maven.plugin.plugin.version>
-        <maven.jar.plugin.version>3.1.2</maven.jar.plugin.version>
-        <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
-        <nexus.staging.maven.plugin.version>1.6.8</nexus.staging.maven.plugin.version>
-        <versions.maven.plugin.version>2.7</versions.maven.plugin.version>
-        <jacoco.maven.plugin.version>0.8.5</jacoco.maven.plugin.version>
         <dockerfile.release.plugin.version>1.4.13</dockerfile.release.plugin.version>
+        <jacoco.maven.plugin.version>0.8.10</jacoco.maven.plugin.version>
+        <maven.checkstyle.plugin>3.3.0</maven.checkstyle.plugin>
+        <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
+        <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
+        <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
+        <maven.javadoc.plugin.version>3.3.1</maven.javadoc.plugin.version>
+        <maven.plugin.plugin.version>3.9.0</maven.plugin.plugin.version>
+        <maven.shade.plugin.version>3.4.1</maven.shade.plugin.version>
+        <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
+        <maven.surefire.plugin.version>3.1.0</maven.surefire.plugin.version>
+        <nexus.staging.maven.plugin.version>1.6.13</nexus.staging.maven.plugin.version>
+        <versions.maven.plugin.version>2.15.0</versions.maven.plugin.version>
         <!-- TODO: - send PR to https://github.com/finos/finos-parent-pom (and use a mvn property to manage the version of sonar) -->
         <sonar.maven.plugin.version>3.7.0.1746</sonar.maven.plugin.version>
     </properties>
