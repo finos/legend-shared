@@ -38,6 +38,7 @@ public final class LegendPac4jConfiguration
   private String mongoDb;
   private MongoSessionConfiguration mongoSession = new MongoSessionConfiguration();
   private String callbackPrefix = "";
+  private String callbackBaseUrl = "";
   private List<String> bypassPaths = ImmutableList.of();
   private List<String> bypassBranches = ImmutableList.of();
   private List<String> trustedPackages = ImmutableList.of();
@@ -209,6 +210,16 @@ public final class LegendPac4jConfiguration
     {
       this.callbackPrefix = callbackPrefix;
     }
+  }
+
+  public String getCallbackBaseUrl()
+  {
+    return callbackBaseUrl;
+  }
+
+  public void setCallbackBaseUrl(String callbackBaseUrl)
+  {
+    this.callbackBaseUrl = callbackBaseUrl;
   }
 
   public void loadDefaults(ConfigurationSourceProvider configurationSourceProvider,
