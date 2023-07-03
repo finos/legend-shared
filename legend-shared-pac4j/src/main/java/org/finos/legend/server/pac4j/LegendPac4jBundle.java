@@ -124,7 +124,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
       throw new RuntimeException(e);
     }
 
-    String applicationContextPath = "/";
+    String applicationContextPath = legendConfig.getCallbackBaseUrl() != null && !legendConfig.getCallbackBaseUrl().isEmpty() ? legendConfig.getCallbackBaseUrl() : "/";
     if (configuration.getServerFactory() instanceof SimpleServerFactory)
     {
       applicationContextPath = ((SimpleServerFactory) configuration.getServerFactory())
