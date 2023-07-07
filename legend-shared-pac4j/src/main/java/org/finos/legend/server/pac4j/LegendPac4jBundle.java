@@ -33,6 +33,7 @@ import org.bson.Document;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.FilterMapping;
 import org.eclipse.jetty.servlet.ServletHandler;
+import org.finos.legend.server.pac4j.hazelcaststore.HazelcastSessionStore;
 import org.finos.legend.server.pac4j.internal.AcceptHeaderAjaxRequestResolver;
 import org.finos.legend.server.pac4j.internal.SecurityFilterHandler;
 import org.finos.legend.server.pac4j.internal.UsernameFilter;
@@ -70,255 +71,261 @@ import java.util.stream.Collectors;
 public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> implements Pac4jFeatureSupport
 {
 
-  private static final String logoutSuffix = "/logout";
-  private static final String callBackSuffix = "/callback";
-  private static final String callbackMatcher = "notCallback";
-  private static final String bypassMatcher = "bypassPaths";
-  private final Function<C, LegendPac4jConfiguration> configSupplier;
-  private final Function<C, Supplier<Subject>> subjectSupplierSupplier;
-  private ConfigurationSourceProvider configurationSourceProvider;
-  private ObjectMapper objectMapper;
+    private static final String logoutSuffix = "/logout";
+    private static final String callBackSuffix = "/callback";
+    private static final String callbackMatcher = "notCallback";
+    private static final String bypassMatcher = "bypassPaths";
+    private final Function<C, LegendPac4jConfiguration> configSupplier;
+    private final Function<C, Supplier<Subject>> subjectSupplierSupplier;
+    private ConfigurationSourceProvider configurationSourceProvider;
+    private ObjectMapper objectMapper;
 
-  @SuppressWarnings("WeakerAccess")
-  public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier)
-  {
-    this(configSupplier, null);
-  }
-
-  @SuppressWarnings("WeakerAccess")
-  public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier,
-                           Function<C, Supplier<Subject>> subjectSupplierSupplier)
-  {
-    this.configSupplier = configSupplier;
-    this.subjectSupplierSupplier = subjectSupplierSupplier;
-  }
-
-  private static String cleanUrl(String inUrl)
-  {
-    String url;
-    try
+    @SuppressWarnings("WeakerAccess")
+    public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier)
     {
-      url = new URI(inUrl).normalize().toString();
-    } catch (URISyntaxException e)
-    {
-      throw new RuntimeException("Unable to normalize path " + inUrl, e);
-    }
-    // For some reason URI.normalize() doesn't clean the start of the URL
-    while (url.startsWith("//"))
-    {
-      url = url.substring(1);
-    }
-    return url;
-  }
-
-  @Override
-  public Pac4jFactory getPac4jFactory(C configuration)
-  {
-    LegendPac4jConfiguration legendConfig = configSupplier.apply(configuration);
-
-    try
-    {
-      legendConfig.loadDefaults(configurationSourceProvider, objectMapper);
-    } catch (IOException | ConfigurationException e)
-    {
-      throw new RuntimeException(e);
+        this(configSupplier, null);
     }
 
-    String applicationContextPath = legendConfig.getCallbackBaseUrl() != null && !legendConfig.getCallbackBaseUrl().isEmpty() ? legendConfig.getCallbackBaseUrl() : "/";
-    if (configuration.getServerFactory() instanceof SimpleServerFactory)
+    @SuppressWarnings("WeakerAccess")
+    public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier,
+                             Function<C, Supplier<Subject>> subjectSupplierSupplier)
     {
-      applicationContextPath = ((SimpleServerFactory) configuration.getServerFactory())
-          .getApplicationContextPath();
+        this.configSupplier = configSupplier;
+        this.subjectSupplierSupplier = subjectSupplierSupplier;
     }
 
-    String callbackFilterUrl = cleanUrl(legendConfig.getCallbackPrefix() + callBackSuffix);
-    String clientCallbackUrl = cleanUrl(applicationContextPath + callbackFilterUrl);
-
-    final SubjectExecutor subjectExecutor = new SubjectExecutor(
-        Objects.isNull(this.subjectSupplierSupplier) ? null : this.subjectSupplierSupplier.apply(configuration));
-
-    MongoDatabase db = null;
-    if (StringUtils.isNotEmpty(legendConfig.getMongoDb())
-        && StringUtils.isNotEmpty(legendConfig.getMongoUri()))
+    private static String cleanUrl(String inUrl)
     {
-      MongoClient client = new MongoClient(new MongoClientURI(legendConfig.getMongoUri()));
-      db = subjectExecutor.execute(() -> client.getDatabase(legendConfig.getMongoDb()));
-    }
-
-    MongoDatabase finalDb = db;
-    Pac4jFactory factory =
-        new Pac4jFactory()
-        {
-          @Override
-          public Config build()
-          {
-            Config config = super.build();
-
-            if (legendConfig.getMongoSession() != null
-                && legendConfig.getMongoSession().isEnabled())
-            {
-
-              if (Objects.isNull(finalDb))
-              {
-                throw new RuntimeException(
-                    "MongoDB needs to be configured if MongoSession is used");
-              }
-
-              MongoCollection<Document> userSessions = subjectExecutor.execute(
-                  () -> finalDb.getCollection(legendConfig.getMongoSession().getCollection()));
-
-              config.setSessionStore(
-                  new MongoDbSessionStore(
-                      legendConfig.getMongoSession().getCryptoAlgorithm(),
-                      legendConfig.getMongoSession().getMaxSessionLength(),
-                      userSessions, ImmutableMap.of(
-                      J2EContext.class, new J2ESessionStore(),
-                      JaxRsContext.class, new ServletSessionStore()),
-                      subjectExecutor, legendConfig.getTrustedPackages()));
-            }
-            return config;
-          }
-        };
-    factory.setCallbackUrl(clientCallbackUrl);
-    factory.setAjaxRequestResolver(new AcceptHeaderAjaxRequestResolver());
-    factory.setUrlResolver(new DefaultUrlResolver());
-    Pac4jFactory.ServletConfiguration servletConfiguration =
-        new Pac4jFactory.ServletConfiguration();
-    Pac4jFactory.ServletSecurityFilterConfiguration securityFilterConfiguration =
-        new Pac4jFactory.ServletSecurityFilterConfiguration();
-    securityFilterConfiguration.setClients(
-        legendConfig.getClients().stream().map(Client::getName).collect(Collectors.joining(",")));
-
-    securityFilterConfiguration.setMatchers(String.join(",",
-        new String[]{callbackMatcher, bypassMatcher}));
-
-    servletConfiguration.setSecurity(Collections.singletonList(securityFilterConfiguration));
-
-    Pac4jFactory.ServletCallbackFilterConfiguration callbackFilterConfiguration =
-        new Pac4jFactory.ServletCallbackFilterConfiguration();
-    callbackFilterConfiguration.setMapping(callbackFilterUrl);
-    servletConfiguration.setCallback(Collections.singletonList(callbackFilterConfiguration));
-
-    Pac4jFactory.ServletLogoutFilterConfiguration logoutConfiguration =
-        new Pac4jFactory.ServletLogoutFilterConfiguration();
-
-    String logoutUrl = cleanUrl(legendConfig.getCallbackPrefix() + logoutSuffix);
-    logoutConfiguration.setMapping(logoutUrl);
-    logoutConfiguration.setDestroySession(true);
-    servletConfiguration.setLogout(Collections.singletonList(logoutConfiguration));
-
-    legendConfig.getAuthorizers().stream()
-        .filter(a -> a instanceof MongoDbConsumer)
-        .forEach(a -> ((MongoDbConsumer) a).setupDb(finalDb));
-
-    factory.setAuthorizers(legendConfig.getAuthorizers().stream()
-        .collect(Collectors.toMap(a -> a.getClass().getName(), a -> a)));
-    securityFilterConfiguration.setAuthorizers(String.join(",", factory.getAuthorizers().keySet()));
-    DefaultSecurityLogic s = new DefaultSecurityLogic();
-    s.setClientFinder(legendConfig.getDefaultSecurityClient());
-    s.setProfileStorageDecision(new LegendUserProfileStorageDecision());
-    factory.setSecurityLogic(s);
-    factory.setServlet(servletConfiguration);
-
-    PathMatcher matcher = new PathMatcher();
-    if (legendConfig.getBypassPaths() != null && !legendConfig.getBypassPaths().isEmpty())
-    {
-      legendConfig.getBypassPaths().forEach(matcher::excludePath);
-    }
-    if (legendConfig.getBypassBranches() != null && !legendConfig.getBypassBranches().isEmpty())
-    {
-      legendConfig.getBypassBranches().forEach(matcher::excludeBranch);
-    }
-    Map<String, Matcher> matchers =
-        ImmutableMap.of(callbackMatcher, new PathMatcher("^" + callbackFilterUrl + "$"),
-            bypassMatcher, matcher);
-    factory.setMatchers(matchers);
-    factory.setClients(legendConfig.getClients());
-    return factory;
-  }
-
-  @Override
-  protected void setupJettySession(Environment environment)
-  {
-    super.setupJettySession(environment);
-    environment
-        .servlets()
-        .addFilter("Username", new UsernameFilter())
-        .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
-    environment
-        .getApplicationContext()
-        .setServletHandler(
-            new SecurityFilterHandler(environment.getApplicationContext().getServletHandler())
-            {
-              @Override
-              protected void handleSecurityFilter(SecurityFilter filter)
-              {
-                  // No-op, required to meet SecurityFilterHandler interface
-              }
-
-              @Override
-              protected void handleMapping(FilterMapping mapping)
-              {
-                mapping.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
-              }
-            });
-    swapClientFinderAndStorageDecision(environment);
-  }
-
-  public void swapClientFinderAndStorageDecision(Environment environment)
-  {
-    for (FilterHolder h: environment.getApplicationContext().getServletHandler().getFilters())
-    {
-      if (h.getHeldClass().equals(SecurityFilter.class))
-      {
-        ServletHandler s =  new ServletHandler();
-        s.addFilter(h);
+        String url;
         try
         {
-          s.initialize();
-          SecurityFilter filter = (SecurityFilter)  s.getFilters()[0].getFilter();
-          DefaultSecurityLogic securityLogic = (DefaultSecurityLogic) filter.getSecurityLogic();
-          securityLogic.setClientFinder(((DefaultSecurityLogic)this.getConfig().getSecurityLogic()).getClientFinder());
-          securityLogic.setProfileStorageDecision(new LegendUserProfileStorageDecision());
-          filter.setSecurityLogic(securityLogic);
-          h.stop();
-          h.setFilter(filter);
-        }
-        catch (Exception e)
+            url = new URI(inUrl).normalize().toString();
+        } catch (URISyntaxException e)
         {
-          e.printStackTrace();
+            throw new RuntimeException("Unable to normalize path " + inUrl, e);
         }
-      }
+        // For some reason URI.normalize() doesn't clean the start of the URL
+        while (url.startsWith("//"))
+        {
+            url = url.substring(1);
+        }
+        return url;
     }
-  }
 
-  @Override
-  public void setup(Bootstrap<?> bootstrap)
-  {
-    configurationSourceProvider = bootstrap.getConfigurationSourceProvider();
-    objectMapper = bootstrap.getObjectMapper();
-  }
-
-  @Override
-  protected Collection<Pac4jFeatureSupport> supportedFeatures()
-  {
-    Collection<Pac4jFeatureSupport> supportedFeatures = super.supportedFeatures();
-    supportedFeatures.add(this);
-    return supportedFeatures;
-  }
-
-  public static JavaSerializationHelper getSerializationHelper(List<String> extraPackages)
-  {
-    JavaSerializationHelper helper = new JavaSerializationHelper();
-    helper.addTrustedPackage("org.finos.legend.server.pac4j."); // Required to serialize KerberosProfile
-    helper.addTrustedPackage("org.pac4j.core.profile."); // Required to serialize UserProfile
-    helper.addTrustedPackage("javax.security.auth."); // Required to serialize KerberosTicket
-    helper.addTrustedPackage("[B"); // byte[] - Required to serialize KerberosTicket
-    helper.addTrustedPackage("[Z"); // boolean[] - Required to serialize KerberosTicket
-    for (String p:extraPackages)
+    @Override
+    public Pac4jFactory getPac4jFactory(C configuration)
     {
-      helper.addTrustedPackage(p);
+        LegendPac4jConfiguration legendConfig = configSupplier.apply(configuration);
+
+        try
+        {
+            legendConfig.loadDefaults(configurationSourceProvider, objectMapper);
+        } catch (IOException | ConfigurationException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        String applicationContextPath = legendConfig.getCallbackBaseUrl() != null && !legendConfig.getCallbackBaseUrl().isEmpty() ? legendConfig.getCallbackBaseUrl() : "/";
+        if (configuration.getServerFactory() instanceof SimpleServerFactory)
+        {
+            applicationContextPath = ((SimpleServerFactory) configuration.getServerFactory())
+                    .getApplicationContextPath();
+        }
+
+        String callbackFilterUrl = cleanUrl(legendConfig.getCallbackPrefix() + callBackSuffix);
+        String clientCallbackUrl = cleanUrl(applicationContextPath + callbackFilterUrl);
+
+        final SubjectExecutor subjectExecutor = new SubjectExecutor(
+                Objects.isNull(this.subjectSupplierSupplier) ? null : this.subjectSupplierSupplier.apply(configuration));
+
+        MongoDatabase db = null;
+        if (StringUtils.isNotEmpty(legendConfig.getMongoDb()) && StringUtils.isNotEmpty(legendConfig.getMongoUri()))
+        {
+            MongoClient client = new MongoClient(new MongoClientURI(legendConfig.getMongoUri()));
+            db = subjectExecutor.execute(() -> client.getDatabase(legendConfig.getMongoDb()));
+        }
+
+        MongoDatabase finalDb = db;
+        Pac4jFactory factory =
+                new Pac4jFactory()
+                {
+                    @Override
+                    public Config build()
+                    {
+                        Config config = super.build();
+
+                        if (legendConfig.getHazelcastSession() != null && legendConfig.getHazelcastSession().isEnabled())
+                        {
+                            config.setSessionStore(new HazelcastSessionStore(
+                                    legendConfig.getHazelcastSession().getMaxSessionLength(),
+                                    ImmutableMap.of(
+                                            J2EContext.class, new J2ESessionStore(),
+                                            JaxRsContext.class, new ServletSessionStore())));
+                        }
+                        else if (legendConfig.getMongoSession() != null && legendConfig.getMongoSession().isEnabled())
+                        {
+
+                            if (Objects.isNull(finalDb))
+                            {
+                                throw new RuntimeException(
+                                        "MongoDB needs to be configured if MongoSession is used");
+                            }
+
+                            MongoCollection<Document> userSessions = subjectExecutor.execute(
+                                    () -> finalDb.getCollection(legendConfig.getMongoSession().getCollection()));
+
+                            config.setSessionStore(
+                                    new MongoDbSessionStore(
+                                            legendConfig.getMongoSession().getCryptoAlgorithm(),
+                                            legendConfig.getMongoSession().getMaxSessionLength(),
+                                            userSessions, ImmutableMap.of(
+                                            J2EContext.class, new J2ESessionStore(),
+                                            JaxRsContext.class, new ServletSessionStore()),
+                                            subjectExecutor, legendConfig.getTrustedPackages()));
+                        }
+                        return config;
+                    }
+                };
+        factory.setCallbackUrl(clientCallbackUrl);
+        factory.setAjaxRequestResolver(new AcceptHeaderAjaxRequestResolver());
+        factory.setUrlResolver(new DefaultUrlResolver());
+        Pac4jFactory.ServletConfiguration servletConfiguration =
+                new Pac4jFactory.ServletConfiguration();
+        Pac4jFactory.ServletSecurityFilterConfiguration securityFilterConfiguration =
+                new Pac4jFactory.ServletSecurityFilterConfiguration();
+        securityFilterConfiguration.setClients(
+                legendConfig.getClients().stream().map(Client::getName).collect(Collectors.joining(",")));
+
+        securityFilterConfiguration.setMatchers(String.join(",",
+                new String[]{callbackMatcher, bypassMatcher}));
+
+        servletConfiguration.setSecurity(Collections.singletonList(securityFilterConfiguration));
+
+        Pac4jFactory.ServletCallbackFilterConfiguration callbackFilterConfiguration =
+                new Pac4jFactory.ServletCallbackFilterConfiguration();
+        callbackFilterConfiguration.setMapping(callbackFilterUrl);
+        servletConfiguration.setCallback(Collections.singletonList(callbackFilterConfiguration));
+
+        Pac4jFactory.ServletLogoutFilterConfiguration logoutConfiguration =
+                new Pac4jFactory.ServletLogoutFilterConfiguration();
+
+        String logoutUrl = cleanUrl(legendConfig.getCallbackPrefix() + logoutSuffix);
+        logoutConfiguration.setMapping(logoutUrl);
+        logoutConfiguration.setDestroySession(true);
+        servletConfiguration.setLogout(Collections.singletonList(logoutConfiguration));
+
+        legendConfig.getAuthorizers().stream()
+                .filter(a -> a instanceof MongoDbConsumer)
+                .forEach(a -> ((MongoDbConsumer) a).setupDb(finalDb));
+
+        factory.setAuthorizers(legendConfig.getAuthorizers().stream()
+                .collect(Collectors.toMap(a -> a.getClass().getName(), a -> a)));
+        securityFilterConfiguration.setAuthorizers(String.join(",", factory.getAuthorizers().keySet()));
+        DefaultSecurityLogic s = new DefaultSecurityLogic();
+        s.setClientFinder(legendConfig.getDefaultSecurityClient());
+        s.setProfileStorageDecision(new LegendUserProfileStorageDecision());
+        factory.setSecurityLogic(s);
+        factory.setServlet(servletConfiguration);
+
+        PathMatcher matcher = new PathMatcher();
+        if (legendConfig.getBypassPaths() != null && !legendConfig.getBypassPaths().isEmpty())
+        {
+            legendConfig.getBypassPaths().forEach(matcher::excludePath);
+        }
+        if (legendConfig.getBypassBranches() != null && !legendConfig.getBypassBranches().isEmpty())
+        {
+            legendConfig.getBypassBranches().forEach(matcher::excludeBranch);
+        }
+        Map<String, Matcher> matchers =
+                ImmutableMap.of(callbackMatcher, new PathMatcher("^" + callbackFilterUrl + "$"),
+                        bypassMatcher, matcher);
+        factory.setMatchers(matchers);
+        factory.setClients(legendConfig.getClients());
+        return factory;
     }
-    return helper;
-  }
+
+    @Override
+    protected void setupJettySession(Environment environment)
+    {
+        super.setupJettySession(environment);
+        environment
+                .servlets()
+                .addFilter("Username", new UsernameFilter())
+                .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
+        environment
+                .getApplicationContext()
+                .setServletHandler(
+                        new SecurityFilterHandler(environment.getApplicationContext().getServletHandler())
+                        {
+                            @Override
+                            protected void handleSecurityFilter(SecurityFilter filter)
+                            {
+                                // No-op, required to meet SecurityFilterHandler interface
+                            }
+
+                            @Override
+                            protected void handleMapping(FilterMapping mapping)
+                            {
+                                mapping.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
+                            }
+                        });
+        swapClientFinderAndStorageDecision(environment);
+    }
+
+    public void swapClientFinderAndStorageDecision(Environment environment)
+    {
+        for (FilterHolder h: environment.getApplicationContext().getServletHandler().getFilters())
+        {
+            if (h.getHeldClass().equals(SecurityFilter.class))
+            {
+                ServletHandler s =  new ServletHandler();
+                s.addFilter(h);
+                try
+                {
+                    s.initialize();
+                    SecurityFilter filter = (SecurityFilter)  s.getFilters()[0].getFilter();
+                    DefaultSecurityLogic securityLogic = (DefaultSecurityLogic) filter.getSecurityLogic();
+                    securityLogic.setClientFinder(((DefaultSecurityLogic)this.getConfig().getSecurityLogic()).getClientFinder());
+                    securityLogic.setProfileStorageDecision(new LegendUserProfileStorageDecision());
+                    filter.setSecurityLogic(securityLogic);
+                    h.stop();
+                    h.setFilter(filter);
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    @Override
+    public void setup(Bootstrap<?> bootstrap)
+    {
+        configurationSourceProvider = bootstrap.getConfigurationSourceProvider();
+        objectMapper = bootstrap.getObjectMapper();
+    }
+
+    @Override
+    protected Collection<Pac4jFeatureSupport> supportedFeatures()
+    {
+        Collection<Pac4jFeatureSupport> supportedFeatures = super.supportedFeatures();
+        supportedFeatures.add(this);
+        return supportedFeatures;
+    }
+
+    public static JavaSerializationHelper getSerializationHelper(List<String> extraPackages)
+    {
+        JavaSerializationHelper helper = new JavaSerializationHelper();
+        helper.addTrustedPackage("org.finos.legend.server.pac4j."); // Required to serialize KerberosProfile
+        helper.addTrustedPackage("org.pac4j.core.profile."); // Required to serialize UserProfile
+        helper.addTrustedPackage("javax.security.auth."); // Required to serialize KerberosTicket
+        helper.addTrustedPackage("[B"); // byte[] - Required to serialize KerberosTicket
+        helper.addTrustedPackage("[Z"); // boolean[] - Required to serialize KerberosTicket
+        for (String p:extraPackages)
+        {
+            helper.addTrustedPackage(p);
+        }
+        return helper;
+    }
 }

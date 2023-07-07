@@ -17,7 +17,7 @@ import java.util.UUID;
 
 public class HazelcastSessionStore extends HttpSessionStore
 {
-    //possibly need to invoke the method with a hazelcast config
+    // TODO: possibly need to invoke the method with a hazelcast config
     private final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
 
     private final int maxSessionLength;
@@ -68,6 +68,7 @@ public class HazelcastSessionStore extends HttpSessionStore
             HazelcastSessionDetails hazelcastSessionDetails = hazelcastMap.get(token.getSessionId());
             if (hazelcastSessionDetails != null)
             {
+                // TODO: the 'key' parameter is not used here to get the profiles map (is that a problem?)
                 Map <String, CommonProfile> profileMap = hazelcastSessionDetails.getProfileMap();
                 if (profileMap != null)
                 {
