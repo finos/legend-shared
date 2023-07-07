@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.server.pac4j.mongostore;
+package org.finos.legend.server.pac4j.sessionutil;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-class UuidUtils
+public class UuidUtils
 {
 
-  static UUID newUuid()
+  public static UUID newUuid()
   {
     return UUID.randomUUID();
   }
 
-  static String toHexString(UUID uuid)
+  public static String toHexString(UUID uuid)
   {
     return Long.toHexString(uuid.getMostSignificantBits())
         + '-'
         + Long.toHexString(uuid.getLeastSignificantBits());
   }
 
-  static byte[] toByteArray(UUID uuid)
+  public static byte[] toByteArray(UUID uuid)
   {
     ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
     bb.putLong(uuid.getMostSignificantBits());
@@ -40,7 +40,7 @@ class UuidUtils
     return bb.array();
   }
 
-  static UUID fromHexString(String hex)
+  public static UUID fromHexString(String hex)
   {
     String[] keyTokens = hex.split("-", 2);
     long msb = Long.parseUnsignedLong(keyTokens[0], 16);
@@ -48,7 +48,7 @@ class UuidUtils
     return new UUID(msb, lsb);
   }
 
-  static UUID fromByteArray(byte[] bytes)
+  public static UUID fromByteArray(byte[] bytes)
   {
     ByteBuffer bb = ByteBuffer.wrap(bytes);
     long msb = bb.getLong();

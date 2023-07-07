@@ -14,6 +14,9 @@
 
 package org.finos.legend.server.pac4j.mongostore;
 
+import org.finos.legend.server.pac4j.sessionutil.SessionToken;
+import org.finos.legend.server.pac4j.sessionutil.UuidUtils;
+
 import java.security.GeneralSecurityException;
 import java.util.Base64;
 import javax.crypto.Cipher;
