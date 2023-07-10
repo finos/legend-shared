@@ -1,5 +1,6 @@
 package org.finos.legend.server.pac4j.hazelcaststore;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
@@ -17,8 +18,6 @@ import java.util.UUID;
 
 public class HazelcastSessionStore extends HttpSessionStore
 {
-    // TODO: possibly need to invoke the method with a hazelcast config
-    private final HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance();
 
     private final int maxSessionLength;
     private final Map<UUID, HazelcastSessionDetails> hazelcastMap;
@@ -29,6 +28,11 @@ public class HazelcastSessionStore extends HttpSessionStore
     {
         super(underlyingStores);
         this.maxSessionLength = maxSessionLength;
+
+        // TODO: make this configurable rather than implicit localhost multicast
+        Config hazelcastConfig = new Config("LegendHazelcast");
+        HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(hazelcastConfig);
+
         this.hazelcastMap = hazelcastInstance.getMap("HazelcastSessionStore");
     }
 
