@@ -18,7 +18,7 @@ import java.util.UUID;
 public class HazelcastSessionStore extends HttpSessionStore
 {
     // TODO: possibly need to invoke the method with a hazelcast config
-    private final HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance();
+    private final HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance();
 
     private final int maxSessionLength;
     private final Map<UUID, HazelcastSessionDetails> hazelcastMap;
