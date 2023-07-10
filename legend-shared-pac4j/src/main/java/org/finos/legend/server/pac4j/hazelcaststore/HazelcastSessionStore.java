@@ -69,7 +69,7 @@ public class HazelcastSessionStore extends HttpSessionStore
             if (hazelcastSessionDetails != null)
             {
                 // TODO: the 'key' parameter is not used here to get the profiles map (is that a problem?)
-                Map <String, CommonProfile> profileMap = hazelcastSessionDetails.getProfileMap();
+                Map<String, CommonProfile> profileMap = hazelcastSessionDetails.getProfileMap();
                 if (profileMap != null)
                 {
                     res = profileMap;
@@ -98,7 +98,7 @@ public class HazelcastSessionStore extends HttpSessionStore
         if (value instanceof LinkedHashMap)
         {
             SessionToken token = getOrCreateSsoKey(context);
-            Map <String, CommonProfile> profileMap = (LinkedHashMap<String, CommonProfile>) value;
+            Map<String, CommonProfile> profileMap = (LinkedHashMap<String, CommonProfile>) value;
             hazelcastMap.get(token.getSessionId()).setProfileMap(profileMap);
         }
         super.set(context, key, value);
