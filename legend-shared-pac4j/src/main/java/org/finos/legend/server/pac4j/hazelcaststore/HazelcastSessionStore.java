@@ -35,11 +35,7 @@ public class HazelcastSessionStore extends HttpSessionStore
         super(underlyingStores);
         this.maxSessionLength = maxSessionLength;
 
-        // TODO: pass Config as a parameter (ideal to use full hazelcast yaml settings file)
-        Config hazelcastConfig = new Config("LegendHazelcast");
-
         // TODO: remove hard-coded tcp-ip setup
-        NetworkConfig networkConfig = new NetworkConfig();
         JoinConfig joinConfig = new JoinConfig();
         MulticastConfig multicastConfig = new MulticastConfig();
         multicastConfig.setEnabled(false);
@@ -49,7 +45,12 @@ public class HazelcastSessionStore extends HttpSessionStore
         tcpIpConfig.setEnabled(true);
         tcpIpConfig.setMembers(Arrays.asList(members.split(",")));
         joinConfig.setTcpIpConfig(tcpIpConfig);
+
+        NetworkConfig networkConfig = new NetworkConfig();
         networkConfig.setJoin(joinConfig);
+
+        // TODO: pass Config as a parameter (ideal to use full hazelcast yaml settings file)
+        Config hazelcastConfig = new Config("LegendHazelcast");
         hazelcastConfig.setNetworkConfig(networkConfig);
 
         HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(hazelcastConfig);
