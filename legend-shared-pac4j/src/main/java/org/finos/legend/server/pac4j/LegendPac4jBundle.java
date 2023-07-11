@@ -158,6 +158,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                         {
                             config.setSessionStore(new HazelcastSessionStore(
                                     legendConfig.getHazelcastSession().getMaxSessionLength(),
+//                                    legendConfig.getHazelcastSession().getMembers(),
                                     ImmutableMap.of(
                                             J2EContext.class, new J2ESessionStore(),
                                             JaxRsContext.class, new ServletSessionStore())));
