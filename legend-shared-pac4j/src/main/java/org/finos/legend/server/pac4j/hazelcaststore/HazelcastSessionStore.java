@@ -1,6 +1,6 @@
 package org.finos.legend.server.pac4j.hazelcaststore;
 
-import com.hazelcast.config.*;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
@@ -11,7 +11,10 @@ import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.core.profile.ProfileHelper;
 
-import java.util.*;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class HazelcastSessionStore extends HttpSessionStore
 {
@@ -21,7 +24,6 @@ public class HazelcastSessionStore extends HttpSessionStore
 
 
     public HazelcastSessionStore(int maxSessionLength,
-//                                 String members,
                                  Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
     {
         super(underlyingStores);
@@ -29,20 +31,6 @@ public class HazelcastSessionStore extends HttpSessionStore
 
         // TODO: pass Config as a parameter (ideal to use full hazelcast yaml settings file)
         Config hazelcastConfig = new Config("LegendHazelcast");
-
-        // TODO: remove hard-coded tcp-ip setup
-//        NetworkConfig networkConfig = new NetworkConfig();
-//        JoinConfig joinConfig = new JoinConfig();
-//        MulticastConfig multicastConfig = new MulticastConfig();
-//        multicastConfig.setEnabled(false);
-//        joinConfig.setMulticastConfig(multicastConfig);
-//
-//        TcpIpConfig tcpIpConfig = new TcpIpConfig();
-//        tcpIpConfig.setEnabled(true);
-//        tcpIpConfig.setMembers(Arrays.asList(members.split(",")));
-//        joinConfig.setTcpIpConfig(tcpIpConfig);
-//        networkConfig.setJoin(joinConfig);
-//        hazelcastConfig.setNetworkConfig(networkConfig);
 
         HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(hazelcastConfig);
 
@@ -63,7 +51,7 @@ public class HazelcastSessionStore extends HttpSessionStore
     {
         SessionToken token = SessionToken.generate();
         token.saveInContext(context, maxSessionLength);
-        HazelcastSessionDetails hazelcastSessionDetails = new HazelcastSessionDetails(new Date().toString());
+        HazelcastSessionDetails hazelcastSessionDetails = new HazelcastSessionDetails(new Date());
         hazelcastMap.put(token.getSessionId(), hazelcastSessionDetails);
         return token;
     }
@@ -114,6 +102,7 @@ public class HazelcastSessionStore extends HttpSessionStore
     {
         if (value instanceof LinkedHashMap)
         {
+            // TODO - there is a 500 error if the cookie exists in the request, but it is not in the store (same problem with Monogo)
             SessionToken token = getOrCreateSsoKey(context);
             Map<String, CommonProfile> profileMap = (LinkedHashMap<String, CommonProfile>) value;
             hazelcastMap.get(token.getSessionId()).setProfileMap(profileMap);

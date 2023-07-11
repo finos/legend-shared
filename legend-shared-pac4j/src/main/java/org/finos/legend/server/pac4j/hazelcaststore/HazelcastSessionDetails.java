@@ -2,23 +2,25 @@ package org.finos.legend.server.pac4j.hazelcaststore;
 
 import org.pac4j.core.profile.CommonProfile;
 
+import java.io.Serializable;
+import java.util.Date;
 import java.util.Map;
 
-public class HazelcastSessionDetails
+public class HazelcastSessionDetails implements Serializable
 {
 
-    private final String createdDateString;
+    private final Date createdDate;
 
     private Map<String, CommonProfile> profileMap;
 
-    public HazelcastSessionDetails(String createdDateString)
+    public HazelcastSessionDetails(Date createdDate)
     {
-        this.createdDateString = createdDateString;
+        this.createdDate = createdDate;
     }
 
-    public String getCreatedDateString()
+    public Date getCreatedDate()
     {
-        return createdDateString;
+        return createdDate;
     }
 
     public Map<String, CommonProfile> getProfileMap()
