@@ -1,6 +1,10 @@
 package org.finos.legend.server.pac4j.hazelcaststore;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.NetworkConfig;
+import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
@@ -11,6 +15,7 @@ import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.core.profile.ProfileHelper;
 
+import java.util.Arrays;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -24,6 +29,7 @@ public class HazelcastSessionStore extends HttpSessionStore
 
 
     public HazelcastSessionStore(int maxSessionLength,
+                                 String members,
                                  Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
     {
         super(underlyingStores);
@@ -31,6 +37,20 @@ public class HazelcastSessionStore extends HttpSessionStore
 
         // TODO: pass Config as a parameter (ideal to use full hazelcast yaml settings file)
         Config hazelcastConfig = new Config("LegendHazelcast");
+
+        // TODO: remove hard-coded tcp-ip setup
+        NetworkConfig networkConfig = new NetworkConfig();
+        JoinConfig joinConfig = new JoinConfig();
+        MulticastConfig multicastConfig = new MulticastConfig();
+        multicastConfig.setEnabled(false);
+        joinConfig.setMulticastConfig(multicastConfig);
+
+        TcpIpConfig tcpIpConfig = new TcpIpConfig();
+        tcpIpConfig.setEnabled(true);
+        tcpIpConfig.setMembers(Arrays.asList(members.split(",")));
+        joinConfig.setTcpIpConfig(tcpIpConfig);
+        networkConfig.setJoin(joinConfig);
+        hazelcastConfig.setNetworkConfig(networkConfig);
 
         HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(hazelcastConfig);
 

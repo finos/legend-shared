@@ -353,6 +353,7 @@ public final class LegendPac4jConfiguration
         private static final int DEFAULT_MAX_SESSION_LENGTH = 7200;
         private int maxSessionLength = DEFAULT_MAX_SESSION_LENGTH;
         private boolean enabled;
+        private String members;
 
         public boolean isEnabled()
         {
@@ -387,10 +388,33 @@ public final class LegendPac4jConfiguration
             }
         }
 
+        public String getMembers()
+        {
+            return this.members;
+        }
+
+        public void setMembers(String members)
+        {
+            this.members = members;
+        }
+
+        private void defaultMembers(String members)
+        {
+            if (Strings.isNullOrEmpty(members))
+            {
+                this.members = "localhost";
+            }
+            else
+            {
+                this.members = members;
+            }
+        }
+
         private void defaults(HazelcastSessionConfiguration other)
         {
             this.defaultEnabled(other.isEnabled());
             this.defaultMaxSessionLength(other.getMaxSessionLength());
+            this.defaultMembers(other.getMembers());
         }
     }
 }
