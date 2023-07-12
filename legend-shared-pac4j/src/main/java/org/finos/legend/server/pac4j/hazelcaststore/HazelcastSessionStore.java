@@ -94,12 +94,11 @@ public class HazelcastSessionStore extends HttpSessionStore
             HazelcastSessionDetails hazelcastSessionDetails = hazelcastMap.get(token.getSessionId());
             if (hazelcastSessionDetails != null)
             {
-                // TODO: the 'key' parameter is not used here to get the profiles map (is that a problem?)
-                Map<String, CommonProfile> profileMap = hazelcastSessionDetails.getProfileMap();
-                if (profileMap != null)
+                Map<String, Object> sessionData = hazelcastSessionDetails.getSessionData();
+                Object data = sessionData.get(key);
+                if (data != null)
                 {
-                    res = profileMap;
-
+                    res = data;
                     //Once we have it, store it in the regular session store for later access
                     super.set(context, key, res);
                 }
@@ -121,13 +120,13 @@ public class HazelcastSessionStore extends HttpSessionStore
     @Override
     public void set(WebContext context, String key, Object value)
     {
-        if (value instanceof LinkedHashMap)
+        SessionToken token = getOrCreateSsoKey(context);
+        HazelcastSessionDetails details = hazelcastMap.get(token.getSessionId());
+        if (details != null)
         {
-            // TODO - there is a 500 error if the cookie exists in the request, but it is not in the store (same problem with Monogo)
-            SessionToken token = getOrCreateSsoKey(context);
-            Map<String, CommonProfile> profileMap = (LinkedHashMap<String, CommonProfile>) value;
-            hazelcastMap.get(token.getSessionId()).setProfileMap(profileMap);
+            details.getSessionData().put(key, value);
         }
+
         super.set(context, key, value);
     }
 
