@@ -1,6 +1,7 @@
 package org.finos.legend.server.pac4j.hazelcaststore;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
@@ -17,12 +18,14 @@ import org.pac4j.core.profile.ProfileHelper;
 
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class HazelcastSessionStore extends HttpSessionStore
 {
+    private static final String hazelcastMapName = "HazelcastSessionStore";
 
     private final int maxSessionLength;
     private final Map<UUID, HazelcastSessionDetails> hazelcastMap;
@@ -53,9 +56,15 @@ public class HazelcastSessionStore extends HttpSessionStore
         Config hazelcastConfig = new Config("LegendHazelcast");
         hazelcastConfig.setNetworkConfig(networkConfig);
 
+        MapConfig mapConfig = new MapConfig(hazelcastMapName);
+        mapConfig.setTimeToLiveSeconds(this.maxSessionLength);
+        Map<String, MapConfig> mapConfigs = new HashMap<>();
+        mapConfigs.put(hazelcastMapName, mapConfig);
+        hazelcastConfig.setMapConfigs(mapConfigs);
+
         HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(hazelcastConfig);
 
-        this.hazelcastMap = hazelcastInstance.getMap("HazelcastSessionStore");
+        this.hazelcastMap = hazelcastInstance.getMap(hazelcastMapName);
     }
 
     private SessionToken getOrCreateSsoKey(WebContext context)
