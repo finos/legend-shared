@@ -125,6 +125,9 @@ public class HazelcastSessionStore extends HttpSessionStore
         if (details != null)
         {
             details.getSessionData().put(key, value);
+
+            // need to write the object back into hazelcast
+            hazelcastMap.put(token.getSessionId(), details);
         }
 
         super.set(context, key, value);
