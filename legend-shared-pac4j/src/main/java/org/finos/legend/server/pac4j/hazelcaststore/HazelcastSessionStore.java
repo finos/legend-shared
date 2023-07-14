@@ -1,11 +1,6 @@
 package org.finos.legend.server.pac4j.hazelcaststore;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.NetworkConfig;
-import com.hazelcast.config.JoinConfig;
-import com.hazelcast.config.MulticastConfig;
-import com.hazelcast.config.TcpIpConfig;
+import com.hazelcast.config.FileSystemYamlConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
@@ -15,56 +10,41 @@ import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.core.profile.ProfileHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
+import java.io.FileNotFoundException;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class HazelcastSessionStore extends HttpSessionStore
 {
-    private static final String hazelcastMapName = "HazelcastSessionStore";
+    private static final Logger logger = LoggerFactory.getLogger(HazelcastSessionStore.class);
 
-    private final int maxSessionLength;
     private final Map<UUID, HazelcastSessionDetails> hazelcastMap;
+    private final int maxSessionLength;
 
-
-    public HazelcastSessionStore(int maxSessionLength,
-                                 String members,
+    public HazelcastSessionStore(String hazelcastConfigFilePath,
                                  Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
     {
         super(underlyingStores);
-        this.maxSessionLength = maxSessionLength;
 
-        // TODO: remove hard-coded tcp-ip setup
-        JoinConfig joinConfig = new JoinConfig();
-        MulticastConfig multicastConfig = new MulticastConfig();
-        multicastConfig.setEnabled(false);
-        joinConfig.setMulticastConfig(multicastConfig);
+        try
+        {
+            FileSystemYamlConfig fileConfig = new FileSystemYamlConfig(hazelcastConfigFilePath);
+            HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(fileConfig);
 
-        TcpIpConfig tcpIpConfig = new TcpIpConfig();
-        tcpIpConfig.setEnabled(true);
-        tcpIpConfig.setMembers(Arrays.asList(members.split(",")));
-        joinConfig.setTcpIpConfig(tcpIpConfig);
-
-        NetworkConfig networkConfig = new NetworkConfig();
-        networkConfig.setJoin(joinConfig);
-
-        // TODO: pass Config as a parameter (ideal to use full hazelcast yaml settings file)
-        Config hazelcastConfig = new Config("LegendHazelcast");
-        hazelcastConfig.setNetworkConfig(networkConfig);
-
-        MapConfig mapConfig = new MapConfig(hazelcastMapName);
-        mapConfig.setTimeToLiveSeconds(this.maxSessionLength);
-        Map<String, MapConfig> mapConfigs = new HashMap<>();
-        mapConfigs.put(hazelcastMapName, mapConfig);
-        hazelcastConfig.setMapConfigs(mapConfigs);
-
-        HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(hazelcastConfig);
-
-        this.hazelcastMap = hazelcastInstance.getMap(hazelcastMapName);
+            String hazelcastMapName = hazelcastInstance.getConfig().getMapConfigs().keySet().stream().findFirst().get();
+            this.hazelcastMap = hazelcastInstance.getMap(hazelcastMapName);
+            this.maxSessionLength = hazelcastInstance.getConfig().getMapConfig(hazelcastMapName).getTimeToLiveSeconds();
+        }
+        catch (FileNotFoundException e)
+        {
+            logger.error("Failed to find Hazelcast config file in specified path: {}", hazelcastConfigFilePath);
+            throw new RuntimeException();
+        }
     }
 
     private SessionToken getOrCreateSsoKey(WebContext context)

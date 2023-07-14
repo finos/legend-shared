@@ -350,10 +350,8 @@ public final class LegendPac4jConfiguration
 
     public static class HazelcastSessionConfiguration
     {
-        private static final int DEFAULT_MAX_SESSION_LENGTH = 7200;
-        private int maxSessionLength = DEFAULT_MAX_SESSION_LENGTH;
         private boolean enabled;
-        private String members;
+        private String configFilePath;
 
         public boolean isEnabled()
         {
@@ -370,51 +368,28 @@ public final class LegendPac4jConfiguration
             this.enabled = this.enabled || enabled;
         }
 
-        public int getMaxSessionLength()
+        public String getConfigFilePath()
         {
-            return maxSessionLength;
+            return this.configFilePath;
         }
 
-        public void setMaxSessionLength(int maxSessionLength)
+        public void setConfigFilePath(String configFilePath)
         {
-            this.maxSessionLength = maxSessionLength;
+            this.configFilePath = configFilePath;
         }
 
-        private void defaultMaxSessionLength(int maxSessionLength)
+        private void defaultConfigFilePath(String configFilePath)
         {
-            if (this.maxSessionLength == DEFAULT_MAX_SESSION_LENGTH)
+            if (Strings.isNullOrEmpty(this.configFilePath))
             {
-                this.maxSessionLength = maxSessionLength;
-            }
-        }
-
-        public String getMembers()
-        {
-            return this.members;
-        }
-
-        public void setMembers(String members)
-        {
-            this.members = members;
-        }
-
-        private void defaultMembers(String members)
-        {
-            if (Strings.isNullOrEmpty(members))
-            {
-                this.members = "localhost";
-            }
-            else
-            {
-                this.members = members;
+                this.configFilePath = configFilePath;
             }
         }
 
         private void defaults(HazelcastSessionConfiguration other)
         {
             this.defaultEnabled(other.isEnabled());
-            this.defaultMaxSessionLength(other.getMaxSessionLength());
-            this.defaultMembers(other.getMembers());
+            this.defaultConfigFilePath(other.getConfigFilePath());
         }
     }
 }

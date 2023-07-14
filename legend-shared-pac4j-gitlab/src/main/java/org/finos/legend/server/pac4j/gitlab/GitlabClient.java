@@ -39,6 +39,8 @@ import org.slf4j.LoggerFactory;
 @SerializableProfile
 public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
 {
+  public static final String GITLAB_CLIENT_NAME = "gitlab";
+
   private static final Logger logger = LoggerFactory.getLogger(GitlabClient.class);
 
   @JsonProperty
@@ -61,7 +63,7 @@ public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
   @Override
   public String getName()
   {
-    return "gitlab";
+    return GITLAB_CLIENT_NAME;
   }
 
   @Override
