@@ -22,10 +22,11 @@ import io.dropwizard.configuration.ConfigurationSourceProvider;
 import io.dropwizard.configuration.YamlConfigurationFactory;
 import java.io.IOException;
 import java.util.List;
+
+import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration;
 import org.pac4j.core.authorization.authorizer.Authorizer;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.client.finder.ClientFinder;
-import org.pac4j.core.client.finder.DefaultSecurityClientFinder;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class LegendPac4jConfiguration
@@ -34,9 +35,9 @@ public final class LegendPac4jConfiguration
   private List<Authorizer> authorizers = ImmutableList.of();
   private List<Client> clients;
   private String defaultClient;
-  private String mongoUri;
-  private String mongoDb;
-  private MongoSessionConfiguration mongoSession = new MongoSessionConfiguration();
+
+  private SessionStoreConfiguration sessionStoreConfiguration = new SessionStoreConfiguration();
+
   private String callbackPrefix = "";
   private List<String> bypassPaths = ImmutableList.of();
   private List<String> bypassBranches = ImmutableList.of();
@@ -137,60 +138,24 @@ public final class LegendPac4jConfiguration
     }
   }
 
-  public MongoSessionConfiguration getMongoSession()
+  public SessionStoreConfiguration getSessionStoreConfiguration()
   {
-    return mongoSession;
+    return sessionStoreConfiguration;
   }
 
-  public void setMongoSession(MongoSessionConfiguration mongoSession)
+  public void setSessionStoreConfiguration(SessionStoreConfiguration sessionStoreConfiguration)
   {
-    this.mongoSession = mongoSession;
+    this.sessionStoreConfiguration = sessionStoreConfiguration;
   }
 
-  private void defaultMongoSession(MongoSessionConfiguration mongoSession)
+  private void defaultSessionStoreConfiguration(SessionStoreConfiguration sessionStoreConfiguration)
   {
-    this.mongoSession.defaults(mongoSession);
-  }
-
-  public String getMongoUri()
-  {
-    return mongoUri;
+    this.sessionStoreConfiguration.defaults(sessionStoreConfiguration);
   }
 
   public void setDefaultClient(String defaultClient)
   {
     this.defaultClient = defaultClient;
-  }
-
-  public void setMongoUri(String mongoUri)
-  {
-    this.mongoUri = mongoUri;
-  }
-
-  private void defaultMongoUri(String mongoUri)
-  {
-    if (Strings.isNullOrEmpty(this.mongoUri))
-    {
-      this.mongoUri = mongoUri;
-    }
-  }
-
-  public String getMongoDb()
-  {
-    return mongoDb;
-  }
-
-  public void setMongoDb(String mongoDb)
-  {
-    this.mongoDb = mongoDb;
-  }
-
-  private void defaultMongoDb(String mongoDb)
-  {
-    if (Strings.isNullOrEmpty(this.mongoDb))
-    {
-      this.mongoDb = mongoDb;
-    }
   }
 
   public String getCallbackPrefix()
@@ -227,96 +192,8 @@ public final class LegendPac4jConfiguration
       this.defaultBypassPaths(other.getBypassPaths());
       this.defaultCallbackPrefix(other.getCallbackPrefix());
       this.defaultClients(other.getClients());
-      this.defaultMongoDb(other.getMongoDb());
-      this.defaultMongoSession(other.getMongoSession());
-      this.defaultMongoUri(other.getMongoUri());
+      this.defaultSessionStoreConfiguration(other.getSessionStoreConfiguration());
     }
   }
 
-  public static class MongoSessionConfiguration
-  {
-    private static final String DEFAULT_CRYPTO_ALGORITHM = "AES";
-    private static final int DEFAULT_MAX_SESSION_LENGTH = 7200;
-    private boolean enabled;
-    private String collection;
-    private String cryptoAlgorithm = DEFAULT_CRYPTO_ALGORITHM;
-    private int maxSessionLength = DEFAULT_MAX_SESSION_LENGTH;
-
-    public boolean isEnabled()
-    {
-      return enabled;
-    }
-
-    public void setEnabled(boolean enabled)
-    {
-      this.enabled = enabled;
-    }
-
-    public String getCollection()
-    {
-      return collection;
-    }
-
-    public void setCollection(String collection)
-    {
-      this.collection = collection;
-    }
-
-    public String getCryptoAlgorithm()
-    {
-      return cryptoAlgorithm;
-    }
-
-    public void setCryptoAlgorithm(String cryptoAlgorithm)
-    {
-      this.cryptoAlgorithm = cryptoAlgorithm;
-    }
-
-    private void defaultCryptoAlgorithm(String cryptoAlgorithm)
-    {
-      if (this.cryptoAlgorithm.equals(DEFAULT_CRYPTO_ALGORITHM))
-      {
-        this.cryptoAlgorithm = cryptoAlgorithm;
-      }
-    }
-
-    public int getMaxSessionLength()
-    {
-      return maxSessionLength;
-    }
-
-    public void setMaxSessionLength(int maxSessionLength)
-    {
-      this.maxSessionLength = maxSessionLength;
-    }
-
-    private void defaultMaxSessionLength(int maxSessionLength)
-    {
-      if (this.maxSessionLength == DEFAULT_MAX_SESSION_LENGTH)
-      {
-        this.maxSessionLength = maxSessionLength;
-      }
-    }
-
-    private void defaultEnabled(boolean enabled)
-    {
-      this.enabled = this.enabled || enabled;
-    }
-
-    private void defaultCollection(String collection)
-    {
-      if (Strings.isNullOrEmpty(this.collection))
-      {
-        this.collection = collection;
-      }
-    }
-
-    private void defaults(MongoSessionConfiguration other)
-    {
-      this.defaultCollection(other.getCollection());
-      this.defaultCryptoAlgorithm(other.getCryptoAlgorithm());
-      this.defaultEnabled(other.isEnabled());
-      this.defaultMaxSessionLength(other.getMaxSessionLength());
-    }
-  }
 }

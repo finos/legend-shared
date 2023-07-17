@@ -16,10 +16,6 @@ package org.finos.legend.server.pac4j;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import io.dropwizard.Configuration;
 import io.dropwizard.configuration.ConfigurationException;
 import io.dropwizard.configuration.ConfigurationSourceProvider;
@@ -29,7 +25,6 @@ import io.dropwizard.setup.Environment;
 import javax.security.auth.Subject;
 import javax.servlet.DispatcherType;
 import org.apache.commons.lang.StringUtils;
-import org.bson.Document;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.FilterMapping;
 import org.eclipse.jetty.servlet.ServletHandler;
@@ -37,13 +32,15 @@ import org.finos.legend.server.pac4j.internal.AcceptHeaderAjaxRequestResolver;
 import org.finos.legend.server.pac4j.internal.SecurityFilterHandler;
 import org.finos.legend.server.pac4j.internal.UsernameFilter;
 import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
-import org.finos.legend.server.pac4j.mongostore.MongoDbSessionStore;
+import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration;
+import org.finos.legend.server.pac4j.session.consumer.SessionConsumer;
+import org.finos.legend.server.pac4j.session.context.SessionContext;
+import org.finos.legend.server.pac4j.session.store.SessionStore;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.config.Config;
 import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.context.session.J2ESessionStore;
 import org.pac4j.core.engine.DefaultSecurityLogic;
-import org.pac4j.core.engine.decision.AlwaysUseSessionProfileStorageDecision;
 import org.pac4j.core.http.url.DefaultUrlResolver;
 import org.pac4j.core.matching.Matcher;
 import org.pac4j.core.matching.PathMatcher;
@@ -137,15 +134,15 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     final SubjectExecutor subjectExecutor = new SubjectExecutor(
         Objects.isNull(this.subjectSupplierSupplier) ? null : this.subjectSupplierSupplier.apply(configuration));
 
-    MongoDatabase db = null;
-    if (StringUtils.isNotEmpty(legendConfig.getMongoDb())
-        && StringUtils.isNotEmpty(legendConfig.getMongoUri()))
-    {
-      MongoClient client = new MongoClient(new MongoClientURI(legendConfig.getMongoUri()));
-      db = subjectExecutor.execute(() -> client.getDatabase(legendConfig.getMongoDb()));
-    }
+    SessionStore sessionStore = null;
 
-    MongoDatabase finalDb = db;
+    SessionStoreConfiguration sessionStoreConfiguration = legendConfig.getSessionStoreConfiguration();
+    if (sessionStoreConfiguration != null && sessionStoreConfiguration.isEnabled())
+    {
+      sessionStore = subjectExecutor.execute(() -> SessionStore.createInstance(legendConfig.getSessionStoreConfiguration()));
+    }
+    SessionStore finalSessionStore = sessionStore;
+
     Pac4jFactory factory =
         new Pac4jFactory()
         {
@@ -154,28 +151,19 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
           {
             Config config = super.build();
 
-            if (legendConfig.getMongoSession() != null
-                && legendConfig.getMongoSession().isEnabled())
+            if (Objects.isNull(finalSessionStore))
             {
-
-              if (Objects.isNull(finalDb))
-              {
-                throw new RuntimeException(
-                    "MongoDB needs to be configured if MongoSession is used");
-              }
-
-              MongoCollection<Document> userSessions = subjectExecutor.execute(
-                  () -> finalDb.getCollection(legendConfig.getMongoSession().getCollection()));
-
-              config.setSessionStore(
-                  new MongoDbSessionStore(
-                      legendConfig.getMongoSession().getCryptoAlgorithm(),
-                      legendConfig.getMongoSession().getMaxSessionLength(),
-                      userSessions, ImmutableMap.of(
-                      J2EContext.class, new J2ESessionStore(),
-                      JaxRsContext.class, new ServletSessionStore()),
-                      subjectExecutor, legendConfig.getTrustedPackages()));
+              throw new RuntimeException("Session store needs to be configured if enabled");
             }
+
+            config.setSessionStore(
+                new SessionContext(
+                        sessionStoreConfiguration.getCryptoAlgorithm(),
+                        sessionStoreConfiguration.getMaxSessionLength(),
+                        finalSessionStore, ImmutableMap.of(J2EContext.class, new J2ESessionStore(),
+                        JaxRsContext.class, new ServletSessionStore()),
+                        subjectExecutor, legendConfig.getTrustedPackages()));
+
             return config;
           }
         };
@@ -208,8 +196,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     servletConfiguration.setLogout(Collections.singletonList(logoutConfiguration));
 
     legendConfig.getAuthorizers().stream()
-        .filter(a -> a instanceof MongoDbConsumer)
-        .forEach(a -> ((MongoDbConsumer) a).setupDb(finalDb));
+        .filter(a -> a instanceof SessionConsumer)
+        .forEach(a -> ((SessionConsumer) a).configureDatabase(finalSessionStore.getDatabase(), sessionStoreConfiguration));
 
     factory.setAuthorizers(legendConfig.getAuthorizers().stream()
         .collect(Collectors.toMap(a -> a.getClass().getName(), a -> a)));
