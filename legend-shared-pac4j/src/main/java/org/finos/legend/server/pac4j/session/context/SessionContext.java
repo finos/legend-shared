@@ -12,17 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.server.pac4j.mongostore;
+package org.finos.legend.server.pac4j.session.context;
 
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.IndexOptions;
 import org.bson.Document;
 import org.finos.legend.server.pac4j.LegendPac4jBundle;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
 import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
+import org.finos.legend.server.pac4j.session.store.SessionStore;
+import org.finos.legend.server.pac4j.session.utils.SessionCrypt;
+import org.finos.legend.server.pac4j.session.utils.SessionToken;
 import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
-import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.core.profile.ProfileHelper;
 import org.pac4j.core.util.JavaSerializationHelper;
@@ -38,44 +38,43 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class MongoDbSessionStore extends HttpSessionStore
+public class SessionContext extends HttpSessionStore //TODO rename
 {
-  private static final Logger logger = LoggerFactory.getLogger(MongoDbSessionStore.class);
-  private static final String CREATED_FIELD = "created";
-  private static final String ID_FIELD = "_id";
-  private final MongoCollection<Document> userSessions;
+  private static final Logger logger = LoggerFactory.getLogger(SessionContext.class);
+
+  private final SessionStore userSessions;
   private final SessionCrypt sessionCrypt;
   private final int maxSessionLength;
   private final JavaSerializationHelper serializationHelper;
   private final SubjectExecutor subjectExecutor;
 
   /**
-   * Create MongoDb session store.
+   * Create session store.
    *
    * @param algorithm        Crypto Algorithm for serialized data
    * @param maxSessionLength Expire data after
-   * @param userSessions     Mongo Collection
+   * @param userSessions     Session Store
    * @param underlyingStores Fallback stores
    */
-  public MongoDbSessionStore(
-      String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
-      Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores, List<String> extraTrustedPackages)
+  public SessionContext(
+          String algorithm, int maxSessionLength, SessionStore userSessions,
+          Map<Class<? extends WebContext>, org.pac4j.core.context.session.SessionStore> underlyingStores, List<String> extraTrustedPackages)
   {
     this(algorithm, maxSessionLength, userSessions, underlyingStores, new SubjectExecutor(null),extraTrustedPackages);
   }
 
   /**
-   * Create MongoDb session store.
+   * Create session store.
    *
    * @param algorithm        Crypto Algorithm for serialized data
    * @param maxSessionLength Expire data after
-   * @param userSessions     Mongo Collection
+   * @param userSessions     Session store
    * @param underlyingStores Fallback stores
    * @param subjectExecutor  Execute DB actions using a Subject
    */
-  public MongoDbSessionStore(
-          String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
-          Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores,
+  public SessionContext(
+          String algorithm, int maxSessionLength, SessionStore userSessions,
+          Map<Class<? extends WebContext>, org.pac4j.core.context.session.SessionStore> underlyingStores,
           SubjectExecutor subjectExecutor, List<String> extraTrustedPackages)
   {
     super(underlyingStores);
@@ -85,9 +84,7 @@ public class MongoDbSessionStore extends HttpSessionStore
     this.serializationHelper = LegendPac4jBundle.getSerializationHelper(extraTrustedPackages);
     this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
     {
-      userSessions.createIndex(
-          new Document(CREATED_FIELD, 1),
-          new IndexOptions().name("ttl").expireAfter((long) maxSessionLength, TimeUnit.SECONDS));
+      userSessions.createIndex(maxSessionLength, TimeUnit.SECONDS);
       return null;
     });
     this.userSessions = userSessions;
@@ -111,15 +108,10 @@ public class MongoDbSessionStore extends HttpSessionStore
     SessionToken finalToken = token;
     this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
     {
-      userSessions.insertOne(getSearchSpec(finalToken).append(CREATED_FIELD, new Date()));
+      userSessions.createSession(finalToken);
       return null;
     });
     return token;
-  }
-
-  private Document getSearchSpec(SessionToken token)
-  {
-    return new Document(ID_FIELD, UuidUtils.toHexString(token.getSessionId()));
   }
 
   @Override
@@ -136,7 +128,7 @@ public class MongoDbSessionStore extends HttpSessionStore
     if (res == null)
     {
       final SessionToken token = getOrCreateSsoKey(context);
-      Document doc = this.subjectExecutor.execute(() -> userSessions.find(getSearchSpec(token)).first());
+      Document doc = this.subjectExecutor.execute(() -> userSessions.getSession(token));
       if (doc != null)
       {
         String serialized = doc.getString(key);
@@ -179,9 +171,8 @@ public class MongoDbSessionStore extends HttpSessionStore
       byte[] serialized = new JavaSerializationHelper().serializeToBytes(serializable);
       try
       {
-        this.subjectExecutor.executeWithException(() -> userSessions.updateOne(
-              getSearchSpec(token),
-              new Document("$set", new Document(key, sessionCrypt.toCryptedString(serialized, token)))));
+        this.subjectExecutor.executeWithException(() -> userSessions.updateSession(
+                                                        token, key, sessionCrypt.toCryptedString(serialized, token)));
       } catch (PrivilegedActionException e)
       {
         logger.warn("Unable to serialize session data for user", e);
@@ -195,7 +186,7 @@ public class MongoDbSessionStore extends HttpSessionStore
   {
     final SessionToken token = getOrCreateSsoKey(context);
     token.saveInContext(context, 0);
-    this.subjectExecutor.execute(() -> userSessions.deleteMany(getSearchSpec(token)));
+    this.subjectExecutor.execute(() -> userSessions.deleteSession(token));
     return super.destroySession(context);
   }
 

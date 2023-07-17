@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.server.pac4j.mongostore;
+package org.finos.legend.server.pac4j.session.utils;
 
 import java.security.GeneralSecurityException;
 import java.util.Base64;
 import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 
-class SessionCrypt
+public class SessionCrypt
 {
   private final String cryptAlgorithm;
 
-  SessionCrypt(String cryptAlgorithm)
+  public SessionCrypt(String cryptAlgorithm)
   {
     this.cryptAlgorithm = cryptAlgorithm;
   }
 
-  String toCryptedString(byte[] in, SessionToken token) throws GeneralSecurityException
+  public String toCryptedString(byte[] in, SessionToken token) throws GeneralSecurityException
   {
     byte[] keyBytes = UuidUtils.toByteArray(token.getSessionKey());
     SecretKeySpec secretKey = new SecretKeySpec(keyBytes, cryptAlgorithm);
@@ -38,7 +38,7 @@ class SessionCrypt
     return Base64.getEncoder().encodeToString(crypted);
   }
 
-  byte[] fromCryptedString(String in, SessionToken token) throws GeneralSecurityException
+  public byte[] fromCryptedString(String in, SessionToken token) throws GeneralSecurityException
   {
     byte[] keyBytes = UuidUtils.toByteArray(token.getSessionKey());
     SecretKeySpec secretKey = new SecretKeySpec(keyBytes, cryptAlgorithm);
