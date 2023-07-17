@@ -2,7 +2,6 @@ package org.finos.legend.server.pac4j.session.store;
 
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
-import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration;
 import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration.RedisConfiguration;
 import org.finos.legend.server.pac4j.session.utils.SessionToken;
 import org.finos.legend.server.pac4j.session.utils.UuidUtils;
