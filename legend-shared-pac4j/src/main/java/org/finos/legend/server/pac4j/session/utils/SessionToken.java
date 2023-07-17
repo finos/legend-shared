@@ -12,14 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.server.pac4j.mongostore;
+package org.finos.legend.server.pac4j.session.utils;
 
 import com.google.common.base.Strings;
 import java.util.UUID;
+
 import org.pac4j.core.context.Cookie;
 import org.pac4j.core.context.WebContext;
 
-class SessionToken
+public class SessionToken
 {
   private static final String SESSION_COOKIE_NAME = "LegendSSO";
 
@@ -32,12 +33,12 @@ class SessionToken
     this.sessionKey = sessionKey;
   }
 
-  static SessionToken generate()
+  public static SessionToken generate()
   {
     return new SessionToken(UuidUtils.newUuid(), UuidUtils.newUuid());
   }
 
-  static SessionToken fromContext(WebContext context)
+  public static SessionToken fromContext(WebContext context)
   {
     String val = (String) context.getRequestAttribute(SESSION_COOKIE_NAME);
     if (!Strings.isNullOrEmpty(val))
@@ -71,7 +72,7 @@ class SessionToken
             "%s/%s", UuidUtils.toHexString(sessionId), UuidUtils.toHexString(sessionKey)));
   }
 
-  UUID getSessionId()
+  public UUID getSessionId()
   {
     return sessionId;
   }
@@ -81,7 +82,7 @@ class SessionToken
     return sessionKey;
   }
 
-  void saveInContext(WebContext context, int ttl)
+  public void saveInContext(WebContext context, int ttl)
   {
     Cookie cookie = toCookie();
     cookie.setDomain(context.getServerName());
