@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.server.pac4j.mongostore;
+package org.finos.legend.server.pac4j.session.utils;
 
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-class UuidUtils
+public class UuidUtils
 {
 
   static UUID newUuid()
@@ -25,7 +25,7 @@ class UuidUtils
     return UUID.randomUUID();
   }
 
-  static String toHexString(UUID uuid)
+  public static String toHexString(UUID uuid)
   {
     return Long.toHexString(uuid.getMostSignificantBits())
         + '-'

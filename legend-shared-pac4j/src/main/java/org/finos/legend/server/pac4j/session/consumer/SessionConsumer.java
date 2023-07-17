@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.server.pac4j;
+package org.finos.legend.server.pac4j.session.consumer;
 
-import com.mongodb.client.MongoDatabase;
+import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration;
 
-public interface MongoDbConsumer
+public interface SessionConsumer
 {
-  void setupDb(MongoDatabase database);
+
+  void configureDatabase(Object database, SessionStoreConfiguration config);
+
 }

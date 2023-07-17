@@ -21,11 +21,11 @@ import org.pac4j.core.context.session.SessionStore;
 public class HttpSessionStore implements SessionStore<WebContext>
 {
 
-  private final Map<Class<? extends WebContext>, SessionStore<? extends WebContext>>
+  private final Map<Class<? extends WebContext>, SessionStore>
       underlyingStores;
 
   public HttpSessionStore(
-      Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
+          Map<Class<? extends WebContext>, SessionStore> underlyingStores)
   {
     this.underlyingStores = underlyingStores;
   }
