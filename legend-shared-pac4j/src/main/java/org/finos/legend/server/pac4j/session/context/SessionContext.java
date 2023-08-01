@@ -14,7 +14,6 @@
 
 package org.finos.legend.server.pac4j.session.context;
 
-import org.bson.Document;
 import org.finos.legend.server.pac4j.LegendPac4jBundle;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
 import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
@@ -32,13 +31,13 @@ import java.io.Serializable;
 import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
-import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class SessionContext extends HttpSessionStore //TODO rename
+
+public class SessionContext extends HttpSessionStore
 {
   private static final Logger logger = LoggerFactory.getLogger(SessionContext.class);
 
@@ -128,10 +127,10 @@ public class SessionContext extends HttpSessionStore //TODO rename
     if (res == null)
     {
       final SessionToken token = getOrCreateSsoKey(context);
-      Document doc = this.subjectExecutor.execute(() -> userSessions.getSession(token));
+      Object doc = this.subjectExecutor.execute(() -> userSessions.getSession(token));
       if (doc != null)
       {
-        String serialized = doc.getString(key);
+        String serialized = userSessions.getSessionAttribute(doc, key);
         if (serialized != null)
         {
           try

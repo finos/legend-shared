@@ -65,14 +65,13 @@
         <mockito.version>3.5.10</mockito.version>
         <mongo.driver.version>3.12.8</mongo.driver.version>
         <mongo.server.version>1.21.0</mongo.server.version>
-        <lettucemod.version>3.4.1</lettucemod.version>
         <nimbus.jwt.version>8.0</nimbus.jwt.version>
         <opentracing.jaxrs2.version>0.5.0</opentracing.jaxrs2.version>
         <opentracing.brave.version>0.37.2</opentracing.brave.version>
         <opentracing.api.version>0.32.0</opentracing.api.version>
         <pac4j.version>3.8.3</pac4j.version>
         <prometheus.version>0.8.1</prometheus.version>
-        <redis.client.version>4.3.0</redis.client.version>
+        <redis.client.version>4.4.3</redis.client.version>
         <spring.test.version>4.3.24.RELEASE</spring.test.version>
         <spring.boot.autoconfigure.version>2.3.3.RELEASE</spring.boot.autoconfigure.version>
         <json-smart.version>2.4.2</json-smart.version>
