@@ -18,6 +18,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration;
+import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration.RedisConfiguration;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.profile.CommonProfile;
 import org.slf4j.Logger;
@@ -47,12 +48,12 @@ public class RedisSessionAuthority extends SessionAuthority
         Document doc = new Document((Map<String, Object>) jedis.jsonGet(id));
         if (doc != null)
         {
-            logger.debug("Allowing user {} - found in Mongo Collection", id);
+            logger.debug("Allowing user {} - found in Profile Authorization Store", id);
             return true;
         }
         else
         {
-            logger.warn("Disallowing user {} - not found in Mongo Collection", id);
+            logger.warn("Disallowing user {} - not found in Profile Authorization Store", id);
             return false;
         }
     }
@@ -60,12 +61,19 @@ public class RedisSessionAuthority extends SessionAuthority
     @Override
     public void configureDatabase(Object database, SessionStoreConfiguration config)
     {
-        if (config == null || StringUtils.isEmpty(config.getDatabaseURI()) || StringUtils.isEmpty(port))
+        if (config == null)
         {
-            throw new RuntimeException("Redis URI and port name must be specified");
+            throw new RuntimeException("Session store configuration is required for session authority");
         }
 
-        jedis = new JedisPooled(new HostAndPort(config.getDatabaseURI(), Integer.parseInt(port)));
+        RedisConfiguration redisConfiguration = config.getRedisConfiguration();
+
+        if (redisConfiguration == null || StringUtils.isEmpty(redisConfiguration.getHostname()) || StringUtils.isEmpty(port))
+        {
+            throw new RuntimeException("Redis hostname and port name must be specified");
+        }
+
+        jedis = new JedisPooled(new HostAndPort(redisConfiguration.getHostname(), Integer.parseInt(port)));
     }
 
 }

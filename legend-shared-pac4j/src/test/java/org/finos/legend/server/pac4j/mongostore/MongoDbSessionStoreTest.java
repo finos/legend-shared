@@ -42,15 +42,16 @@ import org.pac4j.core.context.session.J2ESessionStore;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-public class MongoDbSessionStoreTest {
-
+public class MongoDbSessionStoreTest
+{
     private static MongoServer server;
     private static MongoClient client;
     private static MongoDatabase db;
     private SessionContext store;
 
     @BeforeClass
-    public static void setup() {
+    public static void setup()
+    {
         server = new MongoServer(new MemoryBackend());
         InetSocketAddress serverAddress = server.bind();
 
@@ -59,23 +60,25 @@ public class MongoDbSessionStoreTest {
     }
 
     @AfterClass
-    public static void teardown() {
+    public static void teardown()
+    {
         server.shutdown();
         client.close();
     }
 
     @Before
-    public void before() {
+    public void before()
+    {
         List<String> testTrustedPackages = new ArrayList<>();
         testTrustedPackages.add("test.trusted.package");
 
-        //TODO
-        //store = new SessionContext("AES", 100, db.getCollection("sessionData"), ImmutableMap.of(J2EContext.class, new J2ESessionStore()), testTrustedPackages);
-        store = new SessionContext("AES", 100, new MongoDbSessionStore(null), ImmutableMap.of(J2EContext.class, new J2ESessionStore()), testTrustedPackages);
+        store = new SessionContext("AES", 100, new MongoDbSessionStore(db, "sessionData"),
+                ImmutableMap.of(J2EContext.class, new J2ESessionStore()), testTrustedPackages);
     }
 
     @Test
-    public void testSetCreatesCookie() {
+    public void testSetCreatesCookie()
+    {
         MockHttpServletResponse response = new MockHttpServletResponse();
         J2EContext requestContext = new J2EContext(new MockHttpServletRequest(), response);
         store.set(requestContext, "testKey", "testValue");
@@ -90,7 +93,8 @@ public class MongoDbSessionStoreTest {
 
 
     @Test
-    public void testMultipleSetsOnlyCreateOneCookie() {
+    public void testMultipleSetsOnlyCreateOneCookie()
+    {
         MockHttpServletResponse response = new MockHttpServletResponse();
         J2EContext requestContext = new J2EContext(new MockHttpServletRequest(), response);
         store.set(requestContext, "testKey", "testValue");
@@ -102,12 +106,14 @@ public class MongoDbSessionStoreTest {
     }
 
     @Test
-    public void testTrustedPackageAdded() {
+    public void testTrustedPackageAdded()
+    {
         assertTrue(this.store.getSerializationHelper().getTrustedPackages().contains("test.trusted.package"));
     }
 
     @Test
-    public void testSetThenGetFromSession() {
+    public void testSetThenGetFromSession()
+    {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         J2EContext requestContext = new J2EContext(request, response);
@@ -125,7 +131,8 @@ public class MongoDbSessionStoreTest {
     }
 
     @Test
-    public void testSetThenGetFromMongo() {
+    public void testSetThenGetFromMongo()
+    {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         J2EContext requestContext = new J2EContext(request, response);
@@ -144,7 +151,8 @@ public class MongoDbSessionStoreTest {
     }
 
     @Test
-    public void testSimulateCookieExpiryThenGetFromSession() {
+    public void testSimulateCookieExpiryThenGetFromSession()
+    {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
         J2EContext requestContext = new J2EContext(request, response);
