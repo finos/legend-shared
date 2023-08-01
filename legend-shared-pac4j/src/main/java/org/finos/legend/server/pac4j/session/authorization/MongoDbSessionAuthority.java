@@ -44,12 +44,12 @@ public class MongoDbSessionAuthority extends SessionAuthority
         Document doc = mongoCollection.find(new Document("_id", id)).first();
         if (doc != null)
         {
-            logger.debug("Allowing user {} - found in Mongo Collection", id);
+            logger.debug("Allowing user {} - found in Profile Authorization Store", id);
             return true;
         }
         else
         {
-            logger.warn("Disallowing user {} - not found in Mongo Collection", id);
+            logger.warn("Disallowing user {} - not found in Profile Authorization Store", id);
             return false;
         }
     }
