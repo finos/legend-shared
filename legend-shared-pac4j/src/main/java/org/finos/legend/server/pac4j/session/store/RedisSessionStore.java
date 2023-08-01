@@ -1,12 +1,14 @@
 package org.finos.legend.server.pac4j.session.store;
 
+import org.apache.commons.lang.StringUtils;
 import org.bson.Document;
 import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration;
+import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration.RedisConfiguration;
 import org.finos.legend.server.pac4j.session.utils.SessionToken;
 import org.finos.legend.server.pac4j.session.utils.UuidUtils;
 import redis.clients.jedis.HostAndPort;
 import redis.clients.jedis.JedisPooled;
-import redis.clients.jedis.UnifiedJedis;
+import redis.clients.jedis.Transaction;
 import redis.clients.jedis.json.Path;
 
 import java.util.Date;
@@ -14,31 +16,19 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 
-public class RedisSessionStore extends SessionStore
+public class RedisSessionStore implements SessionStore
 {
-    private static final String CUSTOM_CONFIG_REDIS_PORT = "port";
-
     private static long maxSessionLength;
 
-    private UnifiedJedis jedis;
+    private JedisPooled jedis;
 
-    public RedisSessionStore(SessionStoreConfiguration config)
+    public RedisSessionStore(RedisConfiguration config, long maxSessionLength)
     {
-        validateCustomConfiguration(config.getCustomConfigurations());
+        validateConfiguration(config);
 
-        jedis = new JedisPooled(new HostAndPort(config.getDatabaseURI(),
-                                Integer.parseInt(config.getCustomConfigurations().get(CUSTOM_CONFIG_REDIS_PORT))));
+        jedis = new JedisPooled(new HostAndPort(config.getHostname(), Integer.parseInt(config.getPort())));
 
-        maxSessionLength = config.getMaxSessionLength();
-    }
-
-    private void validateCustomConfiguration(Map<String, String> customConfigurations)
-    {
-
-        if (!customConfigurations.containsKey(CUSTOM_CONFIG_REDIS_PORT))
-        {
-            throw new RuntimeException("Redis session store requires 'port' custom attribute to be configured if enabled");
-        }
+        this.maxSessionLength = maxSessionLength;
     }
 
     public void createIndex(long maxSessionLength, TimeUnit timeUnit)
@@ -52,20 +42,26 @@ public class RedisSessionStore extends SessionStore
 
         Document value = new Document(SESSION_PROPERTY_ID, key).append(SessionStore.SESSION_PROPERTY_CREATED, new Date());
 
-        jedis.jsonSet(key, Path.ROOT_PATH, value); //TODO check on transactions
-        jedis.expire(key, maxSessionLength);
+        Transaction transaction = new Transaction(jedis.getPool().getResource());
+
+        transaction.jsonSet(key, Path.ROOT_PATH, value);
+        transaction.expire(key, maxSessionLength);
+
+        transaction.exec();
     }
 
-    private String createSession(String sessionId, String attributeKey, Object attributeValue)
+    private Object createSession(String sessionId, String attributeKey, Object attributeValue)
     {
         Document doc = new Document(SESSION_PROPERTY_ID, sessionId)
                 .append(SessionStore.SESSION_PROPERTY_CREATED, new Date())
                 .append(attributeKey, attributeValue);
 
-        String result = jedis.jsonSet(sessionId, Path.ROOT_PATH, doc); //TODO check on transactions
-        jedis.expire(sessionId, maxSessionLength);
+        Transaction transaction = new Transaction(jedis.getPool().getResource());
 
-        return result;
+        transaction.jsonSet(sessionId, Path.ROOT_PATH, doc);
+        transaction.expire(sessionId, maxSessionLength);
+
+        return transaction.exec();
     }
 
     public Object deleteSession(SessionToken token)
@@ -73,25 +69,19 @@ public class RedisSessionStore extends SessionStore
         return jedis.jsonDel(getSessionIdFromToken(token));
     }
 
-    public Object getDatabase()
+    public Object getDatabaseClient()
     {
         return jedis;
     }
 
-    private String getSessionIdFromToken(SessionToken token)
+    public Object getSession(SessionToken token)
     {
-        return UuidUtils.toHexString(token.getSessionId());
+        return jedis.jsonGet(getSessionIdFromToken(token));
     }
 
-    public Document getSession(SessionToken token)
+    public String getSessionAttribute(Object document, String attributeKey)
     {
-        Object jsonStringResult = jedis.jsonGet(getSessionIdFromToken(token));
-        if (jsonStringResult == null)
-        {
-            return null;
-        }
-
-        return new Document((Map<String, Object>) jsonStringResult);
+        return String.valueOf(((Map<String, Object>) document).get(attributeKey));
     }
 
     public Object updateSession(SessionToken token, String key, Object value)
@@ -104,6 +94,24 @@ public class RedisSessionStore extends SessionStore
         }
 
         return jedis.jsonSet(sessionId, new Path(key), value);
+    }
+
+    private String getSessionIdFromToken(SessionToken token)
+    {
+        return UuidUtils.toHexString(token.getSessionId());
+    }
+
+    private void validateConfiguration(RedisConfiguration redisConfiguration)
+    {
+        if (StringUtils.isEmpty(redisConfiguration.getHostname()))
+        {
+            throw new RuntimeException("Redis session store requires 'hostname' custom attribute to be configured");
+        }
+
+        if (StringUtils.isEmpty(redisConfiguration.getPort()))
+        {
+            throw new RuntimeException("Redis session store requires 'port' custom attribute to be configured");
+        }
     }
 
 }

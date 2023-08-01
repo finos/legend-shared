@@ -24,7 +24,6 @@ import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import javax.security.auth.Subject;
 import javax.servlet.DispatcherType;
-import org.apache.commons.lang.StringUtils;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.FilterMapping;
 import org.eclipse.jetty.servlet.ServletHandler;
@@ -36,6 +35,7 @@ import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration;
 import org.finos.legend.server.pac4j.session.consumer.SessionConsumer;
 import org.finos.legend.server.pac4j.session.context.SessionContext;
 import org.finos.legend.server.pac4j.session.store.SessionStore;
+import org.finos.legend.server.pac4j.session.store.SessionStoreFactory;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.config.Config;
 import org.pac4j.core.context.J2EContext;
@@ -139,7 +139,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     SessionStoreConfiguration sessionStoreConfiguration = legendConfig.getSessionStoreConfiguration();
     if (sessionStoreConfiguration != null && sessionStoreConfiguration.isEnabled())
     {
-      sessionStore = subjectExecutor.execute(() -> SessionStore.createInstance(legendConfig.getSessionStoreConfiguration()));
+      sessionStore = subjectExecutor.execute(() -> SessionStoreFactory.INSTANCE.getInstance(legendConfig.getSessionStoreConfiguration()));
     }
     SessionStore finalSessionStore = sessionStore;
 
@@ -197,7 +197,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
 
     legendConfig.getAuthorizers().stream()
         .filter(a -> a instanceof SessionConsumer)
-        .forEach(a -> ((SessionConsumer) a).configureDatabase(finalSessionStore.getDatabase(), sessionStoreConfiguration));
+        .forEach(a -> ((SessionConsumer) a).configureDatabase(finalSessionStore.getDatabaseClient(), sessionStoreConfiguration));
 
     factory.setAuthorizers(legendConfig.getAuthorizers().stream()
         .collect(Collectors.toMap(a -> a.getClass().getName(), a -> a)));
