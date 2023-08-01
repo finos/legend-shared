@@ -1,62 +1,26 @@
 package org.finos.legend.server.pac4j.session.store;
 
-import org.apache.commons.lang.StringUtils;
-import org.bson.Document;
-import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration;
 import org.finos.legend.server.pac4j.session.utils.SessionToken;
 
 import java.util.concurrent.TimeUnit;
 
-public abstract class SessionStore
+public interface SessionStore
 {
-    public static final String SESSION_PROPERTY_ID = "_id";
-    protected static final String SESSION_PROPERTY_CREATED = "created";
+    String SESSION_PROPERTY_ID = "_id";
+    String SESSION_PROPERTY_CREATED = "created";
 
-    public static SessionStore createInstance(SessionStoreConfiguration config)
-    {
-        validateSessionStoreConfiguration(config);
+    void createIndex(long maxSessionLength, TimeUnit seconds);
 
-        String type = config.getType();
+    void createSession(SessionToken token);
 
-        if (SessionStoreTypes.mongoDb.name().equals(type))
-        {
-            return new MongoDbSessionStore(config);
-        }
-        else if (SessionStoreTypes.redis.name().equals(type))
-        {
-            return new RedisSessionStore(config);
-        }
-        return null;
-    }
+    Object deleteSession(SessionToken token);
 
-    private static void validateSessionStoreConfiguration(SessionStoreConfiguration config)
-    {
-        if (StringUtils.isEmpty(config.getType()))
-        {
-            throw new RuntimeException("Session store requires 'type' attribute to be configured if enabled");
-        }
+    Object getDatabaseClient();
 
-        if (StringUtils.isEmpty(config.getDatabaseURI()))
-        {
-            throw new RuntimeException("Session store requires 'databaseURI' attribute to be configured if enabled");
-        }
-    }
+    Object getSession(SessionToken token);
 
-    public abstract void createIndex(long maxSessionLength, TimeUnit seconds);
+    String getSessionAttribute(Object document, String attributeKey);
 
-    public abstract void createSession(SessionToken token);
-
-    public abstract Object deleteSession(SessionToken token);
-
-    public abstract Object getDatabase();
-
-    public abstract Document getSession(SessionToken token);
-
-    public abstract Object updateSession(SessionToken token, String key, Object value);
-
-    enum SessionStoreTypes
-    {
-        mongoDb, redis
-    }
+    Object updateSession(SessionToken token, String key, Object value);
 
 }

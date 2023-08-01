@@ -20,7 +20,6 @@ import io.dropwizard.configuration.ResourceConfigurationSourceProvider;
 import java.io.IOException;
 
 import org.finos.legend.server.pac4j.session.config.SessionStoreConfiguration;
-import org.finos.legend.server.pac4j.session.store.MongoDbSessionStore;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -34,16 +33,13 @@ public class LegendPac4JConfigurationTest
     config.setDefaults("defaults.json");
 
     SessionStoreConfiguration sessionStoreConfiguration = new SessionStoreConfiguration();
-    sessionStoreConfiguration.getCustomConfigurations().put(
-            MongoDbSessionStore.CUSTOM_CONFIG_MONGODB_DATABASE_NAME, "overrideMongoDb");
+    sessionStoreConfiguration.getMongodbConfiguration().setDatabaseName("overrideMongoDb");
 
     config.loadDefaults(new ResourceConfigurationSourceProvider(), new ObjectMapper());
 
-    Assert.assertEquals("overrideMongoDb", sessionStoreConfiguration.getCustomConfigurations()
-            .get(MongoDbSessionStore.CUSTOM_CONFIG_MONGODB_DATABASE_NAME));
-    Assert.assertEquals("defaultMongoUri", sessionStoreConfiguration.getDatabaseURI());
-    Assert.assertEquals("defaultMongoSession", sessionStoreConfiguration.getCustomConfigurations()
-            .get(MongoDbSessionStore.CUSTOM_CONFIG_MONGODB_COLLECTION));
+    Assert.assertEquals("overrideMongoDb", sessionStoreConfiguration.getMongodbConfiguration().getDatabaseName());
+    Assert.assertEquals("defaultMongoUri", sessionStoreConfiguration.getMongodbConfiguration().getDatabaseURI());
+    Assert.assertEquals("defaultMongoSession", sessionStoreConfiguration.getMongodbConfiguration().getCollection());
 
   }
 }
