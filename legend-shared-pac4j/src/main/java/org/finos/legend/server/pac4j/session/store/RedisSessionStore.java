@@ -42,6 +42,8 @@ public class RedisSessionStore implements SessionStore
 
         Document value = new Document(SESSION_PROPERTY_ID, key).append(SessionStore.SESSION_PROPERTY_CREATED, new Date());
 
+        // Transactions guarantee atomicity and thread safety operations, which means that requests
+        // from other clients will never be handled concurrently during Redis transactions
         Transaction transaction = new Transaction(jedis.getPool().getResource());
 
         transaction.jsonSet(key, Path.ROOT_PATH, value);
@@ -56,6 +58,8 @@ public class RedisSessionStore implements SessionStore
                 .append(SessionStore.SESSION_PROPERTY_CREATED, new Date())
                 .append(attributeKey, attributeValue);
 
+        // Transactions guarantee atomicity and thread safety operations, which means that requests
+        // from other clients will never be handled concurrently during Redis transactions
         Transaction transaction = new Transaction(jedis.getPool().getResource());
 
         transaction.jsonSet(sessionId, Path.ROOT_PATH, doc);
