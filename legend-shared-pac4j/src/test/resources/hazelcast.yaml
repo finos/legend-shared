@@ -1,0 +1,17 @@
+hazelcast:
+  cluster-name: legend-hazelcast-session-store-cluster
+  instance-name: legend-hazelcast-session-store
+  network:
+    port:
+      port: 5701
+      auto-increment: false
+    join:
+      multicast:
+        enabled: false
+      tcp-ip:
+        enabled: true
+        member-list:
+          - localhost
+  map:
+    session-store:
+      time-to-live-seconds: 7200
