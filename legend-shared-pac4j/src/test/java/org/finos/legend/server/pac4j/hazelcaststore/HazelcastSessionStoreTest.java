@@ -14,8 +14,7 @@ import static org.junit.Assert.assertTrue;
 
 public class HazelcastSessionStoreTest {
 
-    // TODO - figure out file path here
-    private static final String HAZELCAST_CONFIG_FILE_PATH = "hazelcast.yaml";
+    private static final String HAZELCAST_CONFIG_FILE_PATH = "src/test/resources/hazelcast.yaml";
 
     private HazelcastSessionStore store;
 
