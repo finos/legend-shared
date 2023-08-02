@@ -37,7 +37,6 @@ public final class LegendPac4jConfiguration
     private String mongoUri;
     private String mongoDb;
     private MongoSessionConfiguration mongoSession = new MongoSessionConfiguration();
-    // TODO: consider making a breaking change to this config
     private HazelcastSessionConfiguration hazelcastSession = new HazelcastSessionConfiguration();
     private String callbackPrefix = "";
     private String callbackBaseUrl = "";
