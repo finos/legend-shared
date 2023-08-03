@@ -2,6 +2,7 @@ package org.finos.legend.server.pac4j.hazelcaststore;
 
 import com.google.common.collect.ImmutableMap;
 import com.hazelcast.core.Hazelcast;
+import org.finos.legend.server.pac4j.SessionStoreTestUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,8 +10,6 @@ import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.context.session.J2ESessionStore;
 import org.pac4j.jax.rs.pac4j.JaxRsContext;
 import org.pac4j.jax.rs.servlet.pac4j.ServletSessionStore;
-
-import static org.junit.Assert.assertTrue;
 
 public class HazelcastSessionStoreTest {
 
@@ -31,11 +30,33 @@ public class HazelcastSessionStoreTest {
         Hazelcast.shutdownAll();
     }
 
-    // TODO -- fill in method
     @Test
     public void testSetCreatesCookie()
     {
-        assertTrue(true);
+        SessionStoreTestUtil.testSetCreatesCookie(store);
     }
 
+    @Test
+    public void testMultipleSetsOnlyCreateOneCookie()
+    {
+        SessionStoreTestUtil.testMultipleSetsOnlyCreateOneCookie(store);
+    }
+
+    @Test
+    public void testSetThenGetFromSession()
+    {
+        SessionStoreTestUtil.testSetThenGetFromSession(store);
+    }
+
+    @Test
+    public void testSetThenGetFromHazelcast()
+    {
+        SessionStoreTestUtil.testSetThenGetFromStore(store);
+    }
+
+    @Test
+    public void testSimulateCookieExpiryThenGetFromSession()
+    {
+        SessionStoreTestUtil.testSimulateCookieExpiryThenGetFromSession(store);
+    }
 }
