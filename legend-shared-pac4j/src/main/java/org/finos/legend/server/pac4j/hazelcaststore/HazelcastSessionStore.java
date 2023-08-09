@@ -24,20 +24,18 @@ import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.core.profile.ProfileHelper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
-import java.util.Date;
+import java.io.UncheckedIOException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
 public class HazelcastSessionStore extends HttpSessionStore
 {
-    private static final Logger logger = LoggerFactory.getLogger(HazelcastSessionStore.class);
 
-    private final Map<UUID, HazelcastSessionDetails> hazelcastMap;
+    private final Map<UUID, Map<String, Object>> hazelcastMap;
     private final int maxSessionLength;
 
     public HazelcastSessionStore(String hazelcastConfigFilePath,
@@ -56,8 +54,8 @@ public class HazelcastSessionStore extends HttpSessionStore
         }
         catch (FileNotFoundException e)
         {
-            logger.error("Failed to find Hazelcast config file in specified path: {}", hazelcastConfigFilePath);
-            throw new RuntimeException();
+            throw new UncheckedIOException(
+                    "Failed to find Hazelcast config file in specified path: " + hazelcastConfigFilePath, e);
         }
     }
 
@@ -75,8 +73,8 @@ public class HazelcastSessionStore extends HttpSessionStore
     {
         SessionToken token = SessionToken.generate();
         token.saveInContext(context, maxSessionLength);
-        HazelcastSessionDetails hazelcastSessionDetails = new HazelcastSessionDetails(new Date());
-        hazelcastMap.put(token.getSessionId(), hazelcastSessionDetails);
+        Map<String, Object> hazelcastSessionData = new HashMap<>();
+        hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         return token;
     }
 
@@ -94,11 +92,10 @@ public class HazelcastSessionStore extends HttpSessionStore
         if (res == null)
         {
             SessionToken token = getOrCreateSsoKey(context);
-            HazelcastSessionDetails hazelcastSessionDetails = hazelcastMap.get(token.getSessionId());
-            if (hazelcastSessionDetails != null)
+            Map<String, Object> hazelcastSessionData = hazelcastMap.get(token.getSessionId());
+            if (hazelcastSessionData != null)
             {
-                Map<String, Object> sessionData = hazelcastSessionDetails.getSessionData();
-                Object data = sessionData.get(key);
+                Object data = hazelcastSessionData.get(key);
                 if (data != null)
                 {
                     res = data;
@@ -124,13 +121,13 @@ public class HazelcastSessionStore extends HttpSessionStore
     public void set(WebContext context, String key, Object value)
     {
         SessionToken token = getOrCreateSsoKey(context);
-        HazelcastSessionDetails details = hazelcastMap.get(token.getSessionId());
-        if (details != null)
+        Map<String, Object> hazelcastSessionData = hazelcastMap.get(token.getSessionId());
+        if (hazelcastSessionData != null)
         {
-            details.getSessionData().put(key, value);
+            hazelcastSessionData.put(key, value);
 
             // need to write the object back into hazelcast
-            hazelcastMap.put(token.getSessionId(), details);
+            hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         }
 
         super.set(context, key, value);
