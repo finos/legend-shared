@@ -15,6 +15,7 @@
 package org.finos.legend.server.pac4j.hazelcaststore;
 
 import com.hazelcast.config.FileSystemYamlConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
@@ -27,9 +28,11 @@ import org.pac4j.core.profile.ProfileHelper;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 public class HazelcastSessionStore extends HttpSessionStore
@@ -48,9 +51,19 @@ public class HazelcastSessionStore extends HttpSessionStore
             FileSystemYamlConfig fileConfig = new FileSystemYamlConfig(hazelcastConfigFilePath);
             HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(fileConfig);
 
-            String hazelcastMapName = hazelcastInstance.getConfig().getMapConfigs().keySet().stream().findFirst().get();
-            this.hazelcastMap = hazelcastInstance.getMap(hazelcastMapName);
-            this.maxSessionLength = hazelcastInstance.getConfig().getMapConfig(hazelcastMapName).getTimeToLiveSeconds();
+            Collection<MapConfig> mapConfigs = fileConfig.getMapConfigs().values();
+            Optional<MapConfig> optionalMapConfig = mapConfigs.stream().findFirst();
+            if (mapConfigs.size() == 1 && optionalMapConfig.get().getTimeToLiveSeconds() != 0)
+            {
+                MapConfig hazelcastMapConfig = optionalMapConfig.get();
+                this.hazelcastMap = hazelcastInstance.getMap(hazelcastMapConfig.getName());
+                this.maxSessionLength = hazelcastMapConfig.getTimeToLiveSeconds();
+            }
+            else
+            {
+                throw new IllegalStateException(
+                        "The Hazelcast config needs to include exactly one Map Configuration with a TTL seconds value");
+            }
         }
         catch (FileNotFoundException e)
         {
