@@ -119,11 +119,11 @@ public class HazelcastSessionStore extends HttpSessionStore
         }
         else if (SessionToken.fromContext(context) == null)
         {
-            //if res is not null ,this means we still have an active Session but an expired SSO cookie we need to recreate one and add it to the context request/response.
+            // if res is not null, this means we still have an active Session but an expired SSO cookie
+            // we need to recreate one and add it to the context request/response
             createSsoKey(context);
             if (res instanceof LinkedHashMap)
             {
-                ProfileHelper.flatIntoAProfileList((LinkedHashMap<String, CommonProfile>)res);
                 set(context, Pac4jConstants.USER_PROFILES, ProfileHelper.flatIntoAProfileList((LinkedHashMap<String, CommonProfile>)res));
             }
         }
