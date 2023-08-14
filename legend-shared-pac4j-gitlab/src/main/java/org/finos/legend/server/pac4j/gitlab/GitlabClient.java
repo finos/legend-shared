@@ -39,174 +39,176 @@ import org.slf4j.LoggerFactory;
 @SerializableProfile
 public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
 {
-  private static final Logger logger = LoggerFactory.getLogger(GitlabClient.class);
+    public static final String GITLAB_CLIENT_NAME = "gitlab";
 
-  @JsonProperty
-  protected String clientId;
-  @JsonProperty
-  protected String secret;
-  @JsonProperty
-  protected String discoveryUri;
-  @JsonProperty
-  protected String scope;
+    private static final Logger logger = LoggerFactory.getLogger(GitlabClient.class);
 
-  @JsonProperty
-  protected String proxyHost;
-  @JsonProperty
-  protected int proxyPort;
+    @JsonProperty
+    protected String clientId;
+    @JsonProperty
+    protected String secret;
+    @JsonProperty
+    protected String discoveryUri;
+    @JsonProperty
+    protected String scope;
 
-  @JsonProperty
-  protected String sslKeystore;
+    @JsonProperty
+    protected String proxyHost;
+    @JsonProperty
+    protected int proxyPort;
 
-  @Override
-  public String getName()
-  {
-    return "gitlab";
-  }
+    @JsonProperty
+    protected String sslKeystore;
 
-  @Override
-  protected void clientInit()
-  {
-
-    if (StringUtils.isNotBlank(sslKeystore))
+    @Override
+    public String getName()
     {
-      TrustManager[] myTMs = new TrustManager[]{
-          new TrustManagerComposite(sslKeystore)
-      };
-
-      try
-      {
-        SSLContext ctx = SSLContext.getInstance("TLS");
-        ctx.init(null, myTMs, null);
-        SSLContext.setDefault(ctx);
-      } catch (GeneralSecurityException e)
-      {
-        throw new RuntimeException("Cannot initialize Trust store", e);
-      }
+        return GITLAB_CLIENT_NAME;
     }
 
-    OidcConfiguration config = new OidcConfiguration();
-    config.setClientId(clientId);
-    config.setSecret(secret);
-    config.setDiscoveryURI(discoveryUri);
-
-    DefaultResourceRetriever resourceRetriever =
-        new DefaultResourceRetriever(config.getConnectTimeout(), config.getReadTimeout());
-    if (proxyHost != null && !"".equals(proxyHost))
+    @Override
+    protected void clientInit()
     {
-      logger.info("Using proxy {}:{}", proxyHost, proxyPort);
-      resourceRetriever.setProxy(
-          new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort)));
-    }
-    config.setResourceRetriever(resourceRetriever);
 
-    if (scope == null || "".equals(scope))
-    {
-      scope = "openid profile";
-    }
-    config.setScope(scope);
-    setConfiguration(config);
-    setAuthenticator(
-        new OidcAuthenticator(config, this)
+        if (StringUtils.isNotBlank(sslKeystore))
         {
-          @Override
-          public void validate(OidcCredentials credentials, WebContext context)
-          {
-            if (proxyHost != null && !"".equals(proxyHost))
+            TrustManager[] myTMs = new TrustManager[]{
+                    new TrustManagerComposite(sslKeystore)
+            };
+
+            try
             {
-              System.setProperty("https.proxyHost", proxyHost);
-              System.setProperty("https.proxyPort", String.valueOf(proxyPort));
-              super.validate(credentials, context);
-              System.setProperty("https.proxyHost", "");
-              System.setProperty("https.proxyPort", "");
-            } else
+                SSLContext ctx = SSLContext.getInstance("TLS");
+                ctx.init(null, myTMs, null);
+                SSLContext.setDefault(ctx);
+            } catch (GeneralSecurityException e)
             {
-              super.validate(credentials, context);
+                throw new RuntimeException("Cannot initialize Trust store", e);
             }
-          }
-        });
-    setProfileCreator(
-        new OidcProfileCreator<OidcProfile>(config)
+        }
+
+        OidcConfiguration config = new OidcConfiguration();
+        config.setClientId(clientId);
+        config.setSecret(secret);
+        config.setDiscoveryURI(discoveryUri);
+
+        DefaultResourceRetriever resourceRetriever =
+                new DefaultResourceRetriever(config.getConnectTimeout(), config.getReadTimeout());
+        if (proxyHost != null && !"".equals(proxyHost))
         {
-          @Override
-          public OidcProfile create(OidcCredentials credentials, WebContext context)
-          {
-            OidcProfile profile = super.create(credentials, context);
-            profile.setId(profile.getNickname());
-            return profile;
-          }
-        });
-    setUrlResolver(new DefaultUrlResolver(true));
-    super.clientInit();
-  }
+            logger.info("Using proxy {}:{}", proxyHost, proxyPort);
+            resourceRetriever.setProxy(
+                    new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort)));
+        }
+        config.setResourceRetriever(resourceRetriever);
 
-  public String getClientId()
-  {
-    return clientId;
-  }
+        if (scope == null || "".equals(scope))
+        {
+            scope = "openid profile";
+        }
+        config.setScope(scope);
+        setConfiguration(config);
+        setAuthenticator(
+                new OidcAuthenticator(config, this)
+                {
+                    @Override
+                    public void validate(OidcCredentials credentials, WebContext context)
+                    {
+                        if (proxyHost != null && !"".equals(proxyHost))
+                        {
+                            System.setProperty("https.proxyHost", proxyHost);
+                            System.setProperty("https.proxyPort", String.valueOf(proxyPort));
+                            super.validate(credentials, context);
+                            System.setProperty("https.proxyHost", "");
+                            System.setProperty("https.proxyPort", "");
+                        } else
+                        {
+                            super.validate(credentials, context);
+                        }
+                    }
+                });
+        setProfileCreator(
+                new OidcProfileCreator<OidcProfile>(config)
+                {
+                    @Override
+                    public OidcProfile create(OidcCredentials credentials, WebContext context)
+                    {
+                        OidcProfile profile = super.create(credentials, context);
+                        profile.setId(profile.getNickname());
+                        return profile;
+                    }
+                });
+        setUrlResolver(new DefaultUrlResolver(true));
+        super.clientInit();
+    }
 
-  public void setClientId(String clientId)
-  {
-    this.clientId = clientId;
-  }
+    public String getClientId()
+    {
+        return clientId;
+    }
 
-  public String getSecret()
-  {
-    return secret;
-  }
+    public void setClientId(String clientId)
+    {
+        this.clientId = clientId;
+    }
 
-  public void setSecret(String secret)
-  {
-    this.secret = secret;
-  }
+    public String getSecret()
+    {
+        return secret;
+    }
 
-  public String getDiscoveryUri()
-  {
-    return discoveryUri;
-  }
+    public void setSecret(String secret)
+    {
+        this.secret = secret;
+    }
 
-  public void setDiscoveryUri(String discoveryUri)
-  {
-    this.discoveryUri = discoveryUri;
-  }
+    public String getDiscoveryUri()
+    {
+        return discoveryUri;
+    }
 
-  public String getScope()
-  {
-    return scope;
-  }
+    public void setDiscoveryUri(String discoveryUri)
+    {
+        this.discoveryUri = discoveryUri;
+    }
 
-  public void setScope(String scope)
-  {
-    this.scope = scope;
-  }
+    public String getScope()
+    {
+        return scope;
+    }
 
-  public String getProxyHost()
-  {
-    return proxyHost;
-  }
+    public void setScope(String scope)
+    {
+        this.scope = scope;
+    }
 
-  public void setProxyHost(String proxyHost)
-  {
-    this.proxyHost = proxyHost;
-  }
+    public String getProxyHost()
+    {
+        return proxyHost;
+    }
 
-  public int getProxyPort()
-  {
-    return proxyPort;
-  }
+    public void setProxyHost(String proxyHost)
+    {
+        this.proxyHost = proxyHost;
+    }
 
-  public void setProxyPort(int proxyPort)
-  {
-    this.proxyPort = proxyPort;
-  }
+    public int getProxyPort()
+    {
+        return proxyPort;
+    }
 
-  public String getSslKeystore()
-  {
-    return sslKeystore;
-  }
+    public void setProxyPort(int proxyPort)
+    {
+        this.proxyPort = proxyPort;
+    }
 
-  public void setSslKeystore(String sslKeystore)
-  {
-    this.sslKeystore = sslKeystore;
-  }
+    public String getSslKeystore()
+    {
+        return sslKeystore;
+    }
+
+    public void setSslKeystore(String sslKeystore)
+    {
+        this.sslKeystore = sslKeystore;
+    }
 }

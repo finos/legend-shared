@@ -22,6 +22,8 @@ import org.pac4j.core.client.DirectClient;
 @SerializableProfile
 public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonalAccessTokenCredentials, GitlabPersonalAccessTokenProfile>
 {
+    public static final String GITLAB_PERSONAL_ACCESS_TOKEN_CLIENT_NAME = "gitlabPAToken";
+
     @JsonProperty
     public String headerTokenName;
 
@@ -48,7 +50,7 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     @Override
     public String getName()
     {
-        return "gitlabPAToken";
+        return GITLAB_PERSONAL_ACCESS_TOKEN_CLIENT_NAME;
     }
 
     @Override
