@@ -156,6 +156,10 @@ public class MongoDbSessionStore extends HttpSessionStore
                     }
                 }
             }
+            else
+            {
+                token.removeFromContext(context); //force the token to expire because it doesn't match any credential in session store.
+            }
         }
         else if (SessionToken.fromContext(context) == null)
         {

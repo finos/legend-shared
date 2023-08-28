@@ -90,4 +90,15 @@ public class SessionToken
         context.addResponseCookie(cookie);
         context.setRequestAttribute(SESSION_COOKIE_NAME, cookie.getValue());
     }
+
+    public void removeFromContext(WebContext context)
+    {
+        Cookie cookie = toCookie();
+        cookie.setDomain(context.getServerName());
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0);
+        context.addResponseCookie(cookie);
+        context.setRequestAttribute(SESSION_COOKIE_NAME, null);
+    }
 }
