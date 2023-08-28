@@ -14,8 +14,6 @@
 
 package org.finos.legend.server.pac4j.mongostore;
 
-import static org.junit.Assert.assertTrue;
-
 import com.google.common.collect.ImmutableMap;
 import com.mongodb.MongoClient;
 import com.mongodb.ServerAddress;
@@ -33,6 +31,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.context.session.J2ESessionStore;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+
+import javax.servlet.http.Cookie;
+
+import static org.junit.Assert.*;
 
 public class MongoDbSessionStoreTest
 {
@@ -41,6 +45,7 @@ public class MongoDbSessionStoreTest
     private static MongoClient client;
     private static MongoDatabase db;
     private MongoDbSessionStore store;
+    private static final String SESSION_COLLECTION = "sessionData";
 
     @BeforeClass
     public static void setup()
@@ -64,7 +69,13 @@ public class MongoDbSessionStoreTest
     {
         List<String> testTrustedPackages = new ArrayList<>();
         testTrustedPackages.add("test.trusted.package");
-        store = new MongoDbSessionStore("AES", 100, db.getCollection("sessionData"), ImmutableMap.of(J2EContext.class, new J2ESessionStore()), testTrustedPackages);
+        store = new MongoDbSessionStore("AES", 100, db.getCollection(SESSION_COLLECTION), ImmutableMap.of(J2EContext.class, new J2ESessionStore()), testTrustedPackages);
+    }
+
+    public void emptySessionData()
+    {
+        this.db.getCollection(SESSION_COLLECTION).drop();
+
     }
 
     @Test
@@ -101,5 +112,54 @@ public class MongoDbSessionStoreTest
     public void testSimulateCookieExpiryThenGetFromSession()
     {
         SessionStoreTestUtil.testSimulateCookieExpiryThenGetFromSession(store);
+    }
+
+    @Test
+    public void testCanStoreSessionWithoutUsingUnderlyingStore()
+    {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        J2EContext requestContext = new J2EContext(request, response);
+        store.set(requestContext, "testKey", "testValue");
+
+        assertEquals("testValue", store.get(requestContext, "testKey"));
+        Cookie[] initialResponseCookies = response.getCookies();
+        // Copy the SSO cookie to the new request but not the underlying j2ESession.
+        // The cookie alone should be able to manage sessions in case of non-browser clients
+        MockHttpServletRequest newRequest = new MockHttpServletRequest();
+
+        newRequest.setCookies(initialResponseCookies);
+        MockHttpServletResponse newResponse = new MockHttpServletResponse();
+        requestContext = new J2EContext(newRequest, newResponse);
+
+        assertEquals("testValue", store.get(requestContext, "testKey")); //should be able to retrieve value
+        Cookie[] secondaryResponseCookies = newResponse.getCookies();
+        assertEquals(secondaryResponseCookies.length, 0);
+    }
+
+    @Test
+    public void testForceExpiryOfSessionCookie()
+    {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        J2EContext requestContext = new J2EContext(request, response);
+        store.set(requestContext, "testKey", "testValue");
+
+        assertEquals("testValue", store.get(requestContext, "testKey"));
+        Cookie[] initialResponseCookies = response.getCookies();
+        //delete all session data: simulates expiry of stored sessions.
+        this.emptySessionData();
+        // Copy the SSO cookie to the new request but not the underlying j2ESession: simulates usage of SSO cookie from client
+        MockHttpServletRequest newRequest = new MockHttpServletRequest();
+        newRequest.setCookies(initialResponseCookies);
+        MockHttpServletResponse newResponse = new MockHttpServletResponse();
+        requestContext = new J2EContext(newRequest, newResponse);
+
+        assertNull(store.get(requestContext, "testKey"));
+        Cookie[] secondaryResponseCookies = newResponse.getCookies();
+        assertEquals(secondaryResponseCookies.length, initialResponseCookies.length);
+        assertEquals(secondaryResponseCookies[0].getValue(), initialResponseCookies[0].getValue());
+        assertNotEquals(secondaryResponseCookies[0].getMaxAge(), initialResponseCookies[0].getMaxAge());
+        assertEquals(secondaryResponseCookies[0].getMaxAge(), 0); //maxAge is now zero which should expire the cookie the moment it goes to client
     }
 }
