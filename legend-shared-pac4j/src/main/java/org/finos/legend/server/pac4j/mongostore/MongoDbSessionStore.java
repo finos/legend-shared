@@ -26,7 +26,6 @@ import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.profile.CommonProfile;
-import org.pac4j.core.profile.ProfileHelper;
 import org.pac4j.core.util.JavaSerializationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -157,6 +156,10 @@ public class MongoDbSessionStore extends HttpSessionStore
                     }
                 }
             }
+            else
+            {
+                token.removeFromContext(context); //force the token to expire because it doesn't match any credential in session store.
+            }
         }
         else if (SessionToken.fromContext(context) == null)
         {
@@ -165,7 +168,7 @@ public class MongoDbSessionStore extends HttpSessionStore
             createSsoKey(context);
             if (res instanceof LinkedHashMap)
             {
-                set(context, Pac4jConstants.USER_PROFILES, ProfileHelper.flatIntoAProfileList((LinkedHashMap<String, CommonProfile>)res));
+                set(context, Pac4jConstants.USER_PROFILES, res);
             }
         }
         return res;

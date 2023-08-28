@@ -24,7 +24,6 @@ import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.profile.CommonProfile;
-import org.pac4j.core.profile.ProfileHelper;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
@@ -124,7 +123,7 @@ public class HazelcastSessionStore extends HttpSessionStore
             createSsoKey(context);
             if (res instanceof LinkedHashMap)
             {
-                set(context, Pac4jConstants.USER_PROFILES, ProfileHelper.flatIntoAProfileList((LinkedHashMap<String, CommonProfile>)res));
+                set(context, Pac4jConstants.USER_PROFILES, res);
             }
         }
         return res;
