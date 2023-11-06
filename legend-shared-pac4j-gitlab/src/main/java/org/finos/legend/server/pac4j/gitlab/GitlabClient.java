@@ -17,11 +17,6 @@ package org.finos.legend.server.pac4j.gitlab;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.nimbusds.jose.util.DefaultResourceRetriever;
 import com.nimbusds.oauth2.sdk.util.StringUtils;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.security.GeneralSecurityException;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
 import org.finos.legend.server.pac4j.SerializableProfile;
 import org.finos.legend.server.pac4j.gitlab.ssl.TrustManagerComposite;
 import org.pac4j.core.context.WebContext;
@@ -35,14 +30,21 @@ import org.pac4j.oidc.profile.creator.OidcProfileCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.security.GeneralSecurityException;
+
 @SuppressWarnings("unused")
 @SerializableProfile
 public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
 {
+    private static final Logger logger = LoggerFactory.getLogger(GitlabClient.class);
     public static final String GITLAB_CLIENT_NAME = "gitlab";
 
-    private static final Logger logger = LoggerFactory.getLogger(GitlabClient.class);
-
+    @JsonProperty
+    protected String name = GITLAB_CLIENT_NAME;
     @JsonProperty
     protected String clientId;
     @JsonProperty
@@ -61,9 +63,15 @@ public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
     protected String sslKeystore;
 
     @Override
+    public void setName(String name)
+    {
+        this.name = name;
+    }
+
+    @Override
     public String getName()
     {
-        return GITLAB_CLIENT_NAME;
+        return this.name;
     }
 
     @Override
@@ -81,7 +89,8 @@ public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
                 SSLContext ctx = SSLContext.getInstance("TLS");
                 ctx.init(null, myTMs, null);
                 SSLContext.setDefault(ctx);
-            } catch (GeneralSecurityException e)
+            }
+            catch (GeneralSecurityException e)
             {
                 throw new RuntimeException("Cannot initialize Trust store", e);
             }
@@ -121,7 +130,8 @@ public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
                             super.validate(credentials, context);
                             System.setProperty("https.proxyHost", "");
                             System.setProperty("https.proxyPort", "");
-                        } else
+                        }
+                        else
                         {
                             super.validate(credentials, context);
                         }
