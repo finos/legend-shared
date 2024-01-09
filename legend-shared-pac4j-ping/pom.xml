@@ -20,7 +20,7 @@
     <parent>
         <artifactId>legend-shared</artifactId>
         <groupId>org.finos.legend.shared</groupId>
-        <version>0.24.2-SNAPSHOT</version>
+        <version>0.24.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>legend-shared-pac4j-ping</artifactId>

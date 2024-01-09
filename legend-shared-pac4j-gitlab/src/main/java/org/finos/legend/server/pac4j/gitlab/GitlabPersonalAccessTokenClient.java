@@ -18,39 +18,41 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import org.finos.legend.server.pac4j.SerializableProfile;
 import org.pac4j.core.client.DirectClient;
 
-
 @SerializableProfile
 public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonalAccessTokenCredentials, GitlabPersonalAccessTokenProfile>
 {
     public static final String GITLAB_PERSONAL_ACCESS_TOKEN_CLIENT_NAME = "gitlabPAToken";
 
     @JsonProperty
+    protected String name = GITLAB_PERSONAL_ACCESS_TOKEN_CLIENT_NAME;
+    @JsonProperty
     public String headerTokenName;
-
     @JsonProperty
     public String scheme;
+    @JsonProperty
+    public String host;
+    @JsonProperty
+    public Integer port;
+    @JsonProperty
+    public String apiVersion;
 
     @JsonProperty
     @Deprecated
     public String gitlabHost;
-
-    @JsonProperty
-    public String host;
-
-    @JsonProperty
-    public Integer port;
-
     @JsonProperty
     @Deprecated
     public String gitlabApiVersion;
 
-    @JsonProperty
-    public String apiVersion;
+    @Override
+    public void setName(String name)
+    {
+        this.name = name;
+    }
 
     @Override
     public String getName()
     {
-        return GITLAB_PERSONAL_ACCESS_TOKEN_CLIENT_NAME;
+        return this.name;
     }
 
     @Override
