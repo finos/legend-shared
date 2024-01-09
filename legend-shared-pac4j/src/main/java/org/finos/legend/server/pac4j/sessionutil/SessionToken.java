@@ -47,7 +47,7 @@ public class SessionToken
 
         Cookie cookie =
                 context.getRequestCookies().stream()
-                        .filter(c -> c.getName().equals(SESSION_COOKIE_NAME))
+                        .filter(c -> c.getName().equals(SESSION_COOKIE_NAME) && c.getDomain().equals(context.getServerName()))
                         .findFirst()
                         .orElse(null);
         if (cookie != null && cookie.getValue() != null && !"".equals(cookie.getValue()))
