@@ -50,6 +50,8 @@ public class MongoDbSessionStore extends HttpSessionStore
     private final JavaSerializationHelper serializationHelper;
     private final SubjectExecutor subjectExecutor;
 
+    private String cookieName;
+
     /**
      * Create MongoDb session store.
      *
@@ -60,9 +62,9 @@ public class MongoDbSessionStore extends HttpSessionStore
      */
     public MongoDbSessionStore(
             String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
-            Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores, List<String> extraTrustedPackages)
+            Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores, List<String> extraTrustedPackages, String sessionTokenName)
     {
-        this(algorithm, maxSessionLength, userSessions, underlyingStores, new SubjectExecutor(null),extraTrustedPackages);
+        this(algorithm, maxSessionLength, userSessions, underlyingStores, new SubjectExecutor(null),extraTrustedPackages, sessionTokenName);
     }
 
     /**
@@ -77,7 +79,7 @@ public class MongoDbSessionStore extends HttpSessionStore
     public MongoDbSessionStore(
             String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
             Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores,
-            SubjectExecutor subjectExecutor, List<String> extraTrustedPackages)
+            SubjectExecutor subjectExecutor, List<String> extraTrustedPackages, String sessionTokenName)
     {
         super(underlyingStores);
         this.subjectExecutor = subjectExecutor;
@@ -92,11 +94,12 @@ public class MongoDbSessionStore extends HttpSessionStore
             return null;
         });
         this.userSessions = userSessions;
+        this.cookieName = sessionTokenName;
     }
 
     private SessionToken getOrCreateSsoKey(WebContext context)
     {
-        SessionToken token = SessionToken.fromContext(context);
+        SessionToken token = SessionToken.fromContext(this.cookieName, context);
         if (token == null)
         {
             token = createSsoKey(context);
@@ -108,7 +111,7 @@ public class MongoDbSessionStore extends HttpSessionStore
     {
         SessionToken token;
         token = SessionToken.generate();
-        token.saveInContext(context, maxSessionLength);
+        token.saveInContext(this.cookieName, context, maxSessionLength);
         SessionToken finalToken = token;
         this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
         {
@@ -158,10 +161,10 @@ public class MongoDbSessionStore extends HttpSessionStore
             }
             else
             {
-                token.removeFromContext(context); //force the token to expire because it doesn't match any credential in session store.
+                token.removeFromContext(this.cookieName, context); //force the token to expire because it doesn't match any credential in session store.
             }
         }
-        else if (SessionToken.fromContext(context) == null)
+        else if (SessionToken.fromContext(this.cookieName, context) == null)
         {
             // if res is not null, this means we still have an active Session but an expired SSO cookie
             // we need to recreate one and add it to the context request/response
@@ -199,7 +202,7 @@ public class MongoDbSessionStore extends HttpSessionStore
     public boolean destroySession(WebContext context)
     {
         final SessionToken token = getOrCreateSsoKey(context);
-        token.saveInContext(context, 0);
+        token.saveInContext(this.cookieName, context, 0);
         this.subjectExecutor.execute(() -> userSessions.deleteMany(getSearchSpec(token)));
         return super.destroySession(context);
     }

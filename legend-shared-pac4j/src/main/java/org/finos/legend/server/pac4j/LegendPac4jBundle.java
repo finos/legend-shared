@@ -80,6 +80,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     private ConfigurationSourceProvider configurationSourceProvider;
     private ObjectMapper objectMapper;
 
+    private String DEFAULT_SESSION_COOKIE_NAME = "LegendSSO";
+
     @SuppressWarnings("WeakerAccess")
     public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier)
     {
@@ -153,14 +155,14 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                     public Config build()
                     {
                         Config config = super.build();
-
+                        String sessionCookieName = legendConfig.getSessionTokenName() != null? legendConfig.getSessionTokenName() : DEFAULT_SESSION_COOKIE_NAME;
                         if (legendConfig.getHazelcastSession() != null && legendConfig.getHazelcastSession().isEnabled())
                         {
                             config.setSessionStore(new HazelcastSessionStore(
                                     legendConfig.getHazelcastSession().getConfigFilePath(),
                                     ImmutableMap.of(
                                             J2EContext.class, new J2ESessionStore(),
-                                            JaxRsContext.class, new ServletSessionStore())));
+                                            JaxRsContext.class, new ServletSessionStore()), sessionCookieName));
                         }
                         else if (legendConfig.getMongoSession() != null && legendConfig.getMongoSession().isEnabled())
                         {
@@ -181,7 +183,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                                             userSessions, ImmutableMap.of(
                                             J2EContext.class, new J2ESessionStore(),
                                             JaxRsContext.class, new ServletSessionStore()),
-                                            subjectExecutor, legendConfig.getTrustedPackages()));
+                                            subjectExecutor, legendConfig.getTrustedPackages(), sessionCookieName));
                         }
                         return config;
                     }
