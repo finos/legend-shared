@@ -36,7 +36,7 @@ public class SessionStoreTestUtil {
         Cookie[] cookies = response.getCookies();
         assertEquals(1, cookies.length);
         Cookie cookie = cookies[0];
-        assertEquals("LegendSSO", cookie.getName());
+        assertEquals("LegendSSOTest", cookie.getName());
         String val = cookie.getValue();
         Pattern acceptable = Pattern.compile("[0-9a-f]{15,16}-[0-9a-f]{15,16}/[0-9a-f]{15,16}-[0-9a-f]{15,16}");
         assertTrue("testing " + val, acceptable.matcher(val).matches());
