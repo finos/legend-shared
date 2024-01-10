@@ -25,7 +25,6 @@ import org.finos.legend.server.pac4j.sessionutil.UuidUtils;
 import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
-import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.core.util.JavaSerializationHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,7 +49,7 @@ public class MongoDbSessionStore extends HttpSessionStore
     private final JavaSerializationHelper serializationHelper;
     private final SubjectExecutor subjectExecutor;
 
-    private String cookieName;
+    private String sessionTokenName;
 
     /**
      * Create MongoDb session store.
@@ -94,12 +93,12 @@ public class MongoDbSessionStore extends HttpSessionStore
             return null;
         });
         this.userSessions = userSessions;
-        this.cookieName = sessionTokenName;
+        this.sessionTokenName = sessionTokenName;
     }
 
     private SessionToken getOrCreateSsoKey(WebContext context)
     {
-        SessionToken token = SessionToken.fromContext(this.cookieName, context);
+        SessionToken token = SessionToken.fromContext(this.sessionTokenName, context);
         if (token == null)
         {
             token = createSsoKey(context);
@@ -111,7 +110,7 @@ public class MongoDbSessionStore extends HttpSessionStore
     {
         SessionToken token;
         token = SessionToken.generate();
-        token.saveInContext(this.cookieName, context, maxSessionLength);
+        token.saveInContext(this.sessionTokenName, context, maxSessionLength);
         SessionToken finalToken = token;
         this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
         {
@@ -161,10 +160,10 @@ public class MongoDbSessionStore extends HttpSessionStore
             }
             else
             {
-                token.removeFromContext(this.cookieName, context); //force the token to expire because it doesn't match any credential in session store.
+                token.removeFromContext(this.sessionTokenName, context); //force the token to expire because it doesn't match any credential in session store.
             }
         }
-        else if (SessionToken.fromContext(this.cookieName, context) == null)
+        else if (SessionToken.fromContext(this.sessionTokenName, context) == null)
         {
             // if res is not null, this means we still have an active Session but an expired SSO cookie
             // we need to recreate one and add it to the context request/response
@@ -202,7 +201,7 @@ public class MongoDbSessionStore extends HttpSessionStore
     public boolean destroySession(WebContext context)
     {
         final SessionToken token = getOrCreateSsoKey(context);
-        token.saveInContext(this.cookieName, context, 0);
+        token.saveInContext(this.sessionTokenName, context, 0);
         this.subjectExecutor.execute(() -> userSessions.deleteMany(getSearchSpec(token)));
         return super.destroySession(context);
     }
