@@ -69,7 +69,7 @@ public class MongoDbSessionStoreTest
     {
         List<String> testTrustedPackages = new ArrayList<>();
         testTrustedPackages.add("test.trusted.package");
-        store = new MongoDbSessionStore("AES", 100, db.getCollection(SESSION_COLLECTION), ImmutableMap.of(J2EContext.class, new J2ESessionStore()), testTrustedPackages);
+        store = new MongoDbSessionStore("AES", 100, db.getCollection(SESSION_COLLECTION), ImmutableMap.of(J2EContext.class, new J2ESessionStore()), testTrustedPackages, "LegendSSOTest");
     }
 
     public void emptySessionData()

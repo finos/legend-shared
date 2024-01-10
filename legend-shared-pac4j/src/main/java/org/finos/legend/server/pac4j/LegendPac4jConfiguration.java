@@ -40,9 +40,16 @@ public final class LegendPac4jConfiguration
     private HazelcastSessionConfiguration hazelcastSession = new HazelcastSessionConfiguration();
     private String callbackPrefix = "";
     private String callbackBaseUrl = "";
+
+    private String sessionTokenName;
     private List<String> bypassPaths = ImmutableList.of();
     private List<String> bypassBranches = ImmutableList.of();
     private List<String> trustedPackages = ImmutableList.of();
+
+    public String getSessionTokenName()
+    {
+        return this.sessionTokenName;
+    }
 
     public void setDefaults(String defaults)
     {

@@ -35,7 +35,7 @@ public class HazelcastSessionStoreTest {
     public void before()
     {
         store = new HazelcastSessionStore(HAZELCAST_CONFIG_FILE_PATH, ImmutableMap.of(
-                J2EContext.class, new J2ESessionStore(), JaxRsContext.class, new ServletSessionStore()));
+                J2EContext.class, new J2ESessionStore(), JaxRsContext.class, new ServletSessionStore()), "LegendSSOTest");
     }
 
     @After

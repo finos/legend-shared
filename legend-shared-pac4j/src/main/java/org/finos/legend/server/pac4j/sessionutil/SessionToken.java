@@ -21,8 +21,6 @@ import org.pac4j.core.context.WebContext;
 
 public class SessionToken
 {
-    private static final String SESSION_COOKIE_NAME = "LegendSSO";
-
     private final UUID sessionId;
     private final UUID sessionKey;
 
@@ -37,9 +35,9 @@ public class SessionToken
         return new SessionToken(UuidUtils.newUuid(), UuidUtils.newUuid());
     }
 
-    public static SessionToken fromContext(WebContext context)
+    public static SessionToken fromContext(String cookieName, WebContext context)
     {
-        String val = (String) context.getRequestAttribute(SESSION_COOKIE_NAME);
+        String val = (String) context.getRequestAttribute(cookieName);
         if (!Strings.isNullOrEmpty(val))
         {
             return fromTokenString(val);
@@ -47,7 +45,7 @@ public class SessionToken
 
         Cookie cookie =
                 context.getRequestCookies().stream()
-                        .filter(c -> c.getName().equals(SESSION_COOKIE_NAME))
+                        .filter(c -> c.getName().equals(cookieName))
                         .findFirst()
                         .orElse(null);
         if (cookie != null && cookie.getValue() != null && !"".equals(cookie.getValue()))
@@ -63,10 +61,10 @@ public class SessionToken
         return new SessionToken(UuidUtils.fromHexString(uuids[0]), UuidUtils.fromHexString(uuids[1]));
     }
 
-    private Cookie toCookie()
+    private Cookie toCookie(String cookieName)
     {
         return new Cookie(
-            SESSION_COOKIE_NAME,
+                cookieName,
                 String.format("%s/%s", UuidUtils.toHexString(sessionId), UuidUtils.toHexString(sessionKey)));
     }
 
@@ -80,25 +78,25 @@ public class SessionToken
         return sessionKey;
     }
 
-    public void saveInContext(WebContext context, int ttl)
+    public void saveInContext(String cookieName, WebContext context, int ttl)
     {
-        Cookie cookie = toCookie();
+        Cookie cookie = toCookie(cookieName);
         cookie.setDomain(context.getServerName());
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         cookie.setMaxAge(ttl);
         context.addResponseCookie(cookie);
-        context.setRequestAttribute(SESSION_COOKIE_NAME, cookie.getValue());
+        context.setRequestAttribute(cookieName, cookie.getValue());
     }
 
-    public void removeFromContext(WebContext context)
+    public void removeFromContext(String cookieName, WebContext context)
     {
-        Cookie cookie = toCookie();
+        Cookie cookie = toCookie(cookieName);
         cookie.setDomain(context.getServerName());
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         cookie.setMaxAge(0);
         context.addResponseCookie(cookie);
-        context.setRequestAttribute(SESSION_COOKIE_NAME, null);
+        context.setRequestAttribute(cookieName, null);
     }
 }

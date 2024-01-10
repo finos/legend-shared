@@ -23,7 +23,6 @@ import org.finos.legend.server.pac4j.sessionutil.SessionToken;
 import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
-import org.pac4j.core.profile.CommonProfile;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
@@ -39,12 +38,13 @@ public class HazelcastSessionStore extends HttpSessionStore
 
     private final Map<UUID, Map<String, Object>> hazelcastMap;
     private final int maxSessionLength;
+    private String sessionTokenName;
 
     public HazelcastSessionStore(String hazelcastConfigFilePath,
-                                 Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
+                                 Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores, String sessionTokenName)
     {
         super(underlyingStores);
-
+        this.sessionTokenName = sessionTokenName;
         try
         {
             FileSystemYamlConfig fileConfig = new FileSystemYamlConfig(hazelcastConfigFilePath);
@@ -73,7 +73,7 @@ public class HazelcastSessionStore extends HttpSessionStore
 
     private SessionToken getOrCreateSsoKey(WebContext context)
     {
-        SessionToken token = SessionToken.fromContext(context);
+        SessionToken token = SessionToken.fromContext(this.sessionTokenName, context);
         if (token == null)
         {
             token = createSsoKey(context);
@@ -84,7 +84,7 @@ public class HazelcastSessionStore extends HttpSessionStore
     private SessionToken createSsoKey(WebContext context)
     {
         SessionToken token = SessionToken.generate();
-        token.saveInContext(context, maxSessionLength);
+        token.saveInContext(this.sessionTokenName,context, maxSessionLength);
         Map<String, Object> hazelcastSessionData = new HashMap<>();
         hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         return token;
@@ -116,7 +116,7 @@ public class HazelcastSessionStore extends HttpSessionStore
                 }
             }
         }
-        else if (SessionToken.fromContext(context) == null)
+        else if (SessionToken.fromContext(this.sessionTokenName, context) == null)
         {
             // if res is not null, this means we still have an active Session but an expired SSO cookie
             // we need to recreate one and add it to the context request/response
@@ -149,7 +149,7 @@ public class HazelcastSessionStore extends HttpSessionStore
     public boolean destroySession(WebContext context)
     {
         SessionToken token = getOrCreateSsoKey(context);
-        token.saveInContext(context, 0);
+        token.saveInContext(this.sessionTokenName, context, 0);
         hazelcastMap.remove(token.getSessionId());
         return super.destroySession(context);
     }
