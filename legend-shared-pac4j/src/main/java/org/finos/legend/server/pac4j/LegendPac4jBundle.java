@@ -44,7 +44,6 @@ import org.pac4j.core.config.Config;
 import org.pac4j.core.context.J2EContext;
 import org.pac4j.core.context.session.J2ESessionStore;
 import org.pac4j.core.engine.DefaultSecurityLogic;
-import org.pac4j.core.engine.decision.AlwaysUseSessionProfileStorageDecision;
 import org.pac4j.core.http.url.DefaultUrlResolver;
 import org.pac4j.core.matching.Matcher;
 import org.pac4j.core.matching.PathMatcher;
@@ -80,7 +79,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     private ConfigurationSourceProvider configurationSourceProvider;
     private ObjectMapper objectMapper;
 
-    private String DEFAULT_SESSION_COOKIE_NAME = "LegendSSO";
+    private String defaultSessionCookieName = "LegendSSO";
 
     @SuppressWarnings("WeakerAccess")
     public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier)
@@ -155,7 +154,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                     public Config build()
                     {
                         Config config = super.build();
-                        String sessionCookieName = legendConfig.getSessionTokenName() != null? legendConfig.getSessionTokenName() : DEFAULT_SESSION_COOKIE_NAME;
+                        String sessionCookieName = legendConfig.getSessionTokenName() != null ? legendConfig.getSessionTokenName() : defaultSessionCookieName;
                         if (legendConfig.getHazelcastSession() != null && legendConfig.getHazelcastSession().isEnabled())
                         {
                             config.setSessionStore(new HazelcastSessionStore(

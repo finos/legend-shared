@@ -21,8 +21,6 @@ import org.pac4j.core.context.WebContext;
 
 public class SessionToken
 {
-//    private static final String SESSION_COOKIE_NAME = "LegendSSO";
-
     private final UUID sessionId;
     private final UUID sessionKey;
 
@@ -91,7 +89,7 @@ public class SessionToken
         context.setRequestAttribute(cookieName, cookie.getValue());
     }
 
-    public void removeFromContext(String cookieName , WebContext context)
+    public void removeFromContext(String cookieName, WebContext context)
     {
         Cookie cookie = toCookie(cookieName);
         cookie.setDomain(context.getServerName());

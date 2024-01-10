@@ -41,7 +41,7 @@ public final class LegendPac4jConfiguration
     private String callbackPrefix = "";
     private String callbackBaseUrl = "";
 
-    private String sessionTokenName ;
+    private String sessionTokenName;
     private List<String> bypassPaths = ImmutableList.of();
     private List<String> bypassBranches = ImmutableList.of();
     private List<String> trustedPackages = ImmutableList.of();
@@ -50,6 +50,7 @@ public final class LegendPac4jConfiguration
     {
         return this.sessionTokenName;
     }
+
     public void setDefaults(String defaults)
     {
         this.defaults = defaults;
