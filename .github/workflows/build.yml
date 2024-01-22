@@ -71,7 +71,7 @@ jobs:
 
     - name: Build + Test + Sonar + Maven Deploy
       if: (github.repository == 'finos/legend-shared') && (github.ref == 'refs/heads/master')
-      run: mvn javadoc:javadoc deploy -Dmaven.test.failure.ignore=true -Psonar -pl !legend-shared-test-reports
+      run: mvn javadoc:javadoc deploy -Dmaven.test.failure.ignore=true -pl !legend-shared-test-reports
 
     - name: Upload Test Results
       if: always()
