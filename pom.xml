@@ -27,7 +27,7 @@
     <name>Legend Shared</name>
     <groupId>org.finos.legend.shared</groupId>
     <artifactId>legend-shared</artifactId>
-    <version>0.24.3-SNAPSHOT</version>
+    <version>0.25.3-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <properties>
