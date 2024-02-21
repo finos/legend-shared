@@ -35,7 +35,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - name: Build simplified Docker image for checks
         # NOTE: if this gets more complicated, consider having this as a bash script
         run: mkdir -p ./legend-shared-server/target && touch ./legend-shared-server/target/legend-shared-server-dummy.jar && docker build --quiet --tag local/legend-shared-server:${{ github.sha }} ./legend-shared-server

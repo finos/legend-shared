@@ -36,9 +36,10 @@
 
         <encoding>UTF-8</encoding>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <maven.compiler.release>8</maven.compiler.release>
+        <java.version.range>[11,12),[17,18),[21,22)</java.version.range>
 
         <!-- Dependencies -->
         <commons.lang.version>2.6</commons.lang.version>
@@ -266,7 +267,7 @@
                         <configuration>
                             <rules>
                                 <requireJavaVersion>
-                                    <version>[11.0.10,12)</version>
+                                    <version>${java.version.range}</version>
                                 </requireJavaVersion>
                             </rules>
                         </configuration>
