@@ -72,6 +72,7 @@
         <opentracing.api.version>0.32.0</opentracing.api.version>
         <pac4j.version>3.8.3</pac4j.version>
         <prometheus.version>0.8.1</prometheus.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
         <spring.test.version>4.3.24.RELEASE</spring.test.version>
         <spring.boot.autoconfigure.version>2.3.3.RELEASE</spring.boot.autoconfigure.version>
         <json-smart.version>2.4.2</json-smart.version>
@@ -709,6 +710,12 @@
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-continuation</artifactId>
                 <version>${jetty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
