@@ -20,8 +20,11 @@ import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
+import org.eclipse.jetty.http.HttpCookie;
+import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.session.SessionHandler;
 
+import javax.servlet.SessionCookieConfig;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -113,5 +116,14 @@ public class Server extends Application<org.finos.legend.server.shared.staticser
             sessionHandler.setSessionCookie(staticServerConfiguration.getSessionCookie());
         }
         environment.servlets().setSessionHandler(sessionHandler);
+        makeSessionCookieSecure(environment.getApplicationContext().getServletContext());
+    }
+
+    private void makeSessionCookieSecure( ContextHandler.Context servletContext)
+    {
+        SessionCookieConfig sessionCookieConfig = servletContext.getSessionCookieConfig();
+        sessionCookieConfig.setSecure(true);
+        sessionCookieConfig.setHttpOnly(true);
+        servletContext.setAttribute(HttpCookie.SAME_SITE_DEFAULT_ATTRIBUTE, "STRICT");
     }
 }
