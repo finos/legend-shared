@@ -122,8 +122,11 @@ public class Server extends Application<org.finos.legend.server.shared.staticser
     private void makeSessionCookieSecure( ContextHandler.Context servletContext)
     {
         SessionCookieConfig sessionCookieConfig = servletContext.getSessionCookieConfig();
-        sessionCookieConfig.setSecure(true);
-        sessionCookieConfig.setHttpOnly(true);
+        if(sessionCookieConfig != null)
+        {
+            sessionCookieConfig.setSecure(true);
+            sessionCookieConfig.setHttpOnly(true);
+        }
         servletContext.setAttribute(HttpCookie.SAME_SITE_DEFAULT_ATTRIBUTE, "STRICT");
     }
 }
