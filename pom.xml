@@ -46,7 +46,7 @@
         <commons.text.version>1.10.0</commons.text.version>
         <dropwizard.version>1.3.29</dropwizard.version>
         <dropwizard.pac4j.version>3.0.0</dropwizard.pac4j.version>
-        <guava.version>30.0-jre</guava.version>
+        <guava.version>32.0.0-jre</guava.version>
         <jackson.annotations.version>2.10.1</jackson.annotations.version>
         <jackson.dataformat.yaml.version>2.11.2</jackson.dataformat.yaml.version>
         <jakarta.xml.bind.version>2.3.2</jakarta.xml.bind.version>
