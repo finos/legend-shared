@@ -22,14 +22,18 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
+import org.pac4j.core.context.JEEContext;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.credentials.authenticator.Authenticator;
 import org.pac4j.core.exception.BadCredentialsException;
 import org.pac4j.core.exception.CredentialsException;
+import org.pac4j.core.exception.http.BadRequestAction;
+import org.pac4j.core.exception.http.OkAction;
 import org.pac4j.kerberos.credentials.KerberosCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Base64;
@@ -96,7 +100,8 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
                     // ignore errors building the message
                     message = baseMessage;
                 }
-                webContext.writeResponseContent(baseMessage);
+                writeToResponse(webContext, baseMessage);
+
                 LOGGER.error("validate failed: context has no delegate {}",message);
                 throw new BadCredentialsException(message);
             }
@@ -121,6 +126,14 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
             }
             LOGGER.error("Validate failed:  {} {}",message,cause);
             throw new BadCredentialsException(message, cause);
+        }
+    }
+
+    private void writeToResponse(WebContext webContext, String baseMessage) throws IOException
+    {
+        if (webContext instanceof JEEContext)
+        {
+            ((JEEContext) webContext).getNativeResponse().getWriter().write(baseMessage);
         }
     }
 

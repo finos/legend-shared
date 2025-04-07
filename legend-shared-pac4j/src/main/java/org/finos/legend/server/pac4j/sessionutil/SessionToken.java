@@ -37,7 +37,7 @@ public class SessionToken
 
     public static SessionToken fromContext(String cookieName, WebContext context)
     {
-        String val = (String) context.getRequestAttribute(cookieName);
+        String val = (String) context.getRequestAttribute(cookieName).orElse("");
         if (!Strings.isNullOrEmpty(val))
         {
             return fromTokenString(val);

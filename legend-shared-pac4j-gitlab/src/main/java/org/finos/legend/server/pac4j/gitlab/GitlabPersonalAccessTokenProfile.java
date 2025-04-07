@@ -14,7 +14,7 @@
 
 package org.finos.legend.server.pac4j.gitlab;
 
-import org.pac4j.core.context.Pac4jConstants;
+import org.pac4j.core.util.Pac4jConstants;
 import org.pac4j.core.profile.CommonProfile;
 
 public class GitlabPersonalAccessTokenProfile extends CommonProfile

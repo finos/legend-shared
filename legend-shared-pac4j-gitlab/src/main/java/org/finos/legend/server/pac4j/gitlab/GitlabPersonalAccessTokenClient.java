@@ -19,7 +19,7 @@ import org.finos.legend.server.pac4j.SerializableProfile;
 import org.pac4j.core.client.DirectClient;
 
 @SerializableProfile
-public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonalAccessTokenCredentials, GitlabPersonalAccessTokenProfile>
+public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonalAccessTokenCredentials>
 {
     public static final String GITLAB_PERSONAL_ACCESS_TOKEN_CLIENT_NAME = "gitlabPAToken";
 

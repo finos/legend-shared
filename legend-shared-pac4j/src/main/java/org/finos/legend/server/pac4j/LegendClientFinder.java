@@ -23,8 +23,10 @@ import org.pac4j.core.client.Client;
 import org.pac4j.core.client.Clients;
 import org.pac4j.core.client.finder.DefaultSecurityClientFinder;
 import org.pac4j.core.context.WebContext;
+import org.pac4j.core.credentials.Credentials;
 import org.pac4j.core.exception.TechnicalException;
 import org.pac4j.core.util.CommonHelper;
+import org.pac4j.core.util.Pac4jConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +36,7 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
 {
   private static final Logger logger = LoggerFactory.getLogger(DefaultSecurityClientFinder.class);
 
-  String clientNameParameter = new DefaultSecurityClientFinder().getClientNameParameter();
+  String clientNameParameter = Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER;
   String defaultClient;
 
   public LegendClientFinder(String defaultClient)
@@ -49,9 +51,9 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
   }
 
   @Override
-  public List<Client> find(Clients clients, WebContext context, String clientNames)
+  public List<Client<? extends Credentials>> find(Clients clients, WebContext context, String clientNames)
   {
-    List<Client> result = new ArrayList();
+    List<Client<? extends Credentials>> result = new ArrayList<>();
     String securityClientNames = clientNames;
     logger.debug("Provided clientNames: {}", clientNames);
     if (clientNames == null)
@@ -68,7 +70,7 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
     if (CommonHelper.isNotBlank(securityClientNames))
     {
       List<String> names = Arrays.asList(securityClientNames.split(","));
-      String clientNameOnRequest = context.getRequestParameter(this.clientNameParameter);
+      String clientNameOnRequest = context.getRequestParameter(this.clientNameParameter).orElse(null);
       logger.debug("clientNameOnRequest: {}", clientNameOnRequest);
       String nameFound;
       if (clientNameOnRequest != null)
@@ -85,7 +87,7 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
         while (var13.hasNext())
         {
           nameFound = (String) var13.next();
-          Client client = clients.findClient(nameFound);
+          Client client = clients.findClient(nameFound).get();
           result.add(client);
         }
       }
@@ -98,10 +100,10 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
     return result;
   }
 
-  public List<Client> findUtil(Clients clients, List<String> names, String toFind)
+  public List<Client<? extends Credentials>> findUtil(Clients clients, List<String> names, String toFind)
   {
-    List<Client> result = new ArrayList();
-    Client client = clients.findClient(toFind);
+    List<Client<? extends Credentials>> result = new ArrayList<>();
+    Client client = clients.findClient(toFind).get();
     String nameFound = client.getName();
     boolean found = false;
     Iterator var11 = names.iterator();

@@ -19,7 +19,7 @@ public class SerializationTest
   public void testPac4jSerialization()
   {
     byte[] bytes = helper.serializeToBytes(serializableThing);
-    Object output = helper.unserializeFromBytes(bytes);
+    Object output = helper.deserializeFromBytes(bytes);
     Assert.assertNull(output); // Pac4J will return null if the class is not whitelisted
   }
 }

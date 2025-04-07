@@ -22,7 +22,7 @@ import org.finos.legend.server.pac4j.internal.HttpSessionStore;
 import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
 import org.finos.legend.server.pac4j.sessionutil.SessionToken;
 import org.finos.legend.server.pac4j.sessionutil.UuidUtils;
-import org.pac4j.core.context.Pac4jConstants;
+import org.pac4j.core.util.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.util.JavaSerializationHelper;
@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class MongoDbSessionStore extends HttpSessionStore
@@ -133,9 +134,9 @@ public class MongoDbSessionStore extends HttpSessionStore
     }
 
     @Override
-    public Object get(WebContext context, String key)
+    public Optional<Object> get(WebContext context, String key)
     {
-        Object res = super.get(context, key);
+        Object res = super.get(context, key).orElse(null);
         if (res == null)
         {
             final SessionToken token = getOrCreateSsoKey(context);
@@ -148,7 +149,7 @@ public class MongoDbSessionStore extends HttpSessionStore
                     try
                     {
                         res =
-                                serializationHelper.unserializeFromBytes(
+                                serializationHelper.deserializeFromBytes(
                                         sessionCrypt.fromCryptedString(serialized, token));
                         //Once we have it, store it in the regular session store for later access
                         super.set(context, key, res);
@@ -173,7 +174,7 @@ public class MongoDbSessionStore extends HttpSessionStore
                 set(context, Pac4jConstants.USER_PROFILES, res);
             }
         }
-        return res;
+        return Optional.ofNullable(res);
     }
 
     @Override

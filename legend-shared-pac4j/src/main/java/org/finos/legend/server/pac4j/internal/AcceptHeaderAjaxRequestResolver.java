@@ -27,7 +27,7 @@ public class AcceptHeaderAjaxRequestResolver extends DefaultAjaxRequestResolver
   @Override
   public boolean isAjax(WebContext context)
   {
-    String acceptHeader = context.getRequestHeader(HttpHeaders.ACCEPT);
+    String acceptHeader = context.getRequestHeader(HttpHeaders.ACCEPT).orElse("");
     if (Strings.isNullOrEmpty(acceptHeader))
     {
       return true;

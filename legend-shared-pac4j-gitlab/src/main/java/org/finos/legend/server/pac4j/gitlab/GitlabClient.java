@@ -21,6 +21,7 @@ import org.finos.legend.server.pac4j.SerializableProfile;
 import org.finos.legend.server.pac4j.gitlab.ssl.TrustManagerComposite;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.http.url.DefaultUrlResolver;
+import org.pac4j.core.profile.UserProfile;
 import org.pac4j.oidc.client.OidcClient;
 import org.pac4j.oidc.config.OidcConfiguration;
 import org.pac4j.oidc.credentials.OidcCredentials;
@@ -35,10 +36,11 @@ import javax.net.ssl.TrustManager;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.GeneralSecurityException;
+import java.util.Optional;
 
 @SuppressWarnings("unused")
 @SerializableProfile
-public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
+public class GitlabClient extends OidcClient<OidcConfiguration>
 {
     private static final Logger logger = LoggerFactory.getLogger(GitlabClient.class);
     public static final String GITLAB_CLIENT_NAME = "gitlab";
@@ -138,14 +140,14 @@ public class GitlabClient extends OidcClient<OidcProfile, OidcConfiguration>
                     }
                 });
         setProfileCreator(
-                new OidcProfileCreator<OidcProfile>(config)
+                new OidcProfileCreator<OidcProfile>(config,this)
                 {
                     @Override
-                    public OidcProfile create(OidcCredentials credentials, WebContext context)
+                    public Optional<UserProfile> create(OidcCredentials credentials, WebContext context)
                     {
-                        OidcProfile profile = super.create(credentials, context);
+                        OidcProfile profile = (OidcProfile)super.create(credentials, context).get();
                         profile.setId(profile.getNickname());
-                        return profile;
+                        return Optional.of(profile);
                     }
                 });
         setUrlResolver(new DefaultUrlResolver(true));
