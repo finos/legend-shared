@@ -21,7 +21,6 @@ import io.dropwizard.ConfiguredBundle;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Function;
 import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
 import org.finos.legend.server.pac4j.LegendPac4jBundle;
