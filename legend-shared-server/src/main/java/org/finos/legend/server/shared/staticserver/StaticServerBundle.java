@@ -77,7 +77,7 @@ public class StaticServerBundle<C extends Configuration> implements ConfiguredBu
         skipPaths.addAll(staticConfig.getRouterExemptPaths());
       }
       String trimmedStaticPath = staticPath != null && staticPath.endsWith("/") ? staticPath.substring(0, staticPath.length() - 1) : staticPath;
-      new HtmlRouterRedirectBundle(staticPath, skipPaths, trimmedStaticPath + "/index.html")
+      new HtmlRouterRedirectBundle(trimmedStaticPath, skipPaths, trimmedStaticPath + "/index.html")
           .run(environment);
     }
     environment.healthChecks().register("Static", new org.finos.legend.server.shared.staticserver.StaticHealthcheck());
