@@ -60,7 +60,7 @@
         <jetty.version>9.4.44.v20210927</jetty.version>
         <joda.time.version>2.10.1</joda.time.version>
         <junit.version>4.13.1</junit.version>
-        <slf4j.version>1.7.21</slf4j.version>
+        <slf4j.version>1.7.36</slf4j.version>
         <mimeparse.version>0.1.3.3</mimeparse.version>
         <mockwebserver.version>4.9.0</mockwebserver.version>
         <mockito.version>3.5.10</mockito.version>
