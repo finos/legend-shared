@@ -20,9 +20,9 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
 import org.finos.legend.server.pac4j.sessionutil.SessionToken;
-import org.pac4j.core.context.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
+import org.pac4j.core.util.Pac4jConstants;
 
 import java.io.FileNotFoundException;
 import java.io.UncheckedIOException;
@@ -98,9 +98,9 @@ public class HazelcastSessionStore extends HttpSessionStore
     }
 
     @Override
-    public Object get(WebContext context, String key)
+    public Optional<Object> get(WebContext context, String key)
     {
-        Object res = super.get(context, key);
+        Object res = super.get(context, key).orElse(null);
         if (res == null)
         {
             SessionToken token = getOrCreateSsoKey(context);
@@ -126,7 +126,7 @@ public class HazelcastSessionStore extends HttpSessionStore
                 set(context, Pac4jConstants.USER_PROFILES, res);
             }
         }
-        return res;
+        return Optional.ofNullable(res);
     }
 
     @Override

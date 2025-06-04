@@ -41,17 +41,17 @@ import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
 import org.finos.legend.server.pac4j.mongostore.MongoDbSessionStore;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.config.Config;
-import org.pac4j.core.context.J2EContext;
-import org.pac4j.core.context.session.J2ESessionStore;
+import org.pac4j.core.context.JEEContext;
+import org.pac4j.core.context.session.JEESessionStore;
 import org.pac4j.core.engine.DefaultSecurityLogic;
 import org.pac4j.core.http.url.DefaultUrlResolver;
-import org.pac4j.core.matching.Matcher;
-import org.pac4j.core.matching.PathMatcher;
+import org.pac4j.core.matching.matcher.Matcher;
+import org.pac4j.core.matching.matcher.PathMatcher;
 import org.pac4j.core.util.JavaSerializationHelper;
 import org.pac4j.dropwizard.Pac4jBundle;
 import org.pac4j.dropwizard.Pac4jFactory;
 import org.pac4j.dropwizard.Pac4jFeatureSupport;
-import org.pac4j.j2e.filter.SecurityFilter;
+import org.pac4j.jee.filter.SecurityFilter;
 import org.pac4j.jax.rs.pac4j.JaxRsContext;
 import org.pac4j.jax.rs.servlet.pac4j.ServletSessionStore;
 import java.io.IOException;
@@ -160,7 +160,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                             config.setSessionStore(new HazelcastSessionStore(
                                     legendConfig.getHazelcastSession().getConfigFilePath(),
                                     ImmutableMap.of(
-                                            J2EContext.class, new J2ESessionStore(),
+                                            JEEContext.class, new JEESessionStore(),
                                             JaxRsContext.class, new ServletSessionStore()), sessionCookieName));
                         }
                         else if (legendConfig.getMongoSession() != null && legendConfig.getMongoSession().isEnabled())
@@ -180,7 +180,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                                             legendConfig.getMongoSession().getCryptoAlgorithm(),
                                             legendConfig.getMongoSession().getMaxSessionLength(),
                                             userSessions, ImmutableMap.of(
-                                            J2EContext.class, new J2ESessionStore(),
+                                            JEEContext.class, new JEESessionStore(),
                                             JaxRsContext.class, new ServletSessionStore()),
                                             subjectExecutor, legendConfig.getTrustedPackages(), sessionCookieName));
                         }
@@ -285,10 +285,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                 {
                     s.initialize();
                     SecurityFilter filter = (SecurityFilter)  s.getFilters()[0].getFilter();
-                    DefaultSecurityLogic securityLogic = (DefaultSecurityLogic) filter.getSecurityLogic();
-                    securityLogic.setClientFinder(((DefaultSecurityLogic)this.getConfig().getSecurityLogic()).getClientFinder());
-                    securityLogic.setProfileStorageDecision(new LegendUserProfileStorageDecision());
-                    filter.setSecurityLogic(securityLogic);
+                    filter.setSecurityLogic(this.getConfig().getSecurityLogic());
                     h.stop();
                     h.setFilter(filter);
                 }

@@ -18,6 +18,8 @@ import org.pac4j.core.context.WebContext;
 import org.pac4j.core.credentials.extractor.CredentialsExtractor;
 import org.pac4j.core.exception.CredentialsException;
 
+import java.util.Optional;
+
 public class GitlabPersonalAccessTokenExtractor implements CredentialsExtractor<GitlabPersonalAccessTokenCredentials>
 {
     private final String headerTokenName;
@@ -28,13 +30,13 @@ public class GitlabPersonalAccessTokenExtractor implements CredentialsExtractor<
     }
 
     @Override
-    public GitlabPersonalAccessTokenCredentials extract(WebContext webContext)
+    public Optional<GitlabPersonalAccessTokenCredentials> extract(WebContext webContext)
     {
-        String personalAccessToken = webContext.getRequestHeader(this.headerTokenName);
+        String personalAccessToken = webContext.getRequestHeader(this.headerTokenName).orElse(null);
         if (personalAccessToken == null)
         {
             throw new CredentialsException("Unable to retrieve token from the header with token name: " + this.headerTokenName);
         }
-        return new GitlabPersonalAccessTokenCredentials(personalAccessToken);
+        return Optional.of(new GitlabPersonalAccessTokenCredentials(personalAccessToken));
     }
 }

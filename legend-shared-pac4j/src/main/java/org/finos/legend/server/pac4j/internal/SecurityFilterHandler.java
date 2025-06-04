@@ -18,7 +18,7 @@ import java.util.Arrays;
 import org.eclipse.jetty.servlet.FilterMapping;
 import org.eclipse.jetty.servlet.ServletHandler;
 import org.eclipse.jetty.util.component.LifeCycle;
-import org.pac4j.j2e.filter.SecurityFilter;
+import org.pac4j.jee.filter.SecurityFilter;
 
 public abstract class SecurityFilterHandler extends ServletHandler
 {

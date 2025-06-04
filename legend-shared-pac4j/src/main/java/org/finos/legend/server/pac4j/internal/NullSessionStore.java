@@ -17,6 +17,8 @@ package org.finos.legend.server.pac4j.internal;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 
+import java.util.Optional;
+
 public class NullSessionStore implements SessionStore<WebContext>
 {
 
@@ -33,9 +35,9 @@ public class NullSessionStore implements SessionStore<WebContext>
   }
 
   @Override
-  public Object get(WebContext context, String key)
+  public Optional<Object> get(WebContext context, String key)
   {
-    return null;
+    return Optional.empty();
   }
 
   @Override
@@ -51,16 +53,16 @@ public class NullSessionStore implements SessionStore<WebContext>
   }
 
   @Override
-  public Object getTrackableSession(WebContext context)
+  public Optional getTrackableSession(WebContext context)
   {
-    return null;
+    return Optional.empty();
   }
 
   @Override
-  public SessionStore<WebContext> buildFromTrackableSession(WebContext context,
-                                                            Object trackableSession)
+  public Optional<SessionStore<WebContext>> buildFromTrackableSession(WebContext context,
+                                                                      Object trackableSession)
   {
-    return null;
+    return Optional.empty();
   }
 
   @Override

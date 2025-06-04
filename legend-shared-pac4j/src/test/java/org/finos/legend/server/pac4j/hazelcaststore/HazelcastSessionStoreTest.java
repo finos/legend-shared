@@ -20,8 +20,8 @@ import org.finos.legend.server.pac4j.SessionStoreTestUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.pac4j.core.context.J2EContext;
-import org.pac4j.core.context.session.J2ESessionStore;
+import org.pac4j.core.context.JEEContext;
+import org.pac4j.core.context.session.JEESessionStore;
 import org.pac4j.jax.rs.pac4j.JaxRsContext;
 import org.pac4j.jax.rs.servlet.pac4j.ServletSessionStore;
 
@@ -35,7 +35,7 @@ public class HazelcastSessionStoreTest {
     public void before()
     {
         store = new HazelcastSessionStore(HAZELCAST_CONFIG_FILE_PATH, ImmutableMap.of(
-                J2EContext.class, new J2ESessionStore(), JaxRsContext.class, new ServletSessionStore()), "LegendSSOTest");
+                JEEContext.class, new JEESessionStore(), JaxRsContext.class, new ServletSessionStore()), "LegendSSOTest");
     }
 
     @After

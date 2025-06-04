@@ -15,6 +15,8 @@
 package org.finos.legend.server.pac4j.internal;
 
 import java.util.Map;
+import java.util.Optional;
+
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 
@@ -32,7 +34,7 @@ public class HttpSessionStore implements SessionStore<WebContext>
 
   private SessionStore getUnderlyingSessionStore(WebContext context)
   {
-    SessionStore sessionStore = this.underlyingStores.get(context.getClass());
+    SessionStore<? extends WebContext> sessionStore = this.underlyingStores.get(context.getClass());
     if (sessionStore == null)
     {
       return NullSessionStore.INSTANCE;
@@ -47,7 +49,7 @@ public class HttpSessionStore implements SessionStore<WebContext>
   }
 
   @Override
-  public Object get(WebContext context, String key)
+  public Optional<Object> get(WebContext context, String key)
   {
     return getUnderlyingSessionStore(context).get(context, key);
   }
@@ -65,13 +67,13 @@ public class HttpSessionStore implements SessionStore<WebContext>
   }
 
   @Override
-  public Object getTrackableSession(WebContext context)
+  public Optional getTrackableSession(WebContext context)
   {
     return getUnderlyingSessionStore(context).getTrackableSession(context);
   }
 
   @Override
-  public SessionStore<WebContext> buildFromTrackableSession(
+  public Optional<SessionStore<WebContext>> buildFromTrackableSession(
       WebContext context, Object trackableSession)
   {
     return getUnderlyingSessionStore(context).buildFromTrackableSession(context, trackableSession);

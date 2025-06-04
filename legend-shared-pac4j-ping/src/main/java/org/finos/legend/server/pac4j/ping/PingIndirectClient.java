@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unused")
 @SerializableProfile
-public class PingIndirectClient extends OidcClient<OidcProfile, OidcConfiguration>
+public class PingIndirectClient extends OidcClient<OidcConfiguration>
 {
     private static final Logger logger = LoggerFactory.getLogger(PingIndirectClient.class);
 
@@ -69,7 +69,7 @@ public class PingIndirectClient extends OidcClient<OidcProfile, OidcConfiguratio
 
         DefaultResourceRetriever resourceRetriever =
                 new DefaultResourceRetriever(config.getConnectTimeout(), config.getReadTimeout());
-        if (proxyHost != null && !"".equals(proxyHost))
+        if (proxyHost != null && !proxyHost.isEmpty())
         {
             logger.info("Using proxy {}:{}", proxyHost, proxyPort);
             resourceRetriever.setProxy(
@@ -77,7 +77,7 @@ public class PingIndirectClient extends OidcClient<OidcProfile, OidcConfiguratio
         }
         config.setResourceRetriever(resourceRetriever);
 
-        if (scope == null || "".equals(scope))
+        if (scope == null || scope.isEmpty())
         {
             scope = "openid profile";
         }
@@ -85,7 +85,7 @@ public class PingIndirectClient extends OidcClient<OidcProfile, OidcConfiguratio
 
         setConfiguration(config);
         setAuthenticator(new OidcAuthenticator(config, this));
-        setProfileCreator(new OidcProfileCreator<>(config));
+        setProfileCreator(new OidcProfileCreator<>(config,this));
         setUrlResolver(new DefaultUrlResolver(true));
         super.clientInit();
     }

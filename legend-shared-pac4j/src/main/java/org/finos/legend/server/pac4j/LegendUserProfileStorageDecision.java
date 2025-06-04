@@ -20,6 +20,7 @@ import org.pac4j.core.client.DirectClient;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.engine.decision.ProfileStorageDecision;
 import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.profile.UserProfile;
 
 public class LegendUserProfileStorageDecision<C extends WebContext> implements ProfileStorageDecision<C>
 {
@@ -35,7 +36,7 @@ public class LegendUserProfileStorageDecision<C extends WebContext> implements P
   }
 
   @Override
-  public boolean mustSaveProfileInSession(C context, List<Client> currentClients, DirectClient directClient, CommonProfile profile)
+  public boolean mustSaveProfileInSession(C c, List<Client> currentClients, DirectClient directClient, UserProfile userProfile)
   {
     return checkForSerializableAnnotation(currentClients);
   }

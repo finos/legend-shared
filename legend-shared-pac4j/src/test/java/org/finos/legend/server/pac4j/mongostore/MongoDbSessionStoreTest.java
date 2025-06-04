@@ -29,8 +29,8 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.pac4j.core.context.J2EContext;
-import org.pac4j.core.context.session.J2ESessionStore;
+import org.pac4j.core.context.JEEContext;
+import org.pac4j.core.context.session.JEESessionStore;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
@@ -69,7 +69,7 @@ public class MongoDbSessionStoreTest
     {
         List<String> testTrustedPackages = new ArrayList<>();
         testTrustedPackages.add("test.trusted.package");
-        store = new MongoDbSessionStore("AES", 100, db.getCollection(SESSION_COLLECTION), ImmutableMap.of(J2EContext.class, new J2ESessionStore()), testTrustedPackages, "LegendSSOTest");
+        store = new MongoDbSessionStore("AES", 100, db.getCollection(SESSION_COLLECTION), ImmutableMap.of(JEEContext.class, new JEESessionStore()), testTrustedPackages, "LegendSSOTest");
     }
 
     public void emptySessionData()
@@ -119,10 +119,10 @@ public class MongoDbSessionStoreTest
     {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        J2EContext requestContext = new J2EContext(request, response);
+        JEEContext requestContext = new JEEContext(request, response);
         store.set(requestContext, "testKey", "testValue");
 
-        assertEquals("testValue", store.get(requestContext, "testKey"));
+        assertEquals("testValue", store.get(requestContext, "testKey").get());
         Cookie[] initialResponseCookies = response.getCookies();
         // Copy the SSO cookie to the new request but not the underlying j2ESession.
         // The cookie alone should be able to manage sessions in case of non-browser clients
@@ -130,9 +130,9 @@ public class MongoDbSessionStoreTest
 
         newRequest.setCookies(initialResponseCookies);
         MockHttpServletResponse newResponse = new MockHttpServletResponse();
-        requestContext = new J2EContext(newRequest, newResponse);
+        requestContext = new JEEContext(newRequest, newResponse);
 
-        assertEquals("testValue", store.get(requestContext, "testKey")); //should be able to retrieve value
+        assertEquals("testValue", store.get(requestContext, "testKey").get()); //should be able to retrieve value
         Cookie[] secondaryResponseCookies = newResponse.getCookies();
         assertEquals(secondaryResponseCookies.length, 0);
     }
@@ -142,10 +142,10 @@ public class MongoDbSessionStoreTest
     {
         MockHttpServletRequest request = new MockHttpServletRequest();
         MockHttpServletResponse response = new MockHttpServletResponse();
-        J2EContext requestContext = new J2EContext(request, response);
+        JEEContext requestContext = new JEEContext(request, response);
         store.set(requestContext, "testKey", "testValue");
 
-        assertEquals("testValue", store.get(requestContext, "testKey"));
+        assertEquals("testValue", store.get(requestContext, "testKey").get());
         Cookie[] initialResponseCookies = response.getCookies();
         //delete all session data: simulates expiry of stored sessions.
         this.emptySessionData();
@@ -153,9 +153,9 @@ public class MongoDbSessionStoreTest
         MockHttpServletRequest newRequest = new MockHttpServletRequest();
         newRequest.setCookies(initialResponseCookies);
         MockHttpServletResponse newResponse = new MockHttpServletResponse();
-        requestContext = new J2EContext(newRequest, newResponse);
+        requestContext = new JEEContext(newRequest, newResponse);
 
-        assertNull(store.get(requestContext, "testKey"));
+        assertFalse(store.get(requestContext, "testKey").isPresent());
         Cookie[] secondaryResponseCookies = newResponse.getCookies();
         assertEquals(secondaryResponseCookies.length, initialResponseCookies.length);
         assertEquals(secondaryResponseCookies[0].getValue(), initialResponseCookies[0].getValue());

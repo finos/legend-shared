@@ -27,7 +27,7 @@ import org.pac4j.core.config.Config;
 import org.pac4j.core.engine.DefaultSecurityLogic;
 import org.pac4j.core.engine.decision.ProfileStorageDecision;
 import org.pac4j.dropwizard.Pac4jFactory;
-import org.pac4j.j2e.filter.SecurityFilter;
+import org.pac4j.jee.filter.SecurityFilter;
 
 import static org.junit.Assert.*;
 
