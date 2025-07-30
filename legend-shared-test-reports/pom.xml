@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.finos.legend.shared</groupId>
         <artifactId>legend-shared</artifactId>
-        <version>0.27.3-SNAPSHOT</version>
+        <version>0.28.0</version>
     </parent>
 
     <artifactId>legend-shared-test-reports</artifactId>
