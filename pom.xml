@@ -48,7 +48,8 @@
         <dropwizard.version>1.3.29</dropwizard.version>
         <dropwizard.pac4j.version>4.0.0</dropwizard.pac4j.version>
         <guava.version>30.0-jre</guava.version>
-        <jackson.annotations.version>2.10.1</jackson.annotations.version>
+        <jackson.version>2.10.5</jackson.version>
+        <jackson.databind.version>2.10.5.1</jackson.databind.version>
         <jackson.dataformat.yaml.version>2.11.2</jackson.dataformat.yaml.version>
         <jakarta.xml.bind.version>2.3.2</jakarta.xml.bind.version>
         <javax.jax-rs.version>2.1.1</javax.jax-rs.version>
@@ -397,10 +398,6 @@
                 <version>${pac4j.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-databind</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>com.nimbusds</groupId>
                         <artifactId>nimbus-jose-jwt</artifactId>
                     </exclusion>
@@ -410,12 +407,6 @@
                 <groupId>org.pac4j</groupId>
                 <artifactId>pac4j-http</artifactId>
                 <version>${pac4j.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.fasterxml.jackson.core</groupId>
-                        <artifactId>jackson-databind</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.pac4j</groupId>
@@ -446,7 +437,17 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.annotations.version}</version>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.databind.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
