@@ -16,8 +16,8 @@ package org.finos.legend.server.pac4j;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import io.dropwizard.Configuration;
@@ -142,7 +142,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
         MongoDatabase db = null;
         if (StringUtils.isNotEmpty(legendConfig.getMongoDb()) && StringUtils.isNotEmpty(legendConfig.getMongoUri()))
         {
-            MongoClient client = new MongoClient(new MongoClientURI(legendConfig.getMongoUri()));
+            MongoClient client = MongoClients.create(legendConfig.getMongoUri());
             db = subjectExecutor.execute(() -> client.getDatabase(legendConfig.getMongoDb()));
         }
 
