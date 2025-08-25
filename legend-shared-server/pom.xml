@@ -109,10 +109,6 @@
             <groupId>io.opentracing.contrib</groupId>
             <artifactId>opentracing-jaxrs2</artifactId>
         </dependency>
-        <dependency>
-            <groupId>joda-time</groupId>
-            <artifactId>joda-time</artifactId>
-        </dependency>
 
         <!-- JAXB - needed in java 11 -->
         <dependency>
