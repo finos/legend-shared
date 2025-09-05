@@ -15,8 +15,9 @@
 package org.finos.legend.server.pac4j.mongostore;
 
 import com.google.common.collect.ImmutableMap;
-import com.mongodb.MongoClient;
-import com.mongodb.ServerAddress;
+import com.mongodb.ConnectionString;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
@@ -53,7 +54,7 @@ public class MongoDbSessionStoreTest
         server = new MongoServer(new MemoryBackend());
         InetSocketAddress serverAddress = server.bind();
 
-        client = new MongoClient(new ServerAddress(serverAddress));
+        client = MongoClients.create(new ConnectionString("mongodb://"+serverAddress.getHostName() +":"+ serverAddress.getPort()));
         db = client.getDatabase("test");
     }
 
