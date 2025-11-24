@@ -39,10 +39,6 @@
             <artifactId>dropwizard-pac4j</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.commonjava.mimeparse</groupId>
-            <artifactId>mimeparse</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
         </dependency>
