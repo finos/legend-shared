@@ -270,6 +270,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                                 mapping.setDispatcherTypes(EnumSet.allOf(DispatcherType.class));
                             }
                         });
+        environment.getApplicationContext()
+                        .setAttribute("PAC4J_SESSION_STORE",this.getConfig().getSessionStore());
         swapClientFinderAndStorageDecision(environment);
     }
 
