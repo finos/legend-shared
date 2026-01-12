@@ -16,11 +16,9 @@ package org.finos.legend.server.pac4j.kerberos;
 
 import com.sun.security.jgss.GSSUtil;
 import org.ietf.jgss.*;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
-import org.mockito.MockitoAnnotations;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.kerberos.credentials.KerberosCredentials;
 
@@ -44,18 +42,11 @@ import static org.mockito.Mockito.when;
 public class ConstraintKerberosAuthenticatorTest
 {
     ConstraintKerberosAuthenticator delegationKerberosAuth;
-    AutoCloseable closeableMocks;
 
     @Before
     public void setUp()
     {
-        closeableMocks = MockitoAnnotations.openMocks(this);
         delegationKerberosAuth = spy(new ConstraintKerberosAuthenticator("service@REALM", "/test/service/keytab"));
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        closeableMocks.close();
     }
 
    @Test
