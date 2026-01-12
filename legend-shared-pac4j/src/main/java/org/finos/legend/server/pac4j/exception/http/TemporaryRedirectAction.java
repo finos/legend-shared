@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,27 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.finos.legend.server.pac4j;
+package org.finos.legend.server.pac4j.exception.http;
 
-import org.pac4j.core.client.DirectClient;
-import org.pac4j.core.credentials.Credentials;
-import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.exception.http.RedirectionAction;
+import org.pac4j.core.exception.http.WithLocationAction;
 
-@SerializableProfile
-public class TestClient extends DirectClient<Credentials>
+public class TemporaryRedirectAction extends RedirectionAction implements WithLocationAction
 {
-    public TestClient()
+    private final String location;
+
+    public TemporaryRedirectAction(String location)
     {
+        super(307);
+        this.location = location;
     }
 
-    public TestClient(String name)
+    public String getLocation()
     {
-        this.setName(name);
+        return this.location;
     }
-
-    @Override
-  protected void clientInit()
-  {
-
-  }
 }

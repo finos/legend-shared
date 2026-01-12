@@ -16,8 +16,10 @@ package org.finos.legend.server.pac4j;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.client.Clients;
@@ -34,20 +36,16 @@ import org.slf4j.LoggerFactory;
 
 public class LegendClientFinder extends DefaultSecurityClientFinder
 {
-  private static final Logger logger = LoggerFactory.getLogger(DefaultSecurityClientFinder.class);
+   private static final Logger logger = LoggerFactory.getLogger(DefaultSecurityClientFinder.class);
+   public static final String CLIENT_TO_EXCLUDE = "ClientToExclude";
 
   String clientNameParameter = Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER;
-  String defaultClient;
+  List<String> defaultClients;
 
-  public LegendClientFinder(String defaultClient)
+  public LegendClientFinder(List<String> defaultClients)
   {
     super();
-    this.defaultClient = defaultClient;
-  }
-
-  public LegendClientFinder()
-  {
-    super();
+    this.defaultClients = defaultClients;
   }
 
   @Override
@@ -66,6 +64,7 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
         logger.debug("Only client: {}", securityClientNames);
       }
     }
+    Optional<String> kerbClientToExclude = context.getRequestAttribute(CLIENT_TO_EXCLUDE);
 
     if (CommonHelper.isNotBlank(securityClientNames))
     {
@@ -75,11 +74,12 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
       String nameFound;
       if (clientNameOnRequest != null)
       {
-        result = findUtil(clients, names, clientNameOnRequest);
-      } else if (defaultClient != null)
+        result = findUtil(clients, names, Collections.singletonList(clientNameOnRequest), null);
+      } else if (!defaultClients.isEmpty())
       {
-        logger.debug("defaultClient: {}", defaultClient);
-        result = findUtil(clients, names, defaultClient);
+        logger.debug("defaultClients: {}", defaultClients);
+        logger.debug("Exclusion for Kerberos client, removing '{}' from default list", kerbClientToExclude);
+        result = findUtil(clients, names, defaultClients, kerbClientToExclude.orElse(null));
       } else
       {
         Iterator var13 = names.iterator();
@@ -93,41 +93,25 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
       }
     }
 
-    logger.debug("result: {}", result.stream().map((c) ->
-    {
-      return c.getName();
-    }).collect(Collectors.toList()));
+    logger.debug("result: {}", result.stream().map(Client::getName).collect(Collectors.toList()));
     return result;
   }
 
-  public List<Client<? extends Credentials>> findUtil(Clients clients, List<String> names, String toFind)
+  public List<Client<? extends Credentials>> findUtil(Clients clients, List<String> names, List<String> toFind, String clientToExclude)
   {
-    List<Client<? extends Credentials>> result = new ArrayList<>();
-    Client client = clients.findClient(toFind).get();
-    String nameFound = client.getName();
-    boolean found = false;
-    Iterator var11 = names.iterator();
-
-    while (var11.hasNext())
-    {
-      String name = (String) var11.next();
-      if (CommonHelper.areEqualsIgnoreCaseAndTrim(name, nameFound))
-      {
-        result.add(client);
-        found = true;
-        break;
-      }
-    }
-
-    if (!found)
-    {
-      throw new TechnicalException("Client not allowed: " + nameFound);
-    }
-    return result;
+    return toFind.stream()
+            .filter(requested -> !CommonHelper.areEqualsIgnoreCaseAndTrim(clientToExclude, requested))
+            .map(requested -> names.stream()
+                    .filter(allowed -> CommonHelper.areEqualsIgnoreCaseAndTrim(allowed, requested))
+                    .findFirst()
+                    .flatMap(clients::findClient)
+                    .map(client -> (Client<? extends Credentials>) client)
+                    .orElseThrow(() -> new TechnicalException("Client not found: " + requested)))
+            .collect(Collectors.toList());
   }
 
-  public String getDefaultClient()
+  public List<String> getDefaultClients()
   {
-    return defaultClient;
+    return defaultClients;
   }
 }

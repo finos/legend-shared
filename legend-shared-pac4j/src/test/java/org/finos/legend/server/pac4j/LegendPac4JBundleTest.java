@@ -29,6 +29,8 @@ import org.pac4j.core.engine.decision.ProfileStorageDecision;
 import org.pac4j.dropwizard.Pac4jFactory;
 import org.pac4j.jee.filter.SecurityFilter;
 
+import java.util.Collections;
+
 import static org.junit.Assert.*;
 
 public class LegendPac4JBundleTest
@@ -53,7 +55,7 @@ public class LegendPac4JBundleTest
     LegendPac4jConfiguration config = new LegendPac4jConfiguration();
     config.setCallbackPrefix("/test");
     config.setClients(ImmutableList.of(new TestClient(), new SecondTestClient()));
-    config.setDefaultClient("SecondTestClient");
+    config.setDefaultClient(Collections.singletonList("SecondTestClient"));
     LegendPac4jBundle<Configuration> bundle = new LegendPac4jBundle<>(c -> config);
     Pac4jFactory factory = bundle.getPac4jFactory(new Configuration());
     Config builtConfig = factory.build();
@@ -61,7 +63,7 @@ public class LegendPac4JBundleTest
     bundle.run(new Configuration(),e);
     assertEquals("/test/callback", factory.getCallbackUrl());
     assertEquals(config.getClients(), factory.getClients());
-    assertEquals("SecondTestClient", ((LegendClientFinder)((DefaultSecurityLogic)builtConfig.getSecurityLogic()).getClientFinder()).getDefaultClient());
+    assertEquals("SecondTestClient", ((LegendClientFinder)((DefaultSecurityLogic)builtConfig.getSecurityLogic()).getClientFinder()).getDefaultClients());
     assertEquals(config.getClients(), builtConfig.getClients().getClients());
     FilterHolder securityHolder = e.getApplicationContext().getServletHandler().getFilter(SecurityFilter.class.getName());
     assertNotNull("Security filter holder cannot be null", securityHolder);

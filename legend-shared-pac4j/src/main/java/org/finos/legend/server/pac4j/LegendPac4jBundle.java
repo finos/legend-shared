@@ -26,8 +26,6 @@ import io.dropwizard.configuration.ConfigurationSourceProvider;
 import io.dropwizard.server.SimpleServerFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
-import javax.security.auth.Subject;
-import javax.servlet.DispatcherType;
 import org.apache.commons.lang3.StringUtils;
 import org.bson.Document;
 import org.eclipse.jetty.servlet.FilterHolder;
@@ -43,7 +41,7 @@ import org.pac4j.core.client.Client;
 import org.pac4j.core.config.Config;
 import org.pac4j.core.context.JEEContext;
 import org.pac4j.core.context.session.JEESessionStore;
-import org.pac4j.core.engine.DefaultSecurityLogic;
+import org.pac4j.core.engine.decision.AlwaysUseSessionProfileStorageDecision;
 import org.pac4j.core.http.url.DefaultUrlResolver;
 import org.pac4j.core.matching.matcher.Matcher;
 import org.pac4j.core.matching.matcher.PathMatcher;
@@ -51,9 +49,14 @@ import org.pac4j.core.util.JavaSerializationHelper;
 import org.pac4j.dropwizard.Pac4jBundle;
 import org.pac4j.dropwizard.Pac4jFactory;
 import org.pac4j.dropwizard.Pac4jFeatureSupport;
-import org.pac4j.jee.filter.SecurityFilter;
 import org.pac4j.jax.rs.pac4j.JaxRsContext;
+import org.pac4j.jax.rs.servlet.pac4j.ServletJaxRsContext;
 import org.pac4j.jax.rs.servlet.pac4j.ServletSessionStore;
+import org.pac4j.jee.filter.CallbackFilter;
+import org.pac4j.jee.filter.SecurityFilter;
+
+import javax.security.auth.Subject;
+import javax.servlet.DispatcherType;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -89,7 +92,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
 
     @SuppressWarnings("WeakerAccess")
     public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier,
-                             Function<C, Supplier<Subject>> subjectSupplierSupplier)
+                               Function<C, Supplier<Subject>> subjectSupplierSupplier)
     {
         this.configSupplier = configSupplier;
         this.subjectSupplierSupplier = subjectSupplierSupplier;
@@ -161,7 +164,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                                     legendConfig.getHazelcastSession().getConfigFilePath(),
                                     ImmutableMap.of(
                                             JEEContext.class, new JEESessionStore(),
-                                            JaxRsContext.class, new ServletSessionStore()), sessionCookieName));
+                                            JaxRsContext.class, new ServletSessionStore(),
+                                            ServletJaxRsContext.class, new ServletSessionStore()), sessionCookieName));
                         }
                         else if (legendConfig.getMongoSession() != null && legendConfig.getMongoSession().isEnabled())
                         {
@@ -181,30 +185,37 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                                             legendConfig.getMongoSession().getMaxSessionLength(),
                                             userSessions, ImmutableMap.of(
                                             JEEContext.class, new JEESessionStore(),
-                                            JaxRsContext.class, new ServletSessionStore()),
+                                            JaxRsContext.class, new ServletSessionStore(),
+                                            ServletJaxRsContext.class, new ServletSessionStore()),
                                             subjectExecutor, legendConfig.getTrustedPackages(), sessionCookieName));
                         }
                         return config;
                     }
                 };
         factory.setCallbackUrl(clientCallbackUrl);
-        factory.setAjaxRequestResolver(new AcceptHeaderAjaxRequestResolver());
+
+        AcceptHeaderAjaxRequestResolver ajaxRequestResolver = new AcceptHeaderAjaxRequestResolver();
+        ajaxRequestResolver.setAddRedirectionUrlAsHeader(true);
+        factory.setAjaxRequestResolver(ajaxRequestResolver);
+
         factory.setUrlResolver(new DefaultUrlResolver());
-        Pac4jFactory.ServletConfiguration servletConfiguration =
-                new Pac4jFactory.ServletConfiguration();
+
         Pac4jFactory.ServletSecurityFilterConfiguration securityFilterConfiguration =
                 new Pac4jFactory.ServletSecurityFilterConfiguration();
         securityFilterConfiguration.setClients(
                 legendConfig.getClients().stream().map(Client::getName).collect(Collectors.joining(",")));
-
         securityFilterConfiguration.setMatchers(String.join(",",
                 new String[]{callbackMatcher, bypassMatcher}));
+        securityFilterConfiguration.setMultiProfile(legendConfig.isMultiProfile());
 
+        Pac4jFactory.ServletConfiguration servletConfiguration =
+                new Pac4jFactory.ServletConfiguration();
         servletConfiguration.setSecurity(Collections.singletonList(securityFilterConfiguration));
 
         Pac4jFactory.ServletCallbackFilterConfiguration callbackFilterConfiguration =
                 new Pac4jFactory.ServletCallbackFilterConfiguration();
         callbackFilterConfiguration.setMapping(callbackFilterUrl);
+        callbackFilterConfiguration.setMultiProfile(legendConfig.isMultiProfile());
         servletConfiguration.setCallback(Collections.singletonList(callbackFilterConfiguration));
 
         Pac4jFactory.ServletLogoutFilterConfiguration logoutConfiguration =
@@ -222,10 +233,10 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
         factory.setAuthorizers(legendConfig.getAuthorizers().stream()
                 .collect(Collectors.toMap(a -> a.getClass().getName(), a -> a)));
         securityFilterConfiguration.setAuthorizers(String.join(",", factory.getAuthorizers().keySet()));
-        DefaultSecurityLogic s = new DefaultSecurityLogic();
-        s.setClientFinder(legendConfig.getDefaultSecurityClient());
-        s.setProfileStorageDecision(new LegendUserProfileStorageDecision());
-        factory.setSecurityLogic(s);
+        LegendSecurityLogic legendSecurityLogic = new LegendSecurityLogic<>();
+        legendSecurityLogic.setClientFinder(legendConfig.getDefaultSecurityClient());
+        legendSecurityLogic.setProfileStorageDecision(new AlwaysUseSessionProfileStorageDecision<>());
+        factory.setSecurityLogic(legendSecurityLogic);
         factory.setServlet(servletConfiguration);
 
         PathMatcher matcher = new PathMatcher();
@@ -253,6 +264,11 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                 .servlets()
                 .addFilter("Username", new UsernameFilter())
                 .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
+
+        environment
+                .servlets()
+                .addFilter("CallbackFilter", new CallbackFilter())
+                .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/callback");
         environment
                 .getApplicationContext()
                 .setServletHandler(
