@@ -21,11 +21,9 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
-import org.mockito.MockitoAnnotations;
 import org.pac4j.core.context.JEEContext;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.kerberos.credentials.KerberosCredentials;
@@ -34,7 +32,6 @@ import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import java.util.Base64;
 
 import static org.junit.Assert.assertEquals;
@@ -45,7 +42,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
@@ -55,18 +51,11 @@ import static org.mockito.Mockito.when;
 public class UnconstraintKerberosAuthenticatorTest
 {
     UnconstraintKerberosAuthenticator delegationKerberosAuth;
-    AutoCloseable closeableMocks;
 
     @Before
     public void setUp()
     {
-        closeableMocks = MockitoAnnotations.openMocks(this);
         delegationKerberosAuth = spy(new UnconstraintKerberosAuthenticator("service@REALM", "/test/service/keytab", "https://test.service.com"));
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        closeableMocks.close();
     }
 
    @Test
