@@ -44,7 +44,6 @@ import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -55,9 +54,8 @@ public class UnconstraintKerberosAuthenticatorTest
     @Before
     public void setUp()
     {
-        delegationKerberosAuth = spy(new UnconstraintKerberosAuthenticator("service@REALM", "/test/service/keytab", "https://test.service.com"));
+        delegationKerberosAuth = new UnconstraintKerberosAuthenticator("service@REALM", "/test/service/keytab", "https://test.service.com");
     }
-
    @Test
     public void testValidateKerberosDelegationWithTGT() throws Exception
     {
