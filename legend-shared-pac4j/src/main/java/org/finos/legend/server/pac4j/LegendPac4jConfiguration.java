@@ -15,6 +15,7 @@
 package org.finos.legend.server.pac4j;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import io.dropwizard.configuration.ConfigurationException;
@@ -22,10 +23,12 @@ import io.dropwizard.configuration.ConfigurationSourceProvider;
 import io.dropwizard.configuration.YamlConfigurationFactory;
 import java.io.IOException;
 import java.util.List;
+import java.util.Objects;
+
+import org.finos.legend.server.pac4j.deserializer.StringOrArrayDeserializer;
 import org.pac4j.core.authorization.authorizer.Authorizer;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.client.finder.ClientFinder;
-import org.pac4j.core.client.finder.DefaultSecurityClientFinder;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class LegendPac4jConfiguration
@@ -33,7 +36,9 @@ public final class LegendPac4jConfiguration
     private String defaults;
     private List<Authorizer> authorizers = ImmutableList.of();
     private List<Client> clients;
-    private String defaultClient;
+    @JsonDeserialize(using = StringOrArrayDeserializer.class)
+    private List<String> defaultClient = ImmutableList.of();
+    private Boolean multiProfile = false;
     private String mongoUri;
     private String mongoDb;
     private MongoSessionConfiguration mongoSession = new MongoSessionConfiguration();
@@ -109,15 +114,7 @@ public final class LegendPac4jConfiguration
 
     public ClientFinder getDefaultSecurityClient()
     {
-        ClientFinder f;
-        if (this.defaultClient != null)
-        {
-            f = new LegendClientFinder(this.defaultClient);
-        } else
-        {
-            f = new LegendClientFinder();
-        }
-        return f;
+         return new LegendClientFinder(this.defaultClient);
     }
 
     private void defaultClients(List<Client> clients)
@@ -166,9 +163,22 @@ public final class LegendPac4jConfiguration
         return mongoUri;
     }
 
-    public void setDefaultClient(String defaultClient)
+    public void setDefaultClient(List<String> defaultClient)
     {
-        this.defaultClient = defaultClient;
+        if (Objects.nonNull(defaultClient))
+        {
+            this.defaultClient = defaultClient;
+        }
+    }
+
+    public void setMultiProfile(Boolean multiProfile)
+    {
+        this.multiProfile = multiProfile;
+    }
+
+    public Boolean isMultiProfile()
+    {
+        return multiProfile;
     }
 
     public void setMongoUri(String mongoUri)

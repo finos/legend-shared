@@ -36,14 +36,14 @@ public class LegendUserProfileStorageDecision<C extends WebContext> implements P
   }
 
   @Override
-  public boolean mustSaveProfileInSession(C c, List<Client> currentClients, DirectClient directClient, UserProfile userProfile)
+  public boolean mustSaveProfileInSession(C context, List<Client> currentClients, DirectClient directClient, UserProfile userProfile)
   {
     return checkForSerializableAnnotation(currentClients);
   }
 
-  public boolean checkForSerializableAnnotation(List<Client> currentClients)
+  private boolean checkForSerializableAnnotation(List<Client> currentClients)
   {
-    Client c = currentClients.iterator().next();
-    return c.getClass().isAnnotationPresent(SerializableProfile.class);
+      return currentClients.stream()
+              .allMatch(client -> client.getClass().isAnnotationPresent(SerializableProfile.class));
   }
 }

@@ -21,6 +21,7 @@ import javax.security.auth.login.Configuration;
 
 public class SystemAccountLoginConfiguration extends Configuration
 {
+  private  boolean forwardable = false;
   private String keytabLocation;
   private String principal;
   private boolean initiator;
@@ -33,6 +34,15 @@ public class SystemAccountLoginConfiguration extends Configuration
     this.initiator = initiator;
   }
 
+  public SystemAccountLoginConfiguration(
+          String keytabLocation, String principal, boolean initiator, boolean forwardable)
+  {
+    this.keytabLocation = keytabLocation;
+    this.principal = principal;
+    this.initiator = initiator;
+    this.forwardable = forwardable;
+  }
+
   @Override
   public AppConfigurationEntry[] getAppConfigurationEntry(String name)
   {
@@ -41,6 +51,7 @@ public class SystemAccountLoginConfiguration extends Configuration
       Map<String, String> options = new HashMap<String, String>();
       options.put("doNotPrompt", "true");
       options.put("useKeyTab", "true");
+      options.put("forwardable", Boolean.toString(forwardable));
       options.put("keyTab", this.keytabLocation);
       options.put("principal", this.principal);
       options.put("isInitiator", Boolean.toString(this.initiator));

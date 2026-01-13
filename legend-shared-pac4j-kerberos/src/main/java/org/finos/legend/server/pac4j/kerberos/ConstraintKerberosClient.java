@@ -1,4 +1,4 @@
-// Copyright 2020 Goldman Sachs
+// Copyright 2026 Goldman Sachs
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.pac4j.kerberos.client.direct.DirectKerberosClient;
 
 @SuppressWarnings("unused")
 @SerializableProfile
-public class KerberosClient extends DirectKerberosClient
+public class ConstraintKerberosClient extends DirectKerberosClient
 {
   @JsonProperty
   private String servicePrincipal;
@@ -28,14 +28,11 @@ public class KerberosClient extends DirectKerberosClient
   @JsonProperty
   private String keyTabLocation;
 
-  @JsonProperty
-  private String noDelegRedirectHost;
-
   @Override
   public void clientInit()
   {
     defaultAuthenticator(
-        new UnconstraintKerberosAuthenticator(servicePrincipal, keyTabLocation,noDelegRedirectHost));
+        new ConstraintKerberosAuthenticator(servicePrincipal, keyTabLocation));
     super.clientInit();
   }
 }

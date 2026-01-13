@@ -15,6 +15,8 @@
 package org.finos.legend.server.pac4j.kerberos;
 
 import com.sun.security.jgss.GSSUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.finos.legend.server.pac4j.exception.http.TemporaryRedirectAction;
 import org.finos.legend.server.pac4j.kerberos.local.SystemAccountLoginConfiguration;
 import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
@@ -27,8 +29,9 @@ import org.pac4j.core.context.WebContext;
 import org.pac4j.core.credentials.authenticator.Authenticator;
 import org.pac4j.core.exception.BadCredentialsException;
 import org.pac4j.core.exception.CredentialsException;
-import org.pac4j.core.exception.http.BadRequestAction;
-import org.pac4j.core.exception.http.OkAction;
+import org.pac4j.core.exception.http.FoundAction;
+import org.pac4j.core.exception.http.HttpAction;
+import org.pac4j.core.exception.http.SeeOtherAction;
 import org.pac4j.kerberos.credentials.KerberosCredentials;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,16 +46,18 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
-public class DelegationKerberosAuthenticator implements Authenticator<KerberosCredentials>
+public class UnconstraintKerberosAuthenticator implements Authenticator<KerberosCredentials>
 {
-    private static final Logger LOGGER = LoggerFactory.getLogger(DelegationKerberosAuthenticator.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(UnconstraintKerberosAuthenticator.class);
     private final String servicePrincipal;
     private final String keytabLocation;
+    private final String noDelegRedirectHost;
 
-    public DelegationKerberosAuthenticator(String servicePrincipal, String keytabLocation, boolean debug)
+    public UnconstraintKerberosAuthenticator(String servicePrincipal, String keytabLocation, String noDelegRedirectHost)
     {
         this.servicePrincipal = servicePrincipal;
         this.keytabLocation = keytabLocation;
+        this.noDelegRedirectHost = noDelegRedirectHost;
     }
 
     private Subject getSubject() throws LoginException
@@ -81,13 +86,22 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
             GSSCredential cred = Subject.doAs(subject, action);
 
             GSSContext context = manager.createContext(cred);
-       
+
             context.requestCredDeleg(true);
             byte[] resToken = context.acceptSecContext(credentials.getKerberosTicket(), 0, credentials.getKerberosTicket().length);
 
             // delegation is required, so reject credentials without delegation
             if (!context.getCredDelegState())
             {
+                if (StringUtils.isNoneBlank(this.noDelegRedirectHost))
+                {
+                    String path = webContext.getPath();
+                    String queryString = ((JEEContext) webContext).getNativeRequest().getQueryString();
+                    String redirectUrl = this.noDelegRedirectHost + path
+                            + (queryString != null ? "?" + queryString : "");
+                    LOGGER.info("No delegation - redirecting to {}",redirectUrl);
+                    throw new TemporaryRedirectAction(redirectUrl);
+                }
                 String baseMessage = "Delegation is turned off";
                 String message;
                 try
@@ -113,6 +127,10 @@ public class DelegationKerberosAuthenticator implements Authenticator<KerberosCr
         catch (CredentialsException e)
         {
             LOGGER.error("validate failed {}", e.getMessage());
+            throw e;
+        }
+        catch (TemporaryRedirectAction e)
+        {
             throw e;
         }
         catch (Exception e)
