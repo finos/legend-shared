@@ -36,13 +36,11 @@ import java.util.Optional;
 
 import static org.finos.legend.server.pac4j.LegendRequestHandler.REDIRECT_PROTO_ATTRIBUTE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -306,7 +304,7 @@ public class LegendSecurityLogicTest
         TestClient testClient = spy(new TestClient());
         testClient.setProfileCreator(profileCreator);
         when(clientFinder.find(any(), any(), anyString())).thenReturn(Collections.singletonList(testClient));
-        doNothing().when(testClient).getCredentials(webContext);
+        doReturn(Optional.empty()).when(testClient).getCredentials(webContext);
 
         legendSecurityLogic.setClientFinder(clientFinder);
         legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
@@ -381,7 +379,7 @@ public class LegendSecurityLogicTest
         // Verify
         verify(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),anyString(),anyString(),eq(false),any());
         verify(profileManager,never()).save(false, userProfile,true);
-        verify(adapter).adapt(eq(webContext),any(),any());
+        verify(adapter).adapt(eq(webContext),any());
         verify(webContext, never()).setRequestAttribute(eq(REDIRECT_PROTO_ATTRIBUTE), any());
     }
 
