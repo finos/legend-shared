@@ -337,7 +337,7 @@ public class LegendSecurityLogicTest
         TestClient testClient = spy(new TestClient());
         testClient.setProfileCreator(profileCreator);
         when(clientFinder.find(any(), any(), anyString())).thenReturn(Collections.singletonList(testClient));
-        doNothing().when(testClient).getCredentials(webContext);
+        when(testClient.getCredentials(webContext)).thenReturn(Optional.empty());
 
         legendSecurityLogic.setClientFinder(clientFinder);
         legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
