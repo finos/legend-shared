@@ -413,7 +413,7 @@ public class LegendSecurityLogicTest
         // Verify
         verify(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),anyString(),anyString(),eq(false),any());
         verify(profileManager,never()).save(false, userProfile,true);
-        verify(adapter).adapt(eq(webContext),any(),any());
+        verify(adapter).adapt(eq(webContext),any());
         verify(webContext, never()).setRequestAttribute(eq(REDIRECT_PROTO_ATTRIBUTE), any());
     }
 
