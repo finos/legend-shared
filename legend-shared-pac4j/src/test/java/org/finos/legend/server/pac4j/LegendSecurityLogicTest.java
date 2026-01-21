@@ -89,7 +89,7 @@ public class LegendSecurityLogicTest
     public void testPerform_WithDirectClient_SingleProfile_BrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
         when(profileCreator.create(any(Credentials.class), any(WebContext.class)))
@@ -136,7 +136,7 @@ public class LegendSecurityLogicTest
     public void testPerform_WithDirectAndIndirectClient_MultiProfile_BrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
         when(profileCreator.create(any(Credentials.class), any(WebContext.class)))
@@ -202,7 +202,7 @@ public class LegendSecurityLogicTest
         UserProfile userProfile = mock(UserProfile.class);
         ProfileManager profileManager = mock(ProfileManager.class);
         legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(false));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(false));
         SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
         when(adapter.adapt(any(), (Collection<UserProfile>) any(), anyList())).thenReturn(null);
         doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),eq("none"),anyString(),eq(false),any());
@@ -228,7 +228,7 @@ public class LegendSecurityLogicTest
     public void testPerform_WithMultiPleDirectAndIndirectClient_BrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
         when(profileCreator.create(any(Credentials.class), any(WebContext.class)))
@@ -319,7 +319,7 @@ public class LegendSecurityLogicTest
     public void testPerform_WithDirectClient_MissingCredentials_BrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
         when(profileCreator.create(any(Credentials.class), any(WebContext.class)))
@@ -372,7 +372,7 @@ public class LegendSecurityLogicTest
     public void testPerform_WithDirectClient_SingleProfile_NonBrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.empty());
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         when(webContext.getRequestMethod()).thenReturn("GET");
 
         ProfileCreator profileCreator = mock(ProfileCreator.class);
@@ -419,7 +419,7 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_MultiProfile_False() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         UserProfile userProfile = mock(UserProfile.class);
         ProfileManager profileManager = mock(ProfileManager.class);
         legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
@@ -447,7 +447,7 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_MultiProfile_True_NonBrowserCall() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         UserProfile userProfile = mock(UserProfile.class);
         ProfileManager profileManager = mock(ProfileManager.class);
         legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
@@ -476,7 +476,7 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_MultiProfile_Null() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         UserProfile userProfile = mock(UserProfile.class);
         ProfileManager profileManager = mock(ProfileManager.class);
         legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
@@ -504,7 +504,7 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_WithDirectClient_ExpiredProfile() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
@@ -551,7 +551,7 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_WithDirectClientExpiredProfile_ValidIndirectClientProfile() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile oidProfile = mock(UserProfile.class);
@@ -599,7 +599,7 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_WithIndirectClient_ExpiredProfile() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(true));
+        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
