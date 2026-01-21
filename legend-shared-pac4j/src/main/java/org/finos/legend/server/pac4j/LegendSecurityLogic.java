@@ -42,7 +42,7 @@ public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurit
         if (!isConstraintKerberosFlow)
         {
             LOGGER.info("NonConstraint host, falling back to default handling");
-            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, authorizers, matchers, false, parameters);
+            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, false, parameters);
         }
         boolean multiProfile = inputMultiProfile != null && inputMultiProfile;
         if (!multiProfile)
@@ -53,7 +53,7 @@ public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurit
         if (nonBrowserCall(context))
         {
             LOGGER.info("Non-browser call detected, falling back to default handling");
-            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, authorizers, matchers, false, parameters);
+            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, false, parameters);
         }
         LOGGER.info("Browser call detected, using LegendSecurityLogic handling");
         LOGGER.debug("url: {}", context.getFullRequestURL());
