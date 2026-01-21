@@ -25,6 +25,7 @@ import static org.finos.legend.server.pac4j.LegendRequestHandler.REDIRECT_PROTO_
 public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurityLogic<R, C>
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(LegendSecurityLogic.class);
+    public static final String IS_CONSTRAINED_KERBEROS_FLOW = "IS_CONSTRAINED_KERBEROS_FLOW";
 
     @Override
     public R perform(C context,
@@ -37,6 +38,12 @@ public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurit
                      Boolean inputMultiProfile,
                      Object... parameters)
     {
+        boolean isConstraintKerberosFlow = (boolean) context.getRequestAttribute(IS_CONSTRAINED_KERBEROS_FLOW).orElse(false);
+        if (!isConstraintKerberosFlow)
+        {
+            LOGGER.info("NonConstrained host, falling back to default handling");
+            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, false, parameters);
+        }
         boolean multiProfile = inputMultiProfile != null && inputMultiProfile;
         if (!multiProfile)
         {
@@ -46,7 +53,7 @@ public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurit
         if (nonBrowserCall(context))
         {
             LOGGER.info("Non-browser call detected, falling back to default handling");
-            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, authorizers, matchers, false, parameters);
+            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, false, parameters);
         }
         LOGGER.info("Browser call detected, using LegendSecurityLogic handling");
         LOGGER.debug("url: {}", context.getFullRequestURL());
