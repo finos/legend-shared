@@ -41,7 +41,6 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -115,7 +114,7 @@ public class LegendSecurityLogicTest
 
         when(legendSecurityLogic.getProfileStorageDecision()).thenReturn(profileStorageDecision);
         when(profileStorageDecision.mustSaveProfileInSession(any(),anyList(),any(),any())).thenReturn(true);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),anyString(),anyString(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),eq("none"),anyString(),any(),any());
 
         legendSecurityLogic.perform(
                 webContext,
@@ -123,7 +122,7 @@ public class LegendSecurityLogicTest
                 adapter,
                 httpActionAdapter,
                 "AnonymousClient",
-                "authorizers",
+                "",
                 "matchers",
                 true
         );
@@ -206,7 +205,7 @@ public class LegendSecurityLogicTest
         when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINT_KERBEROS_FLOW)).thenReturn(Optional.of(false));
         SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
         when(adapter.adapt(any(), (Collection<UserProfile>) any(), anyList())).thenReturn(null);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),anyString(),anyString(),eq(false),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),eq("none"),anyString(),eq(false),any());
 
         legendSecurityLogic.perform(
                 webContext,
