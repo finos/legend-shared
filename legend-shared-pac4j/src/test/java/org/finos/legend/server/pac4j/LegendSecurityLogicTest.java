@@ -197,7 +197,7 @@ public class LegendSecurityLogicTest
     }
 
     @Test
-    public void testPerform_WithDirectAndIndirectClient_MultiProfile_BrowserCallUsingConstraintHost() throws Exception
+    public void testPerform_WithDirectAndIndirectClient_MultiProfile_BrowserCallUsingConstrainedHost() throws Exception
     {
         UserProfile userProfile = mock(UserProfile.class);
         ProfileManager profileManager = mock(ProfileManager.class);
