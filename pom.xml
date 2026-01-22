@@ -76,7 +76,7 @@
         <prometheus.version>0.8.1</prometheus.version>
         <snakeyaml.version>1.33</snakeyaml.version>
         <spring.test.version>4.3.24.RELEASE</spring.test.version>
-        <spring.boot.autoconfigure.version>2.3.3.RELEASE</spring.boot.autoconfigure.version>
+        <spring.boot.autoconfigure.version>2.5.15</spring.boot.autoconfigure.version>
         <json-smart.version>2.4.2</json-smart.version>
         <hazelcast.version>5.3.1</hazelcast.version>
 
