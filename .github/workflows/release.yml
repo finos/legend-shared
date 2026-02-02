@@ -90,6 +90,6 @@ jobs:
 
       - name: Publish artifacts for the latest tag
         working-directory: target/checkout
-        run: mvn -B -e central-publishing:publish -P release,docker
+        run: mvn -B -e jar:jar central-publishing:publish -P release,docker
         env:
           MAVEN_OPTS: -Xmx14g
