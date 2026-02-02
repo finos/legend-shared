@@ -20,7 +20,6 @@ env:
   CI_GPG_PASSPHRASE: ${{ secrets.CI_GPG_PASSPHRASE }}
   DOCKER_USERNAME: finos
   DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-  MAVEN_OPTS: -Xmx4g
 
 on:
   workflow_dispatch:
@@ -72,5 +71,25 @@ jobs:
       - name: Prepare release
         run: mvn -B -DpreparationGoals=clean release:prepare -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ env.DEVELOPMENT_VERSION }} -P release
 
-      - name: Perform release
-        run: mvn -B release:perform -P release,docker
+      - name: Checkout the latest tag
+        run: |
+          mkdir -p target/checkout
+          git clone --depth 1 --branch ${{ github.event.repository.name }}-${{ github.event.inputs.releaseVersion }} https://github.com/${{ github.repository }}.git target/checkout
+
+      - name: Build the latest tag
+        working-directory: target/checkout
+        run: mvn -B -e -T2 -DskipTests install -P release,docker
+        env:
+          MAVEN_OPTS: -Xmx14g
+
+      - name: Test the latest tag
+        working-directory: target/checkout
+        run: mvn -B -e -T2 -DargLine="-Xmx6g" surefire:test -P release,docker
+        env:
+          MAVEN_OPTS: -Xmx2g
+
+      - name: Deploy artifacts for the latest tag
+        working-directory: target/checkout
+        run: mvn -B -e deploy:deploy -P release,docker
+        env:
+          MAVEN_OPTS: -Xmx14g
