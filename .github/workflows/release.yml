@@ -88,8 +88,33 @@ jobs:
         env:
           MAVEN_OPTS: -Xmx2g
 
-      - name: Publish artifacts for the latest tag
+      - name: Create bundle to publish
         working-directory: target/checkout
-        run: mvn -B -e jar:jar shade:shade source:jar-no-fork javadoc:jar gpg:sign central-publishing:publish -P release,docker
-        env:
-          MAVEN_OPTS: -Xmx14g
+        run: |
+          mkdir -p central-staging/org/finos/legend/shared
+          cp -R ~/.m2/repository/org/finos/legend/shared central-staging/org/finos/legend/shared
+          find central-staging -type f \( -name "*.xml" -o -name "*.repositories" \) -delete
+          mkdir central-publishing
+          cd central-staging && zip -r ../central-publishing/central-bundle.zip org
+
+      - name: Publish bundle
+        working-directory: target/checkout/central-publishing
+        run: |
+          token=$(printf "$CI_DEPLOY_USERNAME:$CI_DEPLOY_PASSWORD" | base64)
+          deploymentId=$(curl -s -X POST -H "Authorization: Bearer $token" --form bundle=@central-bundle.zip https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC)
+          echo "Uploaded bundle. Deployment id is: $deploymentId"
+          echo "DEVELOPMENT_ID=${deploymentId}" >> $GITHUB_ENV
+
+      - name: Verify deployment status
+        run: |
+          token=$(printf "$CI_DEPLOY_USERNAME:$CI_DEPLOY_PASSWORD" | base64)
+          deploymentId=${{ env.DEVELOPMENT_VERSION }}
+          
+          deploymentState=""
+          
+          while [ "$deploymentState" != "PUBLISHED" ]; do
+            sleep 1m
+            response=$(curl -s -X POST -H "Authorization: Bearer $token" https://central.sonatype.com/api/v1/publisher/status?id=$deploymentId)
+            deploymentState=$(jq -r '.deploymentState' $response)
+            echo "Deployment state for id $deploymentId is $deploymentState"
+          done
