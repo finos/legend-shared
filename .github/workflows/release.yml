@@ -101,9 +101,18 @@ jobs:
         working-directory: target/checkout/central-publishing
         run: |
           token=$(printf "$CI_DEPLOY_USERNAME:$CI_DEPLOY_PASSWORD" | base64)
-          deploymentId=$(curl -s -X POST -H "Authorization: Bearer $token" --form bundle=@central-bundle.zip https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC)
-          echo "Uploaded bundle. Deployment id is: $deploymentId"
-          echo "DEVELOPMENT_ID=${deploymentId}" >> $GITHUB_ENV
+          httpCode=$(curl -s -o response.json -w "%{http_code}" -X POST -H "Authorization: Bearer $token" --form bundle=@central-bundle.zip https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC)
+          
+          if ["$httpCode" -eq 200 ]; then
+            deploymentId=$(cat response.json)
+            echo "Uploaded bundle. Deployment id is: $deploymentId"
+            echo "DEVELOPMENT_ID=${deploymentId}" >> $GITHUB_ENV
+          else
+            echo "Failed to upload bundle. Got status code $httpCode"
+            echo "Got the following response body:"
+            cat response.json
+            exit 1
+          fi
 
       - name: Verify deployment status
         run: |
