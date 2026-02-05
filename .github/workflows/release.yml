@@ -131,7 +131,7 @@ jobs:
           while [ "$deploymentState" != "PUBLISHED" ]; do
             sleep 1m
             response=$(curl -s -X POST -H "Authorization: Bearer $token" https://central.sonatype.com/api/v1/publisher/status?id=$deploymentId)
-            deploymentState=$(jq -r '.deploymentState' $response)
+            deploymentState=$(echo "$response" | jq -r '.deploymentState')
             echo "Deployment state for id $deploymentId is $deploymentState"
           
             if [[ "$deploymentState" == "FAILED" ]]; then
