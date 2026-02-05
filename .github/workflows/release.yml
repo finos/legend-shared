@@ -94,6 +94,13 @@ jobs:
           mkdir -p central-staging/org/finos/legend/shared
           cp -R ~/.m2/repository/org/finos/legend/shared central-staging/org/finos/legend/shared
           find central-staging -type f \( -name "*.xml" -o -name "*.repositories" \) -delete
+          find central-staging -type f ! -name "*.md5" ! -name "*.sha1" ! -name "*.sha256" ! -name "*.sha512" ! -name "*.asc" | while read -r file; do
+            md5sum "$file" | awk '{print $1}' > "$file.md5"
+            sha1sum "$file" | awk '{print $1}' > "$file.sha1"
+            sha256sum "$file" | awk '{print $1}' > "$file.sha256"
+            sha512sum "$file" | awk '{print $1}' > "$file.sha512"
+          done
+          
           mkdir central-publishing
           cd central-staging && zip -r ../central-publishing/central-bundle.zip org
 
@@ -103,7 +110,7 @@ jobs:
           token=$(printf "$CI_DEPLOY_USERNAME:$CI_DEPLOY_PASSWORD" | base64)
           httpCode=$(curl -s -o response.json -w "%{http_code}" -X POST -H "Authorization: Bearer $token" --form bundle=@central-bundle.zip https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC)
           
-          if ["$httpCode" -eq 200 ]; then
+          if [[ "$httpCode" == 2* ]]; then
             deploymentId=$(cat response.json)
             echo "Uploaded bundle. Deployment id is: $deploymentId"
             echo "DEVELOPMENT_ID=${deploymentId}" >> $GITHUB_ENV
@@ -117,7 +124,7 @@ jobs:
       - name: Verify deployment status
         run: |
           token=$(printf "$CI_DEPLOY_USERNAME:$CI_DEPLOY_PASSWORD" | base64)
-          deploymentId=${{ env.DEVELOPMENT_VERSION }}
+          deploymentId=${{ env.DEVELOPMENT_ID }}
           
           deploymentState=""
           
@@ -126,4 +133,10 @@ jobs:
             response=$(curl -s -X POST -H "Authorization: Bearer $token" https://central.sonatype.com/api/v1/publisher/status?id=$deploymentId)
             deploymentState=$(jq -r '.deploymentState' $response)
             echo "Deployment state for id $deploymentId is $deploymentState"
+          
+            if [[ "$deploymentState" == "FAILED" ]]; then
+              echo "The deployment failed with the following response"
+              echo "$response"
+              exit 1
+            fi
           done
