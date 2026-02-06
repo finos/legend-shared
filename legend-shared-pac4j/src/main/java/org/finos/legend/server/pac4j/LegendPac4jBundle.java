@@ -52,7 +52,6 @@ import org.pac4j.dropwizard.Pac4jFeatureSupport;
 import org.pac4j.jax.rs.pac4j.JaxRsContext;
 import org.pac4j.jax.rs.servlet.pac4j.ServletJaxRsContext;
 import org.pac4j.jax.rs.servlet.pac4j.ServletSessionStore;
-import org.pac4j.jee.filter.CallbackFilter;
 import org.pac4j.jee.filter.SecurityFilter;
 
 import javax.security.auth.Subject;
@@ -77,6 +76,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     private static final String callBackSuffix = "/callback";
     private static final String callbackMatcher = "notCallback";
     private static final String bypassMatcher = "bypassPaths";
+    public static final String PAC4J_SESSION_STORE = "PAC4J_SESSION_STORE";
     private final Function<C, LegendPac4jConfiguration> configSupplier;
     private final Function<C, Supplier<Subject>> subjectSupplierSupplier;
     private ConfigurationSourceProvider configurationSourceProvider;
@@ -266,10 +266,6 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                 .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");
 
         environment
-                .servlets()
-                .addFilter("CallbackFilter", new CallbackFilter())
-                .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/callback");
-        environment
                 .getApplicationContext()
                 .setServletHandler(
                         new SecurityFilterHandler(environment.getApplicationContext().getServletHandler())
@@ -287,7 +283,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                             }
                         });
         environment.getApplicationContext()
-                        .setAttribute("PAC4J_SESSION_STORE",this.getConfig().getSessionStore());
+                        .setAttribute(PAC4J_SESSION_STORE,this.getConfig().getSessionStore());
         swapClientFinderAndStorageDecision(environment);
     }
 
