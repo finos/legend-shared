@@ -39,7 +39,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
         <maven.compiler.release>8</maven.compiler.release>
-        <java.version.range>[11,12),[17,18),[21,22)</java.version.range>
+        <java.version.range>[11,12),[17,18),[21,22),[25,26)</java.version.range>
         <publish.server.id>central</publish.server.id>
 
         <!-- Dependencies -->
@@ -93,7 +93,7 @@
         <maven.jar.plugin.version>3.1.2</maven.jar.plugin.version>
         <maven.clean.plugin.version>3.1.0</maven.clean.plugin.version>
         <versions.maven.plugin.version>2.7</versions.maven.plugin.version>
-        <jacoco.maven.plugin.version>0.8.13</jacoco.maven.plugin.version>
+        <jacoco.maven.plugin.version>0.8.14</jacoco.maven.plugin.version>
         <dockerfile.release.plugin.version>1.4.13</dockerfile.release.plugin.version>
         <!-- TODO: - send PR to https://github.com/finos/finos-parent-pom (and use a mvn property to manage the version of sonar) -->
         <sonar.maven.plugin.version>3.7.0.1746</sonar.maven.plugin.version>
