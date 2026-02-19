@@ -74,12 +74,12 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
       String nameFound;
       if (clientNameOnRequest != null)
       {
-        result = findUtil(clients, names, Collections.singletonList(clientNameOnRequest), null);
+        result = findUtil(clients, names, Collections.singletonList(clientNameOnRequest), Collections.emptyList());
       } else if (!defaultClients.isEmpty())
       {
         logger.debug("defaultClients: {}", defaultClients);
         logger.debug("Exclusion of client(s), removing '{}' from default list", clientsToExclude);
-        result = findUtil(clients, names, defaultClients, clientsToExclude.orElse(null));
+        result = findUtil(clients, names, defaultClients, clientsToExclude.orElse(Collections.emptyList()));
       } else
       {
         Iterator var13 = names.iterator();
