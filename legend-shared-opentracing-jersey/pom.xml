@@ -21,7 +21,7 @@
   <parent>
     <artifactId>legend-shared</artifactId>
     <groupId>org.finos.legend.shared</groupId>
-    <version>0.32.1-SNAPSHOT</version>
+    <version>0.33.0</version>
   </parent>
 
   <artifactId>legend-shared-opentracing-jersey</artifactId>
