@@ -64,7 +64,7 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
         logger.debug("Only client: {}", securityClientNames);
       }
     }
-    Optional<String> kerbClientToExclude = context.getRequestAttribute(CLIENT_TO_EXCLUDE);
+    Optional<List<String>> clientsToExclude = context.getRequestAttribute(CLIENT_TO_EXCLUDE);
 
     if (CommonHelper.isNotBlank(securityClientNames))
     {
@@ -74,12 +74,12 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
       String nameFound;
       if (clientNameOnRequest != null)
       {
-        result = findUtil(clients, names, Collections.singletonList(clientNameOnRequest), null);
+        result = findUtil(clients, names, Collections.singletonList(clientNameOnRequest), Collections.emptyList());
       } else if (!defaultClients.isEmpty())
       {
         logger.debug("defaultClients: {}", defaultClients);
-        logger.debug("Exclusion for Kerberos client, removing '{}' from default list", kerbClientToExclude);
-        result = findUtil(clients, names, defaultClients, kerbClientToExclude.orElse(null));
+        logger.debug("Exclusion of client(s), removing '{}' from default list", clientsToExclude);
+        result = findUtil(clients, names, defaultClients, clientsToExclude.orElse(Collections.emptyList()));
       } else
       {
         Iterator var13 = names.iterator();
@@ -97,10 +97,10 @@ public class LegendClientFinder extends DefaultSecurityClientFinder
     return result;
   }
 
-  public List<Client<? extends Credentials>> findUtil(Clients clients, List<String> names, List<String> toFind, String clientToExclude)
+  public List<Client<? extends Credentials>> findUtil(Clients clients, List<String> names, List<String> toFind, List<String> clientsToExclude)
   {
     return toFind.stream()
-            .filter(requested -> !CommonHelper.areEqualsIgnoreCaseAndTrim(clientToExclude, requested))
+            .filter(requested -> clientsToExclude.stream().noneMatch(excluded -> CommonHelper.areEqualsIgnoreCaseAndTrim(excluded, requested)))
             .map(requested -> names.stream()
                     .filter(allowed -> CommonHelper.areEqualsIgnoreCaseAndTrim(allowed, requested))
                     .findFirst()
