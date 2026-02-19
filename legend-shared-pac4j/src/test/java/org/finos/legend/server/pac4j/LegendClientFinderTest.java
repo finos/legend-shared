@@ -70,10 +70,10 @@ public class LegendClientFinderTest
     }
 
     @Test
-    public void testMultipleDefaultClientsWithExclusionInRequest()
+    public void testMultipleDefaultClientsWithSingleExclusionInRequest()
     {
         WebContext mockedWebContext = Mockito.mock(WebContext.class);
-        when(mockedWebContext.getRequestAttribute(CLIENT_TO_EXCLUDE)).thenReturn(Optional.of("testclient"));
+        when(mockedWebContext.getRequestAttribute(CLIENT_TO_EXCLUDE)).thenReturn(Optional.of(Collections.singletonList("testclient")));
 
         Clients mockedClients = Mockito.mock(Clients.class);
         when(mockedClients.findClient("testclient1")).thenReturn(Optional.of(new TestClient("testclient1")));
@@ -87,6 +87,26 @@ public class LegendClientFinderTest
         assertEquals(2,testClient.size());
         assertEquals("testclient1",testClient.get(0).getName());
         assertEquals("testclient2",testClient.get(1).getName());
+
+    }
+
+    @Test
+    public void testMultipleDefaultClientsWithMultipleExclusionInRequest()
+    {
+        WebContext mockedWebContext = Mockito.mock(WebContext.class);
+        when(mockedWebContext.getRequestAttribute(CLIENT_TO_EXCLUDE)).thenReturn(Optional.of(Arrays.asList("testclient","testclient1")));
+
+        Clients mockedClients = Mockito.mock(Clients.class);
+        when(mockedClients.findClient("testclient1")).thenReturn(Optional.of(new TestClient("testclient1")));
+        when(mockedClients.findClient("testclient2")).thenReturn(Optional.of(new TestClient("testclient2")));
+        when(mockedClients.findClient("testclient")).thenReturn(Optional.of(new TestClient("testclient")));
+
+        LegendClientFinder legendClientFinder = new LegendClientFinder(Arrays.asList("testclient1","testclient2","testclient"));
+        List<Client<? extends Credentials>> testClient = legendClientFinder.find(mockedClients, mockedWebContext, "testclient1,testclient2,testclient");
+
+        assertNotNull(testClient);
+        assertEquals(1,testClient.size());
+        assertEquals("testclient2",testClient.get(0).getName());
 
     }
 }
