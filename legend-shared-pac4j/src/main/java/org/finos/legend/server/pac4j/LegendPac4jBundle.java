@@ -37,11 +37,14 @@ import org.finos.legend.server.pac4j.internal.SecurityFilterHandler;
 import org.finos.legend.server.pac4j.internal.UsernameFilter;
 import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
 import org.finos.legend.server.pac4j.mongostore.MongoDbSessionStore;
+import org.jspecify.annotations.NonNull;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.config.Config;
 import org.pac4j.core.context.JEEContext;
+import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.JEESessionStore;
 import org.pac4j.core.engine.decision.AlwaysUseSessionProfileStorageDecision;
+import org.pac4j.core.engine.decision.ProfileStorageDecision;
 import org.pac4j.core.http.url.DefaultUrlResolver;
 import org.pac4j.core.matching.matcher.Matcher;
 import org.pac4j.core.matching.matcher.PathMatcher;
@@ -235,7 +238,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
         securityFilterConfiguration.setAuthorizers(String.join(",", factory.getAuthorizers().keySet()));
         LegendSecurityLogic legendSecurityLogic = new LegendSecurityLogic<>();
         legendSecurityLogic.setClientFinder(legendConfig.getDefaultSecurityClient());
-        legendSecurityLogic.setProfileStorageDecision(new AlwaysUseSessionProfileStorageDecision<>());
+        legendSecurityLogic.setProfileStorageDecision(getProfileStorageDecision(legendConfig));
         factory.setSecurityLogic(legendSecurityLogic);
         factory.setServlet(servletConfiguration);
 
@@ -254,6 +257,15 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
         factory.setMatchers(matchers);
         factory.setClients(legendConfig.getClients());
         return factory;
+    }
+
+    ProfileStorageDecision<WebContext> getProfileStorageDecision(LegendPac4jConfiguration legendConfig)
+    {
+        if (legendConfig.isAlwaysUseSessionStorage())
+        {
+            return new AlwaysUseSessionProfileStorageDecision<>();
+        }
+        return new LegendUserProfileStorageDecision<>();
     }
 
     @Override

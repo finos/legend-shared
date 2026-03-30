@@ -75,6 +75,35 @@ public class LegendPac4JBundleTest
     ClientFinder finder = ((DefaultSecurityLogic)((SecurityFilter)s.getFilters()[0].getFilter()).getSecurityLogic()).getClientFinder();
     assertTrue(finder instanceof LegendClientFinder);
     ProfileStorageDecision storageDecision = ((DefaultSecurityLogic)((SecurityFilter)s.getFilters()[0].getFilter()).getSecurityLogic()).getProfileStorageDecision();
+    assertTrue(storageDecision instanceof LegendUserProfileStorageDecision);
+  }
+
+  @Test
+  public void testPac4jFactoryWithAlwaysUseSessionStorageSet() throws Exception
+  {
+    LegendPac4jConfiguration config = new LegendPac4jConfiguration();
+    config.setCallbackPrefix("/test");
+    config.setClients(ImmutableList.of(new TestClient(), new SecondTestClient()));
+    config.setDefaultClient(Collections.singletonList("SecondTestClient"));
+    config.setAlwaysUseSessionStorage(true);
+    LegendPac4jBundle<Configuration> bundle = new LegendPac4jBundle<>(c -> config);
+    Pac4jFactory factory = bundle.getPac4jFactory(new Configuration());
+    Config builtConfig = factory.build();
+    Environment e = new Environment("serverEnv", null, null, new MetricRegistry(), null, new HealthCheckRegistry());
+    bundle.run(new Configuration(),e);
+    assertEquals("/test/callback", factory.getCallbackUrl());
+    assertEquals(config.getClients(), factory.getClients());
+    assertEquals(Collections.singletonList("SecondTestClient"), ((LegendClientFinder)((DefaultSecurityLogic)builtConfig.getSecurityLogic()).getClientFinder()).getDefaultClients());
+    assertEquals(config.getClients(), builtConfig.getClients().getClients());
+    FilterHolder securityHolder = e.getApplicationContext().getServletHandler().getFilter(SecurityFilter.class.getName());
+    assertNotNull("Security filter holder cannot be null", securityHolder);
+    //initialize the filter so we can confirm swaps
+    ServletHandler s =  new ServletHandler();
+    s.addFilter(securityHolder);
+    s.initialize();
+    ClientFinder finder = ((DefaultSecurityLogic)((SecurityFilter)s.getFilters()[0].getFilter()).getSecurityLogic()).getClientFinder();
+    assertTrue(finder instanceof LegendClientFinder);
+    ProfileStorageDecision storageDecision = ((DefaultSecurityLogic)((SecurityFilter)s.getFilters()[0].getFilter()).getSecurityLogic()).getProfileStorageDecision();
     assertTrue(storageDecision instanceof AlwaysUseSessionProfileStorageDecision);
   }
 
