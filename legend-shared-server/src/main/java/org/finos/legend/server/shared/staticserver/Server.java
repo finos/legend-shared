@@ -111,6 +111,10 @@ public class Server extends Application<org.finos.legend.server.shared.staticser
                     Environment environment)
     {
         SessionHandler sessionHandler = new SessionHandler();
+        if (Objects.nonNull(staticServerConfiguration.getPac4j().getMaxInactiveIntervalSec()))
+        {
+            sessionHandler.setMaxInactiveInterval(staticServerConfiguration.getPac4j().getMaxInactiveIntervalSec());
+        }
         if (staticServerConfiguration.getSessionCookie() != null)
         {
             sessionHandler.setSessionCookie(staticServerConfiguration.getSessionCookie());
