@@ -50,6 +50,8 @@ public final class LegendPac4jConfiguration
     private List<String> bypassPaths = ImmutableList.of();
     private List<String> bypassBranches = ImmutableList.of();
     private List<String> trustedPackages = ImmutableList.of();
+    private boolean alwaysUseSessionStorage = false;
+    private Integer maxInactiveIntervalSec;
 
     public String getSessionTokenName()
     {
@@ -87,6 +89,26 @@ public final class LegendPac4jConfiguration
     public List<String> getTrustedPackages()
     {
         return trustedPackages;
+    }
+
+    public boolean isAlwaysUseSessionStorage()
+    {
+        return alwaysUseSessionStorage;
+    }
+
+    public void setAlwaysUseSessionStorage(boolean alwaysUseSessionStorage)
+    {
+        this.alwaysUseSessionStorage = alwaysUseSessionStorage;
+    }
+
+    public Integer getMaxInactiveIntervalSec()
+    {
+        return maxInactiveIntervalSec;
+    }
+
+    public void setMaxInactiveIntervalSec(Integer maxInactiveIntervalSec)
+    {
+        this.maxInactiveIntervalSec = maxInactiveIntervalSec;
     }
 
     public void setBypassBranches(List<String> bypassBranches)
