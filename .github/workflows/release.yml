@@ -54,42 +54,27 @@ jobs:
           gpg-private-key: ${{ secrets.CI_GPG_PRIVATE_KEY }}
           gpg-passphrase: CI_GPG_PASSPHRASE
 
-      - name: Compute next development version
-        run: |
-          releaseVersion=${{ github.event.inputs.releaseVersion }}
-          n=${releaseVersion//[!0-9]/ }
-          a=(${n//\./ })
-          nextPatch=$((${a[2]} + 1))
-          developmentVersion="${a[0]}.${a[1]}.${nextPatch}-SNAPSHOT"
-          echo "DEVELOPMENT_VERSION=${developmentVersion}" >> $GITHUB_ENV
-
       - name: Collect Workflow Telemetry
         uses: runforesight/workflow-telemetry-action@v1
         with:
           theme: dark
 
-      - name: Prepare release
-        run: mvn -B -DpreparationGoals=clean release:prepare -DreleaseVersion=${{ github.event.inputs.releaseVersion }} -DdevelopmentVersion=${{ env.DEVELOPMENT_VERSION }} -P release
-
-      - name: Checkout the latest tag
-        run: |
-          mkdir -p target/checkout
-          git clone --depth 1 --branch ${{ github.event.repository.name }}-${{ github.event.inputs.releaseVersion }} https://github.com/${{ github.repository }}.git target/checkout
-
-      - name: Build the latest tag
-        working-directory: target/checkout
-        run: mvn -B -e -T2 -DskipTests install -P release,docker
+      - name: Build release
+        run: mvn -B -e -T2 -DskipTests -Drevision=${{ github.event.inputs.releaseVersion }} install -P release,docker
         env:
           MAVEN_OPTS: -Xmx14g
 
-      - name: Test the latest tag
-        working-directory: target/checkout
-        run: mvn -B -e -T2 -DargLine="-Xmx6g" surefire:test -P release,docker
+      - name: Test release
+        run: mvn -B -e -T2 -DargLine="-Xmx6g" -Drevision=${{ github.event.inputs.releaseVersion }} surefire:test -P release,docker
         env:
           MAVEN_OPTS: -Xmx2g
 
+      - name: Create and push git tag
+        run: |
+          git tag ${{ github.event.repository.name }}-${{ github.event.inputs.releaseVersion }}
+          git push origin ${{ github.event.repository.name }}-${{ github.event.inputs.releaseVersion }}
+
       - name: Create bundle to publish
-        working-directory: target/checkout
         run: |
           mkdir -p central-staging/org/finos/legend
           cp -R ~/.m2/repository/org/finos/legend/shared central-staging/org/finos/legend
@@ -100,12 +85,12 @@ jobs:
             sha256sum "$file" | awk '{print $1}' > "$file.sha256"
             sha512sum "$file" | awk '{print $1}' > "$file.sha512"
           done
-          
+
           mkdir central-publishing
           cd central-staging && zip -r ../central-publishing/central-bundle.zip org
 
       - name: Publish bundle
-        working-directory: target/checkout/central-publishing
+        working-directory: central-publishing
         run: |
           token=$(printf "$CI_DEPLOY_USERNAME:$CI_DEPLOY_PASSWORD" | base64)
           httpCode=$(curl -s -o response.json -w "%{http_code}" -X POST -H "Authorization: Bearer $token" --form bundle=@central-bundle.zip https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC)
@@ -140,3 +125,15 @@ jobs:
               exit 1
             fi
           done
+
+      - name: Compute and set next SNAPSHOT
+        run: |
+          releaseVersion=${{ github.event.inputs.releaseVersion }}
+          n=${releaseVersion//[!0-9]/ }
+          a=(${n//\./ })
+          nextPatch=$((${a[2]} + 1))
+          nextSnapshot="${a[0]}.${a[1]}.${nextPatch}-SNAPSHOT"
+          sed -i "s|<revision>.*</revision>|<revision>${nextSnapshot}</revision>|" pom.xml
+          git add pom.xml
+          git commit -m "Bump version to ${nextSnapshot}"
+          git push origin master
