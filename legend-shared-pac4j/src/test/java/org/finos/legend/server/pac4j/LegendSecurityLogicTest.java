@@ -664,6 +664,138 @@ public class LegendSecurityLogicTest
 
     }
 
+    @Test
+    public void testCallParentPerform_StaleSessionProfile_ClearsSession() throws Exception
+    {
+        UserProfile staleProfile = mock(UserProfile.class);
+        when(staleProfile.getClientName()).thenReturn("clientA");
+
+        ProfileManager profileManager = mock(ProfileManager.class);
+        when(profileManager.getAll(true)).thenReturn(Collections.singletonList(staleProfile));
+        legendSecurityLogic.setProfileManagerFactory((c) -> profileManager);
+
+        ClientFinder clientFinder = mock(ClientFinder.class);
+        IndirectClient clientB = mock(IndirectClient.class);
+        when(clientB.getName()).thenReturn("clientB");
+        when(clientFinder.find(any(), any(), anyString()))
+                .thenReturn(Collections.singletonList(clientB));
+        legendSecurityLogic.setClientFinder(clientFinder);
+
+        // Make super.perform short-circuit to the grant-access path.
+        legendSecurityLogic.setMatchingChecker(matchingChecker);
+        when(matchingChecker.matches(any(), any(), any(), anyList())).thenReturn(false);
+
+        Clients clients = mock(Clients.class);
+        when(config.getClients()).thenReturn(clients);
+        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
+
+        legendSecurityLogic.callParentPerform(
+                webContext, config, adapter, httpActionAdapter,
+                "clientB", "", "matchers", true, new Object[0]);
+
+
+        verify(profileManager, times(1)).remove(true);
+        verify(clientFinder, times(2)).find(any(), any(), anyString());
+    }
+
+    @Test
+    public void testCallParentPerform_MatchingSessionProfile_KeepsSession() throws Exception
+    {
+        UserProfile matchingProfile = mock(UserProfile.class);
+        when(matchingProfile.getClientName()).thenReturn("clientB");
+
+        ProfileManager profileManager = mock(ProfileManager.class);
+        when(profileManager.getAll(true)).thenReturn(Collections.singletonList(matchingProfile));
+        legendSecurityLogic.setProfileManagerFactory((c) -> profileManager);
+
+        ClientFinder clientFinder = mock(ClientFinder.class);
+        IndirectClient clientB = mock(IndirectClient.class);
+        when(clientB.getName()).thenReturn("clientB");
+        when(clientFinder.find(any(), any(), anyString()))
+                .thenReturn(Collections.singletonList(clientB));
+        legendSecurityLogic.setClientFinder(clientFinder);
+
+        legendSecurityLogic.setMatchingChecker(matchingChecker);
+        when(matchingChecker.matches(any(), any(), any(), anyList())).thenReturn(false);
+
+        Clients clients = mock(Clients.class);
+        when(config.getClients()).thenReturn(clients);
+        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
+
+        legendSecurityLogic.callParentPerform(
+                webContext, config, adapter, httpActionAdapter,
+                "clientB", "", "matchers", true, new Object[0]);
+
+        verify(profileManager, never()).remove(anyBoolean());
+        verify(clientFinder, times(2)).find(any(), any(), anyString());
+    }
+
+    @Test
+    public void testCallParentPerform_EmptySession_NoRemoval() throws Exception
+    {
+        ProfileManager profileManager = mock(ProfileManager.class);
+        when(profileManager.getAll(true)).thenReturn(Collections.emptyList());
+        legendSecurityLogic.setProfileManagerFactory((c) -> profileManager);
+
+        ClientFinder clientFinder = mock(ClientFinder.class);
+        IndirectClient clientB = mock(IndirectClient.class);
+        when(clientB.getName()).thenReturn("clientB");
+        when(clientFinder.find(any(), any(), anyString()))
+                .thenReturn(Collections.singletonList(clientB));
+        legendSecurityLogic.setClientFinder(clientFinder);
+
+        legendSecurityLogic.setMatchingChecker(matchingChecker);
+        when(matchingChecker.matches(any(), any(), any(), anyList())).thenReturn(false);
+
+        Clients clients = mock(Clients.class);
+        when(config.getClients()).thenReturn(clients);
+        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
+
+        legendSecurityLogic.callParentPerform(
+                webContext, config, adapter, httpActionAdapter,
+                "clientB", "", "matchers", true, new Object[0]);
+
+        verify(profileManager, never()).remove(anyBoolean());
+        verify(clientFinder, times(2)).find(any(), any(), anyString());
+    }
+
+    @Test
+    public void testCallParentPerform_MixedProfiles_AnyStaleClearsWholeSession() throws Exception
+    {
+        UserProfile validProfile = mock(UserProfile.class);
+        when(validProfile.getClientName()).thenReturn("clientB");
+        UserProfile staleProfile = mock(UserProfile.class);
+        when(staleProfile.getClientName()).thenReturn("clientX");
+
+        ProfileManager profileManager = mock(ProfileManager.class);
+        when(profileManager.getAll(true))
+                .thenReturn(java.util.Arrays.asList(validProfile, staleProfile));
+        legendSecurityLogic.setProfileManagerFactory((c) -> profileManager);
+
+        ClientFinder clientFinder = mock(ClientFinder.class);
+        IndirectClient clientB = mock(IndirectClient.class);
+        when(clientB.getName()).thenReturn("clientB");
+        IndirectClient clientC = mock(IndirectClient.class);
+        when(clientC.getName()).thenReturn("clientC");
+        when(clientFinder.find(any(), any(), anyString()))
+                .thenReturn(java.util.Arrays.asList(clientB, clientC));
+        legendSecurityLogic.setClientFinder(clientFinder);
+
+        legendSecurityLogic.setMatchingChecker(matchingChecker);
+        when(matchingChecker.matches(any(), any(), any(), anyList())).thenReturn(false);
+
+        Clients clients = mock(Clients.class);
+        when(config.getClients()).thenReturn(clients);
+        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
+
+        legendSecurityLogic.callParentPerform(
+                webContext, config, adapter, httpActionAdapter,
+                "clientB,clientC", "", "matchers", true, new Object[0]);
+
+        verify(profileManager, times(1)).remove(true);
+        verify(clientFinder, times(2)).find(any(), any(), anyString());
+    }
+
     private static class TestableLegendSecurityLogic<R, C extends WebContext>  extends LegendSecurityLogic<R, C> {
         private HttpAction mockedRedirectResponse;
 
