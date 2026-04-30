@@ -19,6 +19,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.finos.legend.server.pac4j.LegendRequestHandler.REDIRECT_PROTO_ATTRIBUTE;
 
@@ -41,21 +43,21 @@ public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurit
         boolean isConstraintKerberosFlow = (boolean) context.getRequestAttribute(IS_CONSTRAINED_KERBEROS_FLOW).orElse(false);
         if (!isConstraintKerberosFlow)
         {
-            LOGGER.info("NonConstrained host, falling back to default handling");
+            LOGGER.debug("NonConstrained host, falling back to default handling");
             return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, false, parameters);
         }
         boolean multiProfile = inputMultiProfile != null && inputMultiProfile;
         if (!multiProfile)
         {
-            LOGGER.info("MultiProfile turned off falling back to default handling");
+            LOGGER.debug("MultiProfile turned off falling back to default handling");
             return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, authorizers, matchers, inputMultiProfile, parameters);
         }
         if (nonBrowserCall(context))
         {
-            LOGGER.info("Non-browser call detected, falling back to default handling");
+            LOGGER.debug("Non-browser call detected, falling back to default handling");
             return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, false, parameters);
         }
-        LOGGER.info("Browser call detected, using LegendSecurityLogic handling");
+        LOGGER.debug("Browser call detected, using LegendSecurityLogic handling");
         LOGGER.debug("url: {}", context.getFullRequestURL());
         LOGGER.debug("clients: {}", clients);
         try
@@ -127,6 +129,18 @@ public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurit
 
     R callParentPerform(C context, Config config, SecurityGrantedAccessAdapter<R, C> securityGrantedAccessAdapter, HttpActionAdapter<R, C> httpActionAdapter, String clients, String authorizers, String matchers, Boolean inputMultiProfile, Object[] parameters)
     {
+        Set<String> requested = getClientFinder().find(config.getClients(), context, clients).stream()
+                .map(Client::getName)
+                .collect(Collectors.toSet());
+
+        ProfileManager<UserProfile> manager = getProfileManager(context);
+        boolean hasStaleProfile = manager.getAll(true).stream()
+                .anyMatch(p -> !requested.contains(p.getClientName()));
+        if (hasStaleProfile)
+        {
+            LOGGER.debug("Session contains profiles outside requested clients {} -> clearing session", requested);
+            manager.remove(true);
+        }
         LOGGER.debug("Calling parent perform method");
         return super.perform(context, config, securityGrantedAccessAdapter,
                 httpActionAdapter, clients, authorizers, matchers, inputMultiProfile, parameters);
