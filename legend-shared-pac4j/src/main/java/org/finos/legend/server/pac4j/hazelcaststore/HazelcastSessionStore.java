@@ -37,7 +37,6 @@ public class HazelcastSessionStore extends HttpSessionStore
 {
 
     private final Map<UUID, Map<String, Object>> hazelcastMap;
-    private final int maxSessionLength;
     private String sessionTokenName;
 
     public HazelcastSessionStore(String hazelcastConfigFilePath,
@@ -56,19 +55,7 @@ public class HazelcastSessionStore extends HttpSessionStore
             {
                 MapConfig hazelcastMapConfig = optionalMapConfig.get();
                 this.hazelcastMap = hazelcastInstance.getMap(hazelcastMapConfig.getName());
-                if (hazelcastMapConfig.getMaxIdleSeconds() != 0)
-                {
-                    this.maxSessionLength = hazelcastMapConfig.getMaxIdleSeconds();
-                }
-                else if (hazelcastMapConfig.getTimeToLiveSeconds() != 0)
-                {
-                    this.maxSessionLength = hazelcastMapConfig.getTimeToLiveSeconds();
-                }
-                else
-                {
-                    throw new IllegalStateException(
-                            "The Hazelcast config needs to include exactly one Map Configuration with a max-idle-seconds or time-to-live-seconds value");
-                }
+
             }
             else
             {
@@ -96,7 +83,8 @@ public class HazelcastSessionStore extends HttpSessionStore
     private SessionToken createSsoKey(WebContext context)
     {
         SessionToken token = SessionToken.generate();
-        token.saveInContext(this.sessionTokenName,context, maxSessionLength);
+        int twoWeeksInSeconds = 14 * 24 * 60 * 60; // 1,209,600 seconds
+        token.saveInContext(this.sessionTokenName,context, twoWeeksInSeconds);
         Map<String, Object> hazelcastSessionData = new HashMap<>();
         hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         return token;
