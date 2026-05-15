@@ -52,16 +52,28 @@ public class HazelcastSessionStore extends HttpSessionStore
 
             Collection<MapConfig> mapConfigs = fileConfig.getMapConfigs().values();
             Optional<MapConfig> optionalMapConfig = mapConfigs.stream().findFirst();
-            if (mapConfigs.size() == 1 && optionalMapConfig.get().getTimeToLiveSeconds() != 0)
+            if (mapConfigs.size() == 1)
             {
                 MapConfig hazelcastMapConfig = optionalMapConfig.get();
                 this.hazelcastMap = hazelcastInstance.getMap(hazelcastMapConfig.getName());
-                this.maxSessionLength = hazelcastMapConfig.getTimeToLiveSeconds();
+                if (hazelcastMapConfig.getMaxIdleSeconds() != 0)
+                {
+                    this.maxSessionLength = hazelcastMapConfig.getMaxIdleSeconds();
+                }
+                else if (hazelcastMapConfig.getTimeToLiveSeconds() != 0)
+                {
+                    this.maxSessionLength = hazelcastMapConfig.getTimeToLiveSeconds();
+                }
+                else
+                {
+                    throw new IllegalStateException(
+                            "The Hazelcast config needs to include exactly one Map Configuration with a max-idle-seconds or time-to-live-seconds value");
+                }
             }
             else
             {
                 throw new IllegalStateException(
-                        "The Hazelcast config needs to include exactly one Map Configuration with a TTL seconds value");
+                        "The Hazelcast config needs to include exactly one Map Configuration");
             }
         }
         catch (FileNotFoundException e)
@@ -137,8 +149,6 @@ public class HazelcastSessionStore extends HttpSessionStore
         if (hazelcastSessionData != null)
         {
             hazelcastSessionData.put(key, value);
-
-            // need to write the object back into hazelcast
             hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         }
 
