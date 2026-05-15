@@ -37,7 +37,6 @@ public class HazelcastSessionStore extends HttpSessionStore
 {
 
     private final Map<UUID, Map<String, Object>> hazelcastMap;
-    private final int maxSessionLength;
     private String sessionTokenName;
 
     public HazelcastSessionStore(String hazelcastConfigFilePath,
@@ -52,16 +51,16 @@ public class HazelcastSessionStore extends HttpSessionStore
 
             Collection<MapConfig> mapConfigs = fileConfig.getMapConfigs().values();
             Optional<MapConfig> optionalMapConfig = mapConfigs.stream().findFirst();
-            if (mapConfigs.size() == 1 && optionalMapConfig.get().getTimeToLiveSeconds() != 0)
+            if (mapConfigs.size() == 1)
             {
                 MapConfig hazelcastMapConfig = optionalMapConfig.get();
                 this.hazelcastMap = hazelcastInstance.getMap(hazelcastMapConfig.getName());
-                this.maxSessionLength = hazelcastMapConfig.getTimeToLiveSeconds();
+
             }
             else
             {
                 throw new IllegalStateException(
-                        "The Hazelcast config needs to include exactly one Map Configuration with a TTL seconds value");
+                        "The Hazelcast config needs to include exactly one Map Configuration");
             }
         }
         catch (FileNotFoundException e)
@@ -84,7 +83,8 @@ public class HazelcastSessionStore extends HttpSessionStore
     private SessionToken createSsoKey(WebContext context)
     {
         SessionToken token = SessionToken.generate();
-        token.saveInContext(this.sessionTokenName,context, maxSessionLength);
+        int twoWeeksInSeconds = 14 * 24 * 60 * 60; // 1,209,600 seconds
+        token.saveInContext(this.sessionTokenName,context, twoWeeksInSeconds);
         Map<String, Object> hazelcastSessionData = new HashMap<>();
         hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         return token;
@@ -137,8 +137,6 @@ public class HazelcastSessionStore extends HttpSessionStore
         if (hazelcastSessionData != null)
         {
             hazelcastSessionData.put(key, value);
-
-            // need to write the object back into hazelcast
             hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         }
 

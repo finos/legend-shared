@@ -28,4 +28,4 @@ hazelcast:
           - localhost
   map:
     session-store:
-      time-to-live-seconds: 7200
+      max-idle-seconds: 86400

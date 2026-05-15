@@ -134,6 +134,7 @@ public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurit
                 .collect(Collectors.toSet());
 
         ProfileManager<UserProfile> manager = getProfileManager(context);
+        manager.setConfig(config);
         boolean hasStaleProfile = manager.getAll(true).stream()
                 .anyMatch(p -> !requested.contains(p.getClientName()));
         if (hasStaleProfile)
