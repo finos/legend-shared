@@ -83,8 +83,7 @@ public class HazelcastSessionStore extends HttpSessionStore
     private SessionToken createSsoKey(WebContext context)
     {
         SessionToken token = SessionToken.generate();
-        int twoWeeksInSeconds = 14 * 24 * 60 * 60; // 1,209,600 seconds
-        token.saveInContext(this.sessionTokenName,context, twoWeeksInSeconds);
+        token.saveInContext(this.sessionTokenName,context, -1);
         Map<String, Object> hazelcastSessionData = new HashMap<>();
         hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         return token;
