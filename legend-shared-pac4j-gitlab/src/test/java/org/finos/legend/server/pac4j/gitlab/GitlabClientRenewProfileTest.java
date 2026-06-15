@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -40,7 +39,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -83,9 +81,10 @@ public class GitlabClientRenewProfileTest
         OidcProfile expiredProfile = createExpiredProfile();
         WebContext mockContext = createMockWebContext();
 
-
-        client.renewUserProfile(expiredProfile, mockContext);
-
+        TechnicalException e = assertThrows(TechnicalException.class,
+                () -> client.renewUserProfile(expiredProfile, mockContext));
+        assertFalse("init() was not called before accessing getConfiguration()",
+                e.getMessage().contains("configuration cannot be null"));
         assertNotNull("Configuration should be non-null after renewUserProfile() triggers init()",
                 client.getConfiguration());
     }
@@ -109,9 +108,10 @@ public class GitlabClientRenewProfileTest
         OidcProfile expiredProfile = createExpiredProfile();
         WebContext mockContext = createMockWebContext();
 
-
-        client.renewUserProfile(expiredProfile, mockContext);
-
+        TechnicalException e = assertThrows(TechnicalException.class,
+                () -> client.renewUserProfile(expiredProfile, mockContext));
+        assertFalse("Should not get 'configuration cannot be null' on an initialized client",
+                e.getMessage().contains("configuration cannot be null"));
         assertNotNull("Configuration should still be non-null", client.getConfiguration());
     }
 
