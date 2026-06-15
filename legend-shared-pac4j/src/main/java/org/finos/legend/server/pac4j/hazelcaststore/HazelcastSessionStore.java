@@ -18,17 +18,18 @@ import com.hazelcast.config.FileSystemYamlConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.map.EntryProcessor;
+import com.hazelcast.map.IMap;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
 import org.finos.legend.server.pac4j.sessionutil.SessionToken;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
-import org.pac4j.core.util.Pac4jConstants;
 
 import java.io.FileNotFoundException;
+import java.io.Serializable;
 import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -36,7 +37,7 @@ import java.util.UUID;
 public class HazelcastSessionStore extends HttpSessionStore
 {
 
-    private final Map<UUID, Map<String, Object>> hazelcastMap;
+    private final IMap<UUID, Map<String, Object>> hazelcastMap;
     private String sessionTokenName;
 
     public HazelcastSessionStore(String hazelcastConfigFilePath,
@@ -83,7 +84,7 @@ public class HazelcastSessionStore extends HttpSessionStore
     private SessionToken createSsoKey(WebContext context)
     {
         SessionToken token = SessionToken.generate();
-        token.saveInContext(this.sessionTokenName,context, -1);
+        token.saveInContext(this.sessionTokenName, context, -1);
         Map<String, Object> hazelcastSessionData = new HashMap<>();
         hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         return token;
@@ -99,47 +100,60 @@ public class HazelcastSessionStore extends HttpSessionStore
     @Override
     public Optional<Object> get(WebContext context, String key)
     {
-        Object res = super.get(context, key).orElse(null);
-        if (res == null)
+        SessionToken token = getOrCreateSsoKey(context);
+        UUID sessionId = token.getSessionId();
+
+        Map<String, Object> hazelcastSessionData = hazelcastMap.get(sessionId);
+
+        if (hazelcastSessionData != null)
         {
-            SessionToken token = getOrCreateSsoKey(context);
-            Map<String, Object> hazelcastSessionData = hazelcastMap.get(token.getSessionId());
-            if (hazelcastSessionData != null)
+            Object data = hazelcastSessionData.get(key);
+            if (data != null)
             {
-                Object data = hazelcastSessionData.get(key);
-                if (data != null)
-                {
-                    res = data;
-                    //Once we have it, store it in the regular session store for later access
-                    super.set(context, key, res);
-                }
+                return Optional.of(data);
             }
+            return Optional.empty();
         }
-        else if (SessionToken.fromContext(this.sessionTokenName, context) == null)
-        {
-            // if res is not null, this means we still have an active Session but an expired SSO cookie
-            // we need to recreate one and add it to the context request/response
-            createSsoKey(context);
-            if (res instanceof LinkedHashMap)
-            {
-                set(context, Pac4jConstants.USER_PROFILES, res);
-            }
-        }
-        return Optional.ofNullable(res);
+
+        hazelcastMap.putIfAbsent(sessionId, new HashMap<>());
+        return Optional.empty();
     }
 
     @Override
     public void set(WebContext context, String key, Object value)
     {
         SessionToken token = getOrCreateSsoKey(context);
-        Map<String, Object> hazelcastSessionData = hazelcastMap.get(token.getSessionId());
-        if (hazelcastSessionData != null)
+        UUID sessionId = token.getSessionId();
+
+        hazelcastMap.executeOnKey(sessionId, new SessionDataUpdater(key, value));
+    }
+
+    private static class SessionDataUpdater
+            implements EntryProcessor<UUID, Map<String, Object>, Void>, Serializable
+    {
+        private static final long serialVersionUID = 1L;
+
+        private final String key;
+        private final Object value;
+
+        SessionDataUpdater(String key, Object value)
         {
-            hazelcastSessionData.put(key, value);
-            hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
+            this.key = key;
+            this.value = value;
         }
 
-        super.set(context, key, value);
+        @Override
+        public Void process(Map.Entry<UUID, Map<String, Object>> entry)
+        {
+            Map<String, Object> data = entry.getValue();
+            if (data == null)
+            {
+                data = new HashMap<>();
+            }
+            data.put(key, value);
+            entry.setValue(data);
+            return null;
+        }
     }
 
     @Override

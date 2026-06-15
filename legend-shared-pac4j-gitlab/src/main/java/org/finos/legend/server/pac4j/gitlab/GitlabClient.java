@@ -20,7 +20,9 @@ import com.nimbusds.oauth2.sdk.util.StringUtils;
 import org.finos.legend.server.pac4j.SerializableProfile;
 import org.finos.legend.server.pac4j.gitlab.ssl.TrustManagerComposite;
 import org.pac4j.core.context.WebContext;
+import org.pac4j.core.exception.TechnicalException;
 import org.pac4j.core.http.url.DefaultUrlResolver;
+import org.pac4j.core.util.Pac4jConstants;
 import org.pac4j.core.profile.UserProfile;
 import org.pac4j.oidc.client.OidcClient;
 import org.pac4j.oidc.config.OidcConfiguration;
@@ -36,6 +38,7 @@ import javax.net.ssl.TrustManager;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.security.GeneralSecurityException;
+import java.util.Map;
 import java.util.Optional;
 
 @SuppressWarnings("unused")
@@ -153,6 +156,46 @@ public class GitlabClient extends OidcClient<OidcConfiguration>
         setUrlResolver(new DefaultUrlResolver(true));
         super.clientInit();
     }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Optional<UserProfile> renewUserProfile(UserProfile profile, WebContext context)
+    {
+        init();
+
+        OidcProfile oidcProfile = (OidcProfile) profile;
+        if (oidcProfile.getRefreshToken() == null)
+        {
+            return Optional.empty();
+        }
+
+        try
+        {
+            return super.renewUserProfile(profile, context);
+        }
+        catch (TechnicalException technicalException)
+        {
+            if (technicalException.getMessage() != null && technicalException.getMessage().contains("invalid_grant"))
+            {
+                logger.debug("Refresh token rejected (invalid_grant), checking session for renewed profile", technicalException);
+                Optional<Object> sessionAttr = context.getSessionStore().get(context, Pac4jConstants.USER_PROFILES);
+                if (sessionAttr.isPresent() && sessionAttr.get() instanceof Map)
+                {
+                    Map<String, UserProfile> profiles = (Map<String, UserProfile>) sessionAttr.get();
+                    Optional<UserProfile> renewed = profiles.values().stream()
+                            .filter(p -> getName().equals(p.getClientName()) && !p.isExpired())
+                            .findFirst();
+                    if (renewed.isPresent())
+                    {
+                        logger.debug("Found valid renewed profile from session, using it");
+                        return renewed;
+                    }
+                }
+            }
+            throw technicalException;
+        }
+    }
+
 
     public String getClientId()
     {
