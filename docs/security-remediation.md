@@ -165,7 +165,8 @@ Closes, per Dependabot:
 ### D1 — Jetty CVE-2026-2332 (request smuggling via chunked-extension parsing, high 7.4)
 
 Every 9.4.x release is affected and **the 9.4 line is EOL — no fix exists or is coming**.
-**Scanner note (2026-07-03, PR #259):** WhiteSource/Mend suggests "9.4.60" as a fix, but no such artifact exists on Maven Central (latest 9.4.x is 9.4.58.v20250814, still inside the GH advisory's vulnerable range ≤ 9.4.59). If a 9.4.60 ever actually ships, bump `jetty.version` immediately — re-check Central's `jetty-http/maven-metadata.xml` each session. The fixed lines require Jetty 10/11/12 → Dropwizard ≥ 2.1/3.x → Java 11 baseline (Phase 2).
+**Scanner note (2026-07-03, PR #259):** WhiteSource/Mend's suggested "9.4.60" is a **HeroDevs NES (commercial) release**, not an Eclipse artifact — nothing ≥ 9.4.59 exists on Maven Central (latest is 9.4.58.v20250814, still inside the GH advisory's vulnerable range ≤ 9.4.59).
+**Commercial mitigation option (deployer-side, not upstream):** HeroDevs Never-Ending Support publishes drop-in Jetty 9.4.x patches under the same `org.eclipse.jetty` coordinates from their private registry (`registry.nes.herodevs.com/maven/`, subscription + access token required): 9.4.59 fixes CVE-2025-11143 (D6), 9.4.60 fixes CVE-2026-2332 (this item), 9.4.61 additionally fixes CVE-2026-5795. **legend-shared itself cannot adopt these**: it publishes to Maven Central, where all dependencies must be publicly resolvable, and a FINOS project cannot make a paid artifact a mandatory dependency. Organizations deploying Legend that need these CVEs closed before Phase 2 can subscribe to NES and override `jetty.version` (or the jetty entries) in their own dependencyManagement — the same-GAV design makes it a build-time swap with no code changes. Mirror the NES artifacts through your internal repository manager and verify provenance per your supply-chain policy. The fixed lines require Jetty 10/11/12 → Dropwizard ≥ 2.1/3.x → Java 11 baseline (Phase 2).
 **Interim mitigation (operators):** request smuggling requires a parsing disagreement between a front proxy and Jetty. Legend deployments front these servers with a reverse proxy/LB; ensure it normalizes or rejects chunked-extension quoted strings and does not reuse backend connections across clients. Document in deployment guidance.
 **Revisit:** Phase 2, or immediately if a 9.4 backport ever appears (check the alert).
 
@@ -193,7 +194,7 @@ Fixed only in **Jetty 12.0.12** — even Jetty 10/11 are affected, so this outli
 
 ### D6 — Jetty CVE-2025-11143 (jetty-http)
 
-Surfaced by WhiteSource on PR #259 (not in the Dependabot baseline). Fixed only in **Jetty 12.0.31 / 12.1.5** — same Jetty-12-only situation as D5. Accepted risk alongside D1/D5; revisit with the Phase-2 track.
+Surfaced by WhiteSource on PR #259 (not in the Dependabot baseline). Fixed only in **Jetty 12.0.31 / 12.1.5** on the open-source line — same Jetty-12-only situation as D5. Also fixed in the commercial HeroDevs NES 9.4.59 (see the mitigation note under D1). Accepted risk alongside D1/D5; revisit with the Phase-2 track.
 
 ### Scanner reconciliation (WhiteSource, PR #259)
 
