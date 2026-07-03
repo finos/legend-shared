@@ -26,7 +26,7 @@ Items must not be batched across waves in a single PR: a per-item history is wha
 | Item | Wave | Component | Current → Target | Alerts closed (severity) | Status |
 |------|------|-----------|------------------|--------------------------|--------|
 | V01 | 0 | `aquasecurity/trivy-action` (CI) | < 0.35.0 → 0.35.0 (SHA-pinned) | CVE-2026-33634 (critical) | ☑ 2026-07-03 |
-| V02 | 1 | `com.hazelcast:hazelcast` | 5.3.1 → 5.3.8 | CVE-2023-45859 (high 7.6), CVE-2023-45860 (high 6.5) | ☐ |
+| V02 | 1 | `com.hazelcast:hazelcast` | 5.3.1 → 5.3.8 | CVE-2023-45859 (high 7.6), CVE-2023-45860 (high 6.5) | ☑ 2026-07-03 |
 | V03 | 1 | `net.minidev:json-smart` | 2.4.2 → 2.5.2 | CVE-2021-31684 (high 7.5), CVE-2023-1370 (high 7.5) | ☐ |
 | V04 | 1 | `org.eclipse.jetty:*` (9 artifacts, one property) | 9.4.44.v20210927 → latest 9.4.x (≥ 9.4.57.v20241219) | CVE-2024-13009 (high 7.2), CVE-2024-8184 (med 5.9), CVE-2023-26048 (med 5.3), CVE-2023-40167 (med 5.3), CVE-2024-9823 (med 5.3) | ☐ |
 | V05 | 1 | `spring-boot-autoconfigure` / `spring-test` (test scope) | 2.3.3 → 2.7.18 / 4.3.24 → 5.3.39 | CVE-2023-20883 (high 7.5) | ☐ |
@@ -61,7 +61,7 @@ All 29 baseline alerts are accounted for: V01 (1), V02 (2), V03 (2), V04 (5), V0
 - **Dependency path:** direct dependency of `legend-shared-pac4j` (used only by `HazelcastSessionStore`); reaches downstream apps through that module.
 - **Blast radius:** small. Patch-level within 5.3.x, wire-format compatible; only affects deployments configured to use the Hazelcast session store. Note the recent `Fix hazelcast store (#257)` commit — the hazelcaststore tests are current and meaningful coverage.
 - **Verification:** `mvn -B install` (the `hazelcaststore` tests in `legend-shared-pac4j` exercise the store end-to-end).
-- **Status:** ☐
+- **Status:** ☑ 2026-07-03 — full reactor build + tests green on 5.3.8.
 
 ### V03 — json-smart 2.4.2 → 2.5.2 (CVE-2021-31684, CVE-2023-1370)
 
