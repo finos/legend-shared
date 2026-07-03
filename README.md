@@ -12,9 +12,35 @@ The important tenets for this project are:
 * Code must be genuinely used by the majority of Legend applications
 * New dependencies must be carefully scrutinized - the goal is to minimize unnecessary dependencies in apps.
 
+## Using the BOM
+
+Legend applications can import `legend-shared-bom` to normalize the versions of the
+`org.finos.legend.shared:*` modules and the common third-party stack (Jackson, Dropwizard,
+pac4j, Jetty, Guava, SLF4J, MongoDB driver, Hazelcast, test libraries, etc.):
+
+```xml
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>org.finos.legend.shared</groupId>
+            <artifactId>legend-shared-bom</artifactId>
+            <version>${legend.shared.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+```
+
+Notes:
+* Some managed entries carry deliberate `<exclusions>` (e.g. `shiro-core` from `pac4j-core`) that
+  encode CVE/conflict resolutions; these propagate to importers by design.
+* To override a version, declare the artifact in your own `dependencyManagement` before (or instead
+  of) relying on the import — redefining the BOM's version properties has no effect across an import.
+
 ## Development setup
 
-This application uses Maven 3.6+ and JDK 8. Simply run `mvn install` to compile.
+This application uses Maven 3.6+ and JDK 11, 17, 21, or 25 (compiled code targets Java 8). Simply run `mvn install` to compile.
 
 ## Roadmap
 
