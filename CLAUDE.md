@@ -32,6 +32,9 @@ Match the existing brace/format style exactly when editing — checkstyle will b
 
 ## Module architecture
 
+**Dependency management:**
+- `legend-shared-bom` — the single source of truth for dependency versions. All version properties and `dependencyManagement` live in `legend-shared-bom/pom.xml`; the root pom imports it (`<scope>import</scope>`), and it is published so Legend applications can import it too. Its parent is `org.finos:finos` (not the root pom — that would create a model cycle), so its `<version>` is a literal kept in lockstep by the release plugin, and it carries its own `docker` profile skip. To change a dependency version, edit the BOM, not the root pom.
+
 **Authentication (pac4j):**
 - `legend-shared-pac4j` — the core. `LegendPac4jBundle` is a Dropwizard bundle (extends `Pac4jBundle`) that Legend apps install to get authentication; it wires pac4j `Client`s from YAML config (`LegendPac4jConfiguration`), sets up security filters (`internal/SecurityFilterHandler`, `UsernameFilter`), and selects a session store. Session state can live in MongoDB (`mongostore/MongoDbSessionStore`, encrypted via `SessionCrypt`) or Hazelcast (`hazelcaststore/HazelcastSessionStore`), fronted by `internal/HttpSessionStore`; `sessionutil/SessionToken` manages the session cookie. `mongoauthorizer/MongoDbAuthorizer` authorizes against a Mongo collection.
 - `legend-shared-pac4j-kerberos`, `-gitlab`, `-ping` — pluggable pac4j clients/authenticators for each identity provider, discovered via Jackson subtypes in app YAML config. The GitLab module includes personal-access-token auth and group-based authorization.
