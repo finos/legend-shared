@@ -75,8 +75,8 @@
         <pac4j.version>4.5.8</pac4j.version>
         <prometheus.version>0.8.1</prometheus.version>
         <snakeyaml.version>1.33</snakeyaml.version>
-        <spring.test.version>4.3.24.RELEASE</spring.test.version>
-        <spring.boot.autoconfigure.version>2.3.3.RELEASE</spring.boot.autoconfigure.version>
+        <spring.test.version>5.3.39</spring.test.version>
+        <spring.boot.autoconfigure.version>2.7.18</spring.boot.autoconfigure.version>
         <json-smart.version>2.5.2</json-smart.version>
         <hazelcast.version>5.3.8</hazelcast.version>
 
@@ -371,6 +371,12 @@
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-test</artifactId>
+                <version>${spring.test.version}</version>
+            </dependency>
+            <dependency>
+                <!-- spring-test 5.x mock-web needs spring-web at runtime (MockHttpServletResponse cookies) -->
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-web</artifactId>
                 <version>${spring.test.version}</version>
             </dependency>
             <dependency>

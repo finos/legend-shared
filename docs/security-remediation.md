@@ -29,7 +29,7 @@ Items must not be batched across waves in a single PR: a per-item history is wha
 | V02 | 1 | `com.hazelcast:hazelcast` | 5.3.1 → 5.3.8 | CVE-2023-45859 (high 7.6), CVE-2023-45860 (high 6.5) | ☑ 2026-07-03 |
 | V03 | 1 | `net.minidev:json-smart` | 2.4.2 → 2.5.2 | CVE-2021-31684 (high 7.5), CVE-2023-1370 (high 7.5) | ☑ 2026-07-03 |
 | V04 | 1 | `org.eclipse.jetty:*` (9 artifacts, one property) | 9.4.44.v20210927 → 9.4.57.v20241219 | CVE-2024-13009 (high 7.2), CVE-2024-8184 (med 5.9), CVE-2023-26048 (med 5.3), CVE-2023-40167 (med 5.3), CVE-2024-9823 (med 5.3) | ☑ 2026-07-03 |
-| V05 | 1 | `spring-boot-autoconfigure` / `spring-test` (test scope) | 2.3.3 → 2.7.18 / 4.3.24 → 5.3.39 | CVE-2023-20883 (high 7.5) | ☐ |
+| V05 | 1 | `spring-boot-autoconfigure` / `spring-test` (test scope) | 2.3.3 → 2.7.18 / 4.3.24 → 5.3.39 | CVE-2023-20883 (high 7.5) | ☑ 2026-07-03 |
 | V06 | 2 | Jackson family + snakeyaml (coordinated) | jackson 2.10.5/2.10.5.1/2.11.2 → 2.18.8; snakeyaml 1.33 → 2.x | 12 alerts — see item | ☐ |
 | V07 | 3 | `com.nimbusds:nimbus-jose-jwt` | 8.0 → ≥ 9.37.4 | CVE-2023-52428 (high 7.5), CVE-2025-53864 (med 5.8) | ☐ |
 | D1 | deferred | `org.eclipse.jetty:jetty-http` | no fix in 9.4 line | CVE-2026-2332 (high 7.4) | accepted risk |
@@ -94,7 +94,7 @@ All 29 baseline alerts are accounted for: V01 (1), V02 (2), V03 (2), V04 (5), V0
 - **How:** root `pom.xml`: `<spring.boot.autoconfigure.version>` → `2.7.18` (last 2.x line), `<spring.test.version>` → `5.3.39`. spring-test 4.3 → 5.3 may need small test adjustments (JUnit 4 runner API is stable; imports unchanged for `spring-test` basics).
 - **Blast radius:** zero at runtime (test scope). Risk is limited to compile errors in test code; fix forward within the PR.
 - **Verification:** `mvn -B install` (all module test suites).
-- **Status:** ☐
+- **Status:** ☑ 2026-07-03 — done. Gotcha found and fixed: spring-test 5.x `MockHttpServletResponse.addCookie` needs `spring-web` on the classpath (`NoClassDefFoundError: org/springframework/http/HttpHeaders`); added `org.springframework:spring-web` (same version property) as a test dependency in the root DM and in `legend-shared-pac4j`, `-kerberos`, `-ping`. Build green after.
 
 ## Wave 2 — Jackson family + snakeyaml, one coordinated PR
 
