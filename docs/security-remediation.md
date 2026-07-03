@@ -30,7 +30,7 @@ Items must not be batched across waves in a single PR: a per-item history is wha
 | V03 | 1 | `net.minidev:json-smart` | 2.4.2 → 2.5.2 | CVE-2021-31684 (high 7.5), CVE-2023-1370 (high 7.5) | ☑ 2026-07-03 |
 | V04 | 1 | `org.eclipse.jetty:*` (9 artifacts, one property) | 9.4.44.v20210927 → 9.4.57.v20241219 | CVE-2024-13009 (high 7.2), CVE-2024-8184 (med 5.9), CVE-2023-26048 (med 5.3), CVE-2023-40167 (med 5.3), CVE-2024-9823 (med 5.3) | ☑ 2026-07-03 |
 | V05 | 1 | `spring-boot-autoconfigure` / `spring-test` (test scope) | 2.3.3 → 2.7.18 / 4.3.24 → 5.3.39 | CVE-2023-20883 (high 7.5) | ☑ 2026-07-03 |
-| V06 | 2 | Jackson family + snakeyaml (coordinated) | jackson 2.10.5/2.10.5.1/2.11.2 → 2.18.8; snakeyaml 1.33 → 2.x | 12 alerts — see item | ☐ |
+| V06 | 2 | Jackson family + snakeyaml (coordinated) | jackson 2.10.5/2.10.5.1/2.11.2 → 2.18.8; snakeyaml 1.33 → 2.3 | 12 alerts — see item | ☑ 2026-07-03 |
 | V07 | 3 | `com.nimbusds:nimbus-jose-jwt` | 8.0 → ≥ 9.37.4 | CVE-2023-52428 (high 7.5), CVE-2025-53864 (med 5.8) | ☐ |
 | D1 | deferred | `org.eclipse.jetty:jetty-http` | no fix in 9.4 line | CVE-2026-2332 (high 7.4) | accepted risk |
 | D2 | deferred | `org.pac4j:pac4j-core` | fix is 5.7.10 (Java 11) | CVE-2026-40458 (high 6.5) | accepted risk |
@@ -141,7 +141,7 @@ Closes, per Dependabot:
   - `mvn dependency:tree | grep -E 'jackson|snakeyaml'` — every jackson artifact at 2.18.8, snakeyaml at its 2.x target, nothing left at 2.9.10/2.10.x/1.33.
   - Boot the shaded static server against a real YAML/JSON config (same smoke test as V04) — this exercises the Dropwizard config-parsing path end-to-end.
   - Deserialization round-trip tests in `legend-shared-pac4j` (`deserializer`, `mongostore`, `hazelcaststore` test packages) all green.
-- **Status:** ☐
+- **Status:** ☑ 2026-07-03 — jackson-bom 2.18.8 imported at the top of dependencyManagement; properties bumped (jackson* → 2.18.8, snakeyaml → 2.3). Full build + tests green on first run (afterburner included — no exclusion needed). Tree check: all 13 `com.fasterxml.jackson*` artifacts at 2.18.8, snakeyaml at 2.3, nothing left at 2.9.10/2.10.x/1.33. Shaded-server smoke test: config parsed, healthcheck healthy, `/` 200, no errors logged.
 
 ## Wave 3 — after Wave 2, needs runtime auth verification
 

@@ -48,9 +48,9 @@
         <dropwizard.version>1.3.29</dropwizard.version>
         <dropwizard.pac4j.version>4.0.0</dropwizard.pac4j.version>
         <guava.version>33.4.6-jre</guava.version>
-        <jackson.version>2.10.5</jackson.version>
-        <jackson.databind.version>2.10.5.1</jackson.databind.version>
-        <jackson.dataformat.yaml.version>2.11.2</jackson.dataformat.yaml.version>
+        <jackson.version>2.18.8</jackson.version>
+        <jackson.databind.version>2.18.8</jackson.databind.version>
+        <jackson.dataformat.yaml.version>2.18.8</jackson.dataformat.yaml.version>
         <jakarta.xml.bind.version>2.3.2</jakarta.xml.bind.version>
         <javax.jax-rs.version>2.1.1</javax.jax-rs.version>
         <javax.activation.version>1.1.1</javax.activation.version>
@@ -74,7 +74,7 @@
         <opentracing.api.version>0.32.0</opentracing.api.version>
         <pac4j.version>4.5.8</pac4j.version>
         <prometheus.version>0.8.1</prometheus.version>
-        <snakeyaml.version>1.33</snakeyaml.version>
+        <snakeyaml.version>2.3</snakeyaml.version>
         <spring.test.version>5.3.39</spring.test.version>
         <spring.boot.autoconfigure.version>2.7.18</spring.boot.autoconfigure.version>
         <json-smart.version>2.5.2</json-smart.version>
@@ -316,6 +316,16 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- Jackson BOM: keeps ALL com.fasterxml.jackson* artifacts (including the
+                 datatype/module/jaxrs jars pulled transitively by Dropwizard) on one version -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
             <!-- LEGEND -->
             <dependency>
                 <groupId>org.finos.legend.shared</groupId>
