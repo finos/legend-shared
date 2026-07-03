@@ -25,7 +25,7 @@ Items must not be batched across waves in a single PR: a per-item history is wha
 
 | Item | Wave | Component | Current → Target | Alerts closed (severity) | Status |
 |------|------|-----------|------------------|--------------------------|--------|
-| V01 | 0 | `aquasecurity/trivy-action` (CI) | < 0.35.0 → ≥ 0.35.0 | CVE-2026-33634 (critical) | ☐ |
+| V01 | 0 | `aquasecurity/trivy-action` (CI) | < 0.35.0 → 0.35.0 (SHA-pinned) | CVE-2026-33634 (critical) | ☑ 2026-07-03 |
 | V02 | 1 | `com.hazelcast:hazelcast` | 5.3.1 → 5.3.8 | CVE-2023-45859 (high 7.6), CVE-2023-45860 (high 6.5) | ☐ |
 | V03 | 1 | `net.minidev:json-smart` | 2.4.2 → 2.5.2 | CVE-2021-31684 (high 7.5), CVE-2023-1370 (high 7.5) | ☐ |
 | V04 | 1 | `org.eclipse.jetty:*` (9 artifacts, one property) | 9.4.44.v20210927 → latest 9.4.x (≥ 9.4.57.v20241219) | CVE-2024-13009 (high 7.2), CVE-2024-8184 (med 5.9), CVE-2023-26048 (med 5.3), CVE-2023-40167 (med 5.3), CVE-2024-9823 (med 5.3) | ☐ |
@@ -50,7 +50,7 @@ All 29 baseline alerts are accounted for: V01 (1), V02 (2), V03 (2), V04 (5), V0
 - **How:** bump the action reference to ≥ 0.35.0 in `docker.yml`. Prefer pinning by full commit SHA rather than tag (standard mitigation for action supply-chain risk).
 - **Blast radius:** the Docker publish workflow only. No library consumer impact.
 - **Verification:** workflow runs green on the PR (`docker.yml` triggers) or via a manual `workflow_dispatch` if it doesn't run on PRs.
-- **Status:** ☐
+- **Status:** ☑ 2026-07-03 — pinned to commit `57a97c7e` (tag 0.35.0). Workflow-green check pending on PR.
 
 ## Wave 1 — independent version-pin bumps (any order)
 

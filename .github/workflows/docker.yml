@@ -40,7 +40,7 @@ jobs:
         # NOTE: if this gets more complicated, consider having this as a bash script
         run: mkdir -p ./legend-shared-server/target && touch ./legend-shared-server/target/legend-shared-server-dummy.jar && docker build --quiet --tag local/legend-shared-server:${{ github.sha }} ./legend-shared-server
       - name: Scan image for security issues
-        uses: aquasecurity/trivy-action@0.2.2
+        uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
         with:
           # TODO: we should probably also setup misconfiguration scanning
           # See https://github.com/aquasecurity/trivy-action#using-trivy-to-scan-infrastucture-as-code
