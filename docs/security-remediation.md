@@ -31,7 +31,7 @@ Items must not be batched across waves in a single PR: a per-item history is wha
 | V04 | 1 | `org.eclipse.jetty:*` (9 artifacts, one property) | 9.4.44.v20210927 → 9.4.57.v20241219 | CVE-2024-13009 (high 7.2), CVE-2024-8184 (med 5.9), CVE-2023-26048 (med 5.3), CVE-2023-40167 (med 5.3), CVE-2024-9823 (med 5.3) | ☑ 2026-07-03 |
 | V05 | 1 | `spring-boot-autoconfigure` / `spring-test` (test scope) | 2.3.3 → 2.7.18 / 4.3.24 → 5.3.39 | CVE-2023-20883 (high 7.5) | ☑ 2026-07-03 |
 | V06 | 2 | Jackson family + snakeyaml (coordinated) | jackson 2.10.5/2.10.5.1/2.11.2 → 2.18.8; snakeyaml 1.33 → 2.3 | 12 alerts — see item | ☑ 2026-07-03 |
-| V07 | 3 | `com.nimbusds:nimbus-jose-jwt` | 8.0 → ≥ 9.37.4 | CVE-2023-52428 (high 7.5), CVE-2025-53864 (med 5.8) | ☐ |
+| V07 | 3 | `com.nimbusds:nimbus-jose-jwt` | 8.0 → 9.37.4 | CVE-2023-52428 (high 7.5), CVE-2025-53864 (med 5.8) | ☑ 2026-07-03 (manual OIDC check pending) |
 | D1 | deferred | `org.eclipse.jetty:jetty-http` | no fix in 9.4 line | CVE-2026-2332 (high 7.4) | accepted risk |
 | D2 | deferred | `org.pac4j:pac4j-core` | fix is 5.7.10 (Java 11) | CVE-2026-40458 (high 6.5) | accepted risk |
 | D3 | deferred | Dropwizard 1.3.29 EOL | 2.0.x is last Java-8 line | (enabler, no direct alert) | Phase 2 |
@@ -153,9 +153,9 @@ Closes, per Dependabot:
 - **Blast radius / why last:** the OIDC login flow of every Legend app that uses `PingIndirectClient`/OIDC. The compile-time API used by this repo is small, but `oauth2-oidc-sdk:8.22` ↔ nimbus 9.x runtime compatibility is the real risk (`NoSuchMethodError` at login time, not at build time). Two-step approach:
   1. Bump nimbus alone; run the full build; then **manually verify a real OIDC login** against a test IdP (or at minimum a downstream Legend app's auth integration test) — unit tests here do not cover the flow.
   2. If incompatible, additionally pin `com.nimbusds:oauth2-oidc-sdk` to a 9.x version compatible with both nimbus 9.37.x and pac4j-oidc 4.5.8's API usage, and re-verify.
-- **Cleanup:** check `mvn dependency:tree -Dincludes=net.minidev:json-smart` — nimbus 9.x drops json-smart; if absent, retire the V03 pin (leave a note here).
+- **Cleanup:** checked — json-smart does **not** drop out: it remains in the tree via `oauth2-oidc-sdk:8.22` (not via nimbus). The V03 pin stays load-bearing; do not retire it.
 - **Verification:** full build; manual OIDC flow sign-in reaching a profile-authenticated endpoint; sequencing after V06 keeps jackson noise out of any failure triage.
-- **Status:** ☐
+- **Status:** ☑ 2026-07-03 — build + all tests green on nimbus 9.37.4 with oidc-sdk 8.22, including `GitlabClientRenewProfileTest` (token flow against a mock IdP via mockwebserver) and `OidcProfileTest`. **Outstanding before release:** a manual OIDC login against a real IdP (or a downstream Legend app's auth integration environment) — the unit suite does not cover the full authorization-code flow.
 
 ---
 

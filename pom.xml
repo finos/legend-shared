@@ -68,7 +68,7 @@
         <mockito-inline.version>5.2.0</mockito-inline.version>
         <mongo.driver.version>5.3.1</mongo.driver.version>
         <mongo.server.version>1.46.0</mongo.server.version>
-        <nimbus.jwt.version>8.0</nimbus.jwt.version>
+        <nimbus.jwt.version>9.37.4</nimbus.jwt.version>
         <opentracing.jaxrs2.version>0.5.0</opentracing.jaxrs2.version>
         <opentracing.brave.version>0.37.2</opentracing.brave.version>
         <opentracing.api.version>0.32.0</opentracing.api.version>
