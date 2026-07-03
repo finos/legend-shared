@@ -28,7 +28,7 @@ Items must not be batched across waves in a single PR: a per-item history is wha
 | V01 | 0 | `aquasecurity/trivy-action` (CI) | < 0.35.0 → 0.35.0 (SHA-pinned) | CVE-2026-33634 (critical) | ☑ 2026-07-03 |
 | V02 | 1 | `com.hazelcast:hazelcast` | 5.3.1 → 5.3.8 | CVE-2023-45859 (high 7.6), CVE-2023-45860 (high 6.5) | ☑ 2026-07-03 |
 | V03 | 1 | `net.minidev:json-smart` | 2.4.2 → 2.5.2 | CVE-2021-31684 (high 7.5), CVE-2023-1370 (high 7.5) | ☑ 2026-07-03 |
-| V04 | 1 | `org.eclipse.jetty:*` (9 artifacts, one property) | 9.4.44.v20210927 → latest 9.4.x (≥ 9.4.57.v20241219) | CVE-2024-13009 (high 7.2), CVE-2024-8184 (med 5.9), CVE-2023-26048 (med 5.3), CVE-2023-40167 (med 5.3), CVE-2024-9823 (med 5.3) | ☐ |
+| V04 | 1 | `org.eclipse.jetty:*` (9 artifacts, one property) | 9.4.44.v20210927 → 9.4.57.v20241219 | CVE-2024-13009 (high 7.2), CVE-2024-8184 (med 5.9), CVE-2023-26048 (med 5.3), CVE-2023-40167 (med 5.3), CVE-2024-9823 (med 5.3) | ☑ 2026-07-03 |
 | V05 | 1 | `spring-boot-autoconfigure` / `spring-test` (test scope) | 2.3.3 → 2.7.18 / 4.3.24 → 5.3.39 | CVE-2023-20883 (high 7.5) | ☐ |
 | V06 | 2 | Jackson family + snakeyaml (coordinated) | jackson 2.10.5/2.10.5.1/2.11.2 → 2.18.8; snakeyaml 1.33 → 2.x | 12 alerts — see item | ☐ |
 | V07 | 3 | `com.nimbusds:nimbus-jose-jwt` | 8.0 → ≥ 9.37.4 | CVE-2023-52428 (high 7.5), CVE-2025-53864 (med 5.8) | ☐ |
@@ -86,7 +86,7 @@ All 29 baseline alerts are accounted for: V01 (1), V02 (2), V03 (2), V04 (5), V0
     org.finos.legend.server.shared.staticserver.Server server legend-shared-server/src/test/resources/testConfig.json
   ```
   and confirm it serves the static root and `/admin/healthcheck`.
-- **Status:** ☐
+- **Status:** ☑ 2026-07-03 — build + tests green; tree shows all jetty artifacts (incl. unpinned jetty-io/jetty-xml) at 9.4.57.v20241219; shaded-jar smoke test served `/` (200) and a healthy `/admin/healthcheck`. Note: invoke the smoke test as `Server server <config-path>` — with a missing path it falls back to the bundled default config (AnonymousClient, port 8080).
 
 ### V05 — test-scope Spring bumps (CVE-2023-20883)
 
