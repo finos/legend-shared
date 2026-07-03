@@ -37,6 +37,7 @@ Items must not be batched across waves in a single PR: a per-item history is wha
 | D3 | deferred | Dropwizard 1.3.29 EOL | 2.0.x is last Java-8 line | (enabler, no direct alert) | Phase 2 |
 | D4 | watch | `jackson-databind` | no patched version exists yet | CVE-2026-54515 (med 5.3) | watch |
 | D5 | deferred | `org.eclipse.jetty:jetty-http` | fix only in Jetty 12.0.12 | CVE-2024-6763 (med 3.7) | accepted risk |
+| D6 | deferred | `org.eclipse.jetty:jetty-http` | fix only in Jetty 12.0.31/12.1.5 | CVE-2025-11143 (WhiteSource) | accepted risk |
 
 All 29 baseline alerts are accounted for: V01 (1), V02 (2), V03 (2), V04 (5), V05 (1), V06 (12), V07 (2), D1 (1), D2 (1), D4 (1), D5 (1).
 
@@ -163,7 +164,8 @@ Closes, per Dependabot:
 
 ### D1 — Jetty CVE-2026-2332 (request smuggling via chunked-extension parsing, high 7.4)
 
-Every 9.4.x release is affected and **the 9.4 line is EOL — no fix exists or is coming**. The fixed lines require Jetty 10/11/12 → Dropwizard ≥ 2.1/3.x → Java 11 baseline (Phase 2).
+Every 9.4.x release is affected and **the 9.4 line is EOL — no fix exists or is coming**.
+**Scanner note (2026-07-03, PR #259):** WhiteSource/Mend suggests "9.4.60" as a fix, but no such artifact exists on Maven Central (latest 9.4.x is 9.4.58.v20250814, still inside the GH advisory's vulnerable range ≤ 9.4.59). If a 9.4.60 ever actually ships, bump `jetty.version` immediately — re-check Central's `jetty-http/maven-metadata.xml` each session. The fixed lines require Jetty 10/11/12 → Dropwizard ≥ 2.1/3.x → Java 11 baseline (Phase 2).
 **Interim mitigation (operators):** request smuggling requires a parsing disagreement between a front proxy and Jetty. Legend deployments front these servers with a reverse proxy/LB; ensure it normalizes or rejects chunked-extension quoted strings and does not reuse backend connections across clients. Document in deployment guidance.
 **Revisit:** Phase 2, or immediately if a 9.4 backport ever appears (check the alert).
 
@@ -183,11 +185,19 @@ Dropwizard 1.3 has been EOL since 2020 and is the structural blocker behind D1/D
 
 ### D4 — jackson-databind CVE-2026-54515 (medium 5.3) — WATCH
 
-Case-insensitive deserialization bypass; **no patched version exists yet** (vulnerable range `< 2.18.9`, fix expected in 2.18.9). Nothing to upgrade to; V06 lands us on 2.18.8. **Each session: re-run the alert query; when a patched version appears, fold it into a one-line patch bump.**
+Case-insensitive deserialization bypass; **no patched version exists yet** (vulnerable range `< 2.18.9`, fix expected in 2.18.9; WhiteSource cites only jackson-databind **3.1.4** — a 3.x major, not a drop-in). Nothing to upgrade to; V06 lands us on 2.18.8. **Each session: re-run the alert query; when a 2.18.9 appears, fold it into a one-line patch bump.**
 
 ### D5 — Jetty CVE-2024-6763 (URI authority parsing, medium 3.7)
 
 Fixed only in **Jetty 12.0.12** — even Jetty 10/11 are affected, so this outlives a Phase-2 Dropwizard 3.x migration unless that lands on Jetty 12 (Dropwizard 4.x/5.x territory). Low CVSS, parsing-hygiene issue. Accepted risk alongside D1.
+
+### D6 — Jetty CVE-2025-11143 (jetty-http)
+
+Surfaced by WhiteSource on PR #259 (not in the Dependabot baseline). Fixed only in **Jetty 12.0.31 / 12.1.5** — same Jetty-12-only situation as D5. Accepted risk alongside D1/D5; revisit with the Phase-2 track.
+
+### Scanner reconciliation (WhiteSource, PR #259)
+
+The WhiteSource check on PR #259 reported "37 vulnerabilities remediated, 4 new". The "4 new" are **not regressions** — WhiteSource attributes findings to jar versions, so the bumped jars (jetty-http 9.4.57, jackson-databind 2.18.8) count as "newly introduced" carriers of the already-known unfixable items: CVE-2026-2332 (D1), CVE-2026-54515 (D4), CVE-2024-6763 (D5), CVE-2025-11143 (D6). None has a shippable fix on the Java-8-compatible stack today.
 
 ## Phase 2 track (separate effort, FINOS/Legend-wide decision)
 
