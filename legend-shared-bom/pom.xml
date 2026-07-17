@@ -1,0 +1,530 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ Copyright 2026 Goldman Sachs
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!--
+     This module is deliberately parented to org.finos:finos (not legend-shared): the root pom
+     imports this BOM, and a BOM whose parent is the root would create a model-building cycle.
+     The finos parent still provides the release profile (GPG signing) and Central metadata.
+    -->
+    <parent>
+        <groupId>org.finos</groupId>
+        <artifactId>finos</artifactId>
+        <version>7</version>
+    </parent>
+
+    <name>Legend Shared - BOM</name>
+    <description>Bill of Materials for Legend Shared modules and their shared third-party dependency stack</description>
+    <groupId>org.finos.legend.shared</groupId>
+    <artifactId>legend-shared-bom</artifactId>
+    <version>0.36.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <url>https://legend.finos.org</url>
+
+    <scm>
+        <developerConnection>scm:git:https://github.com/finos/legend-shared</developerConnection>
+        <tag>HEAD</tag>
+    </scm>
+
+    <properties>
+        <!-- Dependencies -->
+        <commons.lang3.version>3.18.0</commons.lang3.version>
+        <commons.text.version>1.10.0</commons.text.version>
+        <dropwizard.version>1.3.29</dropwizard.version>
+        <dropwizard.pac4j.version>4.0.0</dropwizard.pac4j.version>
+        <guava.version>33.4.6-jre</guava.version>
+        <jackson.version>2.18.8</jackson.version>
+        <jackson.databind.version>2.18.8</jackson.databind.version>
+        <jackson.dataformat.yaml.version>2.18.8</jackson.dataformat.yaml.version>
+        <jakarta.xml.bind.version>2.3.3</jakarta.xml.bind.version>
+        <javax.jax-rs.version>2.1.1</javax.jax-rs.version>
+        <javax.activation.version>1.1.1</javax.activation.version>
+        <javax.servlet.api.version>3.1.0</javax.servlet.api.version>
+        <javax.xml.bind.version>2.3.1</javax.xml.bind.version>
+        <jaxb.version>2.3.0</jaxb.version>
+        <jaxb.runtime.version>2.3.2</jaxb.runtime.version>
+        <jersey.client.version>2.23.2</jersey.client.version>
+        <jersey.test.framework.version>2.23.1</jersey.test.framework.version>
+        <jetty.version>9.4.57.v20241219</jetty.version>
+        <junit.version>4.13.1</junit.version>
+        <slf4j.version>1.7.36</slf4j.version>
+        <mimeparse.version>0.1.3.3</mimeparse.version>
+        <mockwebserver.version>4.9.0</mockwebserver.version>
+        <mockito.version>5.21.0</mockito.version>
+        <mockito-inline.version>5.2.0</mockito-inline.version>
+        <mongo.driver.version>5.3.1</mongo.driver.version>
+        <mongo.server.version>1.46.0</mongo.server.version>
+        <nimbus.jwt.version>9.37.4</nimbus.jwt.version>
+        <opentracing.jaxrs2.version>0.5.0</opentracing.jaxrs2.version>
+        <opentracing.brave.version>0.37.2</opentracing.brave.version>
+        <opentracing.api.version>0.32.0</opentracing.api.version>
+        <pac4j.version>4.5.8</pac4j.version>
+        <prometheus.version>0.8.1</prometheus.version>
+        <snakeyaml.version>2.3</snakeyaml.version>
+        <spring.test.version>5.3.39</spring.test.version>
+        <spring.boot.autoconfigure.version>2.7.18</spring.boot.autoconfigure.version>
+        <json-smart.version>2.5.2</json-smart.version>
+        <hazelcast.version>5.3.8</hazelcast.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Jackson BOM: keeps ALL com.fasterxml.jackson* artifacts (including the
+                 datatype/module/jaxrs jars pulled transitively by Dropwizard) on one version -->
+            <dependency>
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- LEGEND -->
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-pac4j</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-pac4j-kerberos</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-pac4j-gitlab</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-pac4j-ping</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-opentracing-base</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-opentracing-jersey</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-opentracing-test</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-opentracing-servlet-filter</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <!-- LEGEND -->
+
+            <!-- Logging -->
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-api</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <!-- Logging -->
+
+            <!-- Spring -->
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-test</artifactId>
+                <version>${spring.test.version}</version>
+            </dependency>
+            <dependency>
+                <!-- spring-test 5.x mock-web needs spring-web at runtime (MockHttpServletResponse cookies) -->
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-web</artifactId>
+                <version>${spring.test.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-autoconfigure</artifactId>
+                <version>${spring.boot.autoconfigure.version}</version>
+            </dependency>
+            <!-- Spring -->
+
+            <!-- Pac4j -->
+            <dependency>
+                <groupId>org.pac4j</groupId>
+                <artifactId>pac4j-kerberos</artifactId>
+                <version>${pac4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.springframework</groupId>
+                        <artifactId>spring-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.pac4j</groupId>
+                <artifactId>pac4j-oidc</artifactId>
+                <version>${pac4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.nimbusds</groupId>
+                        <artifactId>nimbus-jose-jwt</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.pac4j</groupId>
+                <artifactId>pac4j-http</artifactId>
+                <version>${pac4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.pac4j</groupId>
+                <artifactId>pac4j-core</artifactId>
+                <version>${pac4j.version}</version>
+                <exclusions>
+                    <!-- apache-shiro is an optional dependency of pac4j-core. Explicitly excluded for scanner to avoid CVEs flagging-->
+                    <exclusion>
+                        <groupId>org.apache.shiro</groupId>
+                        <artifactId>shiro-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.pac4j</groupId>
+                <artifactId>dropwizard-pac4j</artifactId>
+                <version>${dropwizard.pac4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.pac4j</groupId>
+                        <artifactId>pac4j-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <!-- Pac4j -->
+
+            <!-- Jackson -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${jackson.databind.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.dataformat.yaml.version}</version>
+            </dependency>
+            <!-- Jackson -->
+
+            <!-- Dropwizard -->
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-assets</artifactId>
+                <version>${dropwizard.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.fasterxml.jackson.dataformat</groupId>
+                        <artifactId>jackson-dataformat-yaml</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-core</artifactId>
+                <version>${dropwizard.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard</groupId>
+                <artifactId>dropwizard-testing</artifactId>
+                <version>${dropwizard.version}</version>
+            </dependency>
+            <!-- Dropwizard -->
+
+            <!-- Open Tracing -->
+            <dependency>
+                <groupId>io.opentracing.contrib</groupId>
+                <artifactId>opentracing-jaxrs2</artifactId>
+                <version>${opentracing.jaxrs2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentracing.brave</groupId>
+                <artifactId>brave-opentracing</artifactId>
+                <version>${opentracing.brave.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.opentracing</groupId>
+                <artifactId>opentracing-mock</artifactId>
+                <version>${opentracing.api.version}</version>
+            </dependency>
+            <!-- Open Tracing -->
+
+            <!-- Metrics -->
+            <dependency>
+                <groupId>io.prometheus</groupId>
+                <artifactId>simpleclient</artifactId>
+                <version>${prometheus.version}</version>
+            </dependency>
+            <!-- Metrics -->
+
+            <!-- Jersey -->
+            <dependency>
+                <groupId>org.glassfish.jersey.test-framework.providers</groupId>
+                <artifactId>jersey-test-framework-provider-grizzly2</artifactId>
+                <version>${jersey.test.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-client</artifactId>
+                <version>${jersey.client.version}</version>
+            </dependency>
+            <!-- Jersey -->
+
+            <!-- Mongo -->
+            <dependency>
+                <groupId>org.mongodb</groupId>
+                <artifactId>mongodb-driver-sync</artifactId>
+                <version>${mongo.driver.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.bwaldvogel</groupId>
+                <artifactId>mongo-java-server</artifactId>
+                <version>${mongo.server.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.bwaldvogel</groupId>
+                <artifactId>mongo-java-server-core</artifactId>
+                <version>${mongo.server.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.bwaldvogel</groupId>
+                <artifactId>mongo-java-server-memory-backend</artifactId>
+                <version>${mongo.server.version}</version>
+            </dependency>
+            <!-- Mongo -->
+
+            <!-- JUnit -->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+            </dependency>
+            <!-- JUnit -->
+
+            <!-- JAXB - needed in java 11 -->
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${javax.xml.bind.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-core</artifactId>
+            <version>${jaxb.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>${jaxb.version}</version>
+        </dependency>
+        <!-- JAXB -->
+
+            <!-- JAXB Runtime, com.sun.xml.bind module -->
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>${jaxb.runtime.version}</version>
+            </dependency>
+
+            <!-- Javax -->
+            <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>javax.servlet-api</artifactId>
+                <version>${javax.servlet.api.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>${javax.activation.version}</version>
+            </dependency>
+            <dependency>
+                <!-- JAX RS -->
+                <groupId>javax.ws.rs</groupId>
+                <artifactId>javax.ws.rs-api</artifactId>
+                <version>${javax.jax-rs.version}</version>
+            </dependency>
+            <!-- Javax -->
+
+            <!-- API, java.xml.bind module -->
+            <dependency>
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta.xml.bind.version}</version>
+            </dependency>
+
+            <!-- Commons -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons.lang3.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${commons.text.version}</version>
+            </dependency>
+            <!-- Commons -->
+
+            <!-- Guava -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
+            </dependency>
+            <!-- Guava -->
+
+            <dependency>
+                <groupId>net.minidev</groupId>
+                <artifactId>json-smart</artifactId>
+                <version>${json-smart.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.hazelcast</groupId>
+                <artifactId>hazelcast</artifactId>
+                <version>${hazelcast.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.squareup.okhttp3</groupId>
+                <artifactId>mockwebserver</artifactId>
+                <version>${mockwebserver.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-inline</artifactId>
+                <version>${mockito-inline.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.nimbusds</groupId>
+                <artifactId>nimbus-jose-jwt</artifactId>
+                <version>${nimbus.jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.commonjava.mimeparse</groupId>
+                <artifactId>mimeparse</artifactId>
+                <version>${mimeparse.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>commons-lang</groupId>
+                        <artifactId>commons-lang</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-http</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlets</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-util-ajax</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-security</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-webapp</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-continuation</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.yaml</groupId>
+                <artifactId>snakeyaml</artifactId>
+                <version>${snakeyaml.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <profiles>
+        <profile>
+            <id>docker</id>
+            <build>
+                <plugins>
+                    <!-- The finos parent's docker profile binds dockerfile build/push; this module has no Dockerfile -->
+                    <plugin>
+                        <groupId>com.spotify</groupId>
+                        <artifactId>dockerfile-maven-plugin</artifactId>
+                        <version>1.4.13</version>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
+</project>

@@ -22,7 +22,7 @@
     <parent>
         <groupId>org.finos.legend.shared</groupId>
         <artifactId>legend-shared</artifactId>
-        <version>0.35.4-SNAPSHOT</version>
+        <version>0.36.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>legend-shared-pac4j-kerberos</artifactId>
@@ -79,6 +79,11 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- TEST -->
