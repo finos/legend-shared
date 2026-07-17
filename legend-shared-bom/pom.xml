@@ -33,13 +33,13 @@
     <description>Bill of Materials for Legend Shared modules and their shared third-party dependency stack</description>
     <groupId>org.finos.legend.shared</groupId>
     <artifactId>legend-shared-bom</artifactId>
-    <version>0.36.0-RC2</version>
+    <version>0.36.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <url>https://legend.finos.org</url>
 
     <scm>
         <developerConnection>scm:git:https://github.com/finos/legend-shared</developerConnection>
-        <tag>legend-shared-0.36.0-RC2</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
