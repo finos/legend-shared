@@ -32,7 +32,7 @@
 
     <properties>
         <!-- CI-Friendly Version -->
-        <revision>0.35.4-SNAPSHOT</revision>
+        <revision>0.35.6-SNAPSHOT</revision>
 
         <sonar.projectKey>legend-shared</sonar.projectKey>
         <sonar.moduleKey>${project.groupId}:${project.artifactId}</sonar.moduleKey>
