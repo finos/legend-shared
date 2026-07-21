@@ -16,11 +16,16 @@ package org.finos.legend.server.pac4j.internal;
 
 import com.google.common.base.Strings;
 import com.google.common.net.HttpHeaders;
-import com.google.common.net.MediaType;
-import java.util.Collections;
-import org.commonjava.mimeparse.MIMEParse;
+
+import java.text.ParseException;
+import java.util.List;
+
+import org.glassfish.jersey.message.internal.AcceptableMediaType;
+import org.glassfish.jersey.message.internal.HttpHeaderReader;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver;
+
+import javax.ws.rs.core.MediaType;
 
 public class AcceptHeaderAjaxRequestResolver extends DefaultAjaxRequestResolver
 {
@@ -32,8 +37,30 @@ public class AcceptHeaderAjaxRequestResolver extends DefaultAjaxRequestResolver
     {
       return true;
     }
-    String mimeType = MIMEParse.bestMatch(Collections.singleton(MediaType.HTML_UTF_8.toString()),
-        acceptHeader);
-    return Strings.isNullOrEmpty(mimeType);
+    String mimeType = mimeParseBestMatch(acceptHeader);
+      return Strings.isNullOrEmpty(mimeType);
+  }
+
+  private String mimeParseBestMatch(String acceptHeader)
+  {
+    List<AcceptableMediaType> requested;
+    try
+    {
+      requested = HttpHeaderReader.readAcceptMediaType(acceptHeader);
+      requested.sort(AcceptableMediaType.COMPARATOR);
+    }
+    catch (ParseException e)
+    {
+      return "";
+    }
+    MediaType supported = new MediaType("text", "html", "utf-8");
+    for (AcceptableMediaType req : requested)
+    {
+      if (req.isCompatible(supported))
+      {
+        return supported.toString();
+      }
+    }
+    return "";
   }
 }
