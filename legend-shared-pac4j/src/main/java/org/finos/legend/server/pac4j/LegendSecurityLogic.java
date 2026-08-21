@@ -40,12 +40,6 @@ public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurit
                      Boolean inputMultiProfile,
                      Object... parameters)
     {
-        boolean isConstraintKerberosFlow = (boolean) context.getRequestAttribute(IS_CONSTRAINED_KERBEROS_FLOW).orElse(false);
-        if (!isConstraintKerberosFlow)
-        {
-            LOGGER.debug("NonConstrained host, falling back to default handling");
-            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, false, parameters);
-        }
         boolean multiProfile = inputMultiProfile != null && inputMultiProfile;
         if (!multiProfile)
         {

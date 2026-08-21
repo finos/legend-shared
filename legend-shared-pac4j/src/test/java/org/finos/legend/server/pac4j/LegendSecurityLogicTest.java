@@ -89,7 +89,6 @@ public class LegendSecurityLogicTest
     public void testPerform_WithDirectClient_SingleProfile_BrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
         when(profileCreator.create(any(Credentials.class), any(WebContext.class)))
@@ -136,7 +135,6 @@ public class LegendSecurityLogicTest
     public void testPerform_WithDirectAndIndirectClient_MultiProfile_BrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
         when(profileCreator.create(any(Credentials.class), any(WebContext.class)))
@@ -196,16 +194,38 @@ public class LegendSecurityLogicTest
 
     }
 
+
     @Test
-    public void testPerform_WithDirectAndIndirectClient_MultiProfile_BrowserCallUsingConstrainedHost() throws Exception
+    public void testPerform_MultiProfile_BrowserCall_WithoutConstrainedKerberosFlowAttribute() throws Exception
     {
+        // Verifies that multi-profile support works for browser calls even when
+        // IS_CONSTRAINED_KERBEROS_FLOW attribute is not set (removed gate)
+        when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
+        ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
+        when(profileCreator.create(any(Credentials.class), any(WebContext.class)))
+                .thenReturn(Optional.of(userProfile));
+
         ProfileManager profileManager = mock(ProfileManager.class);
-        legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(false));
+        when(profileManager.getAll(anyBoolean())).thenReturn(Collections.emptyList());
+
         SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
         when(adapter.adapt(any(), (Collection<UserProfile>) any(), anyList())).thenReturn(null);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),eq("none"),anyString(),eq(false),any());
+
+        ClientFinder clientFinder = mock(ClientFinder.class);
+        AnonymousClient anonymousClient = new AnonymousClient();
+        anonymousClient.setProfileCreator(profileCreator);
+        when(clientFinder.find(any(), any(), anyString())).thenReturn(Collections.singletonList(anonymousClient));
+
+        legendSecurityLogic.setClientFinder(clientFinder);
+        legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
+
+        when(legendSecurityLogic.getMatchingChecker()).thenReturn(matchingChecker);
+        when(matchingChecker.matches(any(), anyString(), any(), anyList())).thenReturn(true);
+
+        when(legendSecurityLogic.getProfileStorageDecision()).thenReturn(profileStorageDecision);
+        when(profileStorageDecision.mustSaveProfileInSession(any(),anyList(),any(),any())).thenReturn(true);
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),eq("none"),anyString(),any(),any());
 
         legendSecurityLogic.perform(
                 webContext,
@@ -218,17 +238,14 @@ public class LegendSecurityLogicTest
                 true
         );
 
-        // Verify
-        verify(profileManager,never()).save(false, userProfile,true);
-        verify(adapter,never()).adapt(eq(webContext),any(),any());
-        verify(webContext, never()).setRequestAttribute(eq(REDIRECT_PROTO_ATTRIBUTE), any());
+        // Verify that profile is saved via multi-profile logic (not falling back to default)
+        verify(profileManager).save(true, userProfile, true);
     }
 
     @Test
     public void testPerform_WithMultiPleDirectAndIndirectClient_BrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
         when(profileCreator.create(any(Credentials.class), any(WebContext.class)))
@@ -319,7 +336,6 @@ public class LegendSecurityLogicTest
     public void testPerform_WithDirectClient_MissingCredentials_BrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
         when(profileCreator.create(any(Credentials.class), any(WebContext.class)))
@@ -372,7 +388,6 @@ public class LegendSecurityLogicTest
     public void testPerform_WithDirectClient_SingleProfile_NonBrowserCall() throws Exception
     {
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.empty());
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         when(webContext.getRequestMethod()).thenReturn("GET");
 
         ProfileCreator profileCreator = mock(ProfileCreator.class);
@@ -419,7 +434,6 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_MultiProfile_False() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         UserProfile userProfile = mock(UserProfile.class);
         ProfileManager profileManager = mock(ProfileManager.class);
         legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
@@ -447,7 +461,6 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_MultiProfile_True_NonBrowserCall() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         UserProfile userProfile = mock(UserProfile.class);
         ProfileManager profileManager = mock(ProfileManager.class);
         legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
@@ -476,7 +489,6 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_MultiProfile_Null() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         UserProfile userProfile = mock(UserProfile.class);
         ProfileManager profileManager = mock(ProfileManager.class);
         legendSecurityLogic.setProfileManagerFactory((webContext) -> profileManager);
@@ -504,7 +516,6 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_WithDirectClient_ExpiredProfile() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
@@ -551,7 +562,6 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_WithDirectClientExpiredProfile_ValidIndirectClientProfile() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile oidProfile = mock(UserProfile.class);
@@ -599,7 +609,6 @@ public class LegendSecurityLogicTest
     @Test
     public void testPerform_WithIndirectClient_ExpiredProfile() throws Exception
     {
-        when(webContext.getRequestAttribute(LegendSecurityLogic.IS_CONSTRAINED_KERBEROS_FLOW)).thenReturn(Optional.of(true));
         when(webContext.getRequestHeader(eq("User-Agent"))).thenReturn(Optional.of("Mozilla/5.0"));
         ProfileCreator profileCreator = mock(ProfileCreator.class);
         UserProfile userProfile = mock(UserProfile.class);
