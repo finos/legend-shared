@@ -127,13 +127,15 @@ jobs:
           done
 
       - name: Compute and set next SNAPSHOT
+        env:
+          RELEASE_VERSION: ${{ github.event.inputs.releaseVersion }}
         run: |
-          releaseVersion=${{ github.event.inputs.releaseVersion }}
-          n=${releaseVersion//[!0-9]/ }
-          a=(${n//\./ })
-          nextPatch=$((${a[2]} + 1))
-          nextSnapshot="${a[0]}.${a[1]}.${nextPatch}-SNAPSHOT"
+          set -euo pipefail
+          IFS=. read -r major minor patch <<< "${RELEASE_VERSION}"
+          nextSnapshot="${major}.${minor}.$((patch + 1))-SNAPSHOT"
+          git fetch origin "${GITHUB_REF_NAME}"
+          git checkout -B "${GITHUB_REF_NAME}" "origin/${GITHUB_REF_NAME}"
           sed -i "s|<revision>.*</revision>|<revision>${nextSnapshot}</revision>|" pom.xml
           git add pom.xml
           git commit -m "Bump version to ${nextSnapshot}"
-          git push origin master
+          git push origin "${GITHUB_REF_NAME}"
