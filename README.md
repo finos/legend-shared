@@ -16,6 +16,17 @@ The important tenets for this project are:
 
 This application uses Maven 3.6+ and JDK 8. Simply run `mvn install` to compile.
 
+## Release manager skills
+
+[`claude-plugins/legend-release`](claude-plugins/legend-release) holds Claude Code
+skills for releasing the Legend stack (shared, pure, engine, sdlc and depot). To
+install them:
+
+```
+/plugin marketplace add finos/legend-shared
+/plugin install legend-release@legend
+```
+
 ## Roadmap
 
 Visit our [roadmap](https://github.com/finos/legend#roadmap) to know more about the upcoming features.

@@ -9,7 +9,7 @@ A green pipeline is not proof the release landed. Publishing to the Central
 Portal is not the same as being readable on repo1, and the branch can be left in
 a state that breaks the *next* release even when this one succeeded.
 
-Read `.claude/skills/release-preflight/references/repo-matrix.md` for coordinates
+Read `../release-preflight/references/repo-matrix.md` (relative to this skill's directory) for coordinates
 and naming.
 
 ## Checks

@@ -46,9 +46,8 @@ counted twice, so "26 errors" can mean 13 tests.
 
 ## 4. Classify
 
-Check every distinct failure against
-`.claude/skills/release-triage/references/known-failures.md`. For each, give a
-verdict:
+Check every distinct failure against `references/known-failures.md` (in this
+skill's directory). For each, give a verdict:
 
 - **Environmental** — shared infrastructure, credentials, stale cloud-store
   state. No code fix exists. A rerun will fail identically until someone fixes
@@ -77,3 +76,8 @@ another hour to fail the same way.
 If the failure was not already in `known-failures.md`, add it — signature,
 verdict, action, and the run ID where it was first seen. This file is the whole
 value of the skill; a triage that does not feed it teaches the next one nothing.
+
+The copy this skill reads is the installed plugin's, and edits to it are lost on
+the next plugin update. Make the change in a `finos/legend-shared` checkout, at
+`claude-plugins/legend-release/skills/release-triage/references/known-failures.md`,
+and offer to open a PR for it. Ask before pushing.

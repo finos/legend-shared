@@ -3,7 +3,16 @@
 Five repos, **four different release mechanisms**. Never assume the shape of a
 release from one repo when working in another — look the repo up here first.
 
-Checkouts live side by side under `/home/aziem/pure/`.
+## Checkouts
+
+These skills are installed as a plugin and can be run from a checkout of any of
+the five repos. The repo being released is the one whose checkout you are in —
+derive it from `git remote get-url origin`.
+
+Skills that span repos (`release-train`) need all five checkouts. They are
+normally side by side in one parent directory (`../legend-engine`,
+`../legend-sdlc`, ...). Look there first; if a checkout is missing, ask the user
+where it is rather than cloning a fresh one.
 
 ## Release order
 

@@ -13,9 +13,10 @@ waits for the previous one to be **readable on Central** — not merely "publish
 legend-shared → legend-pure → legend-engine → legend-sdlc → legend-depot
 ```
 
-Checkouts live side by side under `/home/aziem/pure/`. Read
-`.claude/skills/release-preflight/references/repo-matrix.md` — the five repos do
-not share a release mechanism, and this skill drives all five.
+This skill drives all five repos, so it needs a checkout of each — see
+"Checkouts" in `../release-preflight/references/repo-matrix.md` (relative to this
+skill's directory). Read that file first: the five repos do not share a release
+mechanism.
 
 `legend-stack-release.yml` exists in every repo and is believed stale. The train
 is sequenced by hand, one `release.yml` dispatch per repo. Do not trigger the

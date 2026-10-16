@@ -9,7 +9,7 @@ A failed release usually leaves a pushed tag and version-bump commits behind.
 Both must go before that version can be cut again — but *what* exactly was left
 depends on the repo and on how the release failed, so *inspect before acting*.
 
-Read `.claude/skills/release-preflight/references/repo-matrix.md` first.
+Read `../release-preflight/references/repo-matrix.md` (relative to this skill's directory) first.
 
 ## Do not reach for `clean-after-failed-release.yml`
 

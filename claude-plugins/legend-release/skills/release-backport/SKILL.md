@@ -14,7 +14,7 @@ That is exactly what happened to legend-engine 4.143.1 — PR #5210 squashed
 actual fix into one commit, moving 602 poms to `4.143.2-SNAPSHOT` as a side
 effect. The fix was two lines of JSON.
 
-Read `.claude/skills/release-preflight/references/repo-matrix.md` for branch and
+Read `../release-preflight/references/repo-matrix.md` (relative to this skill's directory) for branch and
 label conventions.
 
 ## Preferred route: the label

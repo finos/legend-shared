@@ -1,7 +1,9 @@
 # Known release failure signatures
 
 Append to this file every time a release failure is diagnosed. The value of
-`release-triage` is entirely in how complete this list is.
+`release-triage` is entirely in how complete this list is. The source of truth is
+`claude-plugins/legend-release/skills/release-triage/references/known-failures.md`
+in `finos/legend-shared` — add entries there, by PR.
 
 Each entry: **signature** (what to grep for), **verdict** (real / environmental),
 **action**.

@@ -1,0 +1,10 @@
+{
+  "name": "legend-release",
+  "version": "0.1.0",
+  "description": "Release manager skills for the Legend stack (legend-shared, legend-pure, legend-engine, legend-sdlc, legend-depot)",
+  "author": {
+    "name": "FINOS Legend"
+  },
+  "repository": "https://github.com/finos/legend-shared",
+  "license": "Apache-2.0"
+}

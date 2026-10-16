@@ -9,7 +9,7 @@ A Legend release costs 1–3 hours of CI. Every check here is cheap and catches 
 failure that would otherwise surface after that wait — or worse, after the tag
 has been pushed.
 
-Read `.claude/skills/release-preflight/references/repo-matrix.md` first. The five
+Read `references/repo-matrix.md` (in this skill's directory) first. The five
 repos do not share a release mechanism, and three of the five have **no
 pre-flight gate in CI at all**, so this skill is the only thing standing between
 them and a burned version number.

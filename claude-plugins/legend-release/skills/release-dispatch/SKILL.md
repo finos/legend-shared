@@ -8,7 +8,7 @@ description: Dispatch a Legend release workflow and babysit it to completion —
 Dispatches a release and stays with it. The point is that the user does not have
 to watch a 1–3 hour pipeline or discover a failure an hour after it happened.
 
-Read `.claude/skills/release-preflight/references/repo-matrix.md` before anything.
+Read `../release-preflight/references/repo-matrix.md` (relative to this skill's directory) before anything.
 
 ## 1. Establish the target
 
