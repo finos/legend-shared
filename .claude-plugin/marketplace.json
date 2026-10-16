@@ -1,0 +1,16 @@
+{
+  "name": "legend",
+  "owner": {
+    "name": "FINOS Legend"
+  },
+  "metadata": {
+    "description": "Claude Code plugins for working on the Legend stack"
+  },
+  "plugins": [
+    {
+      "name": "legend-release",
+      "source": "./claude-plugins/legend-release",
+      "description": "Release manager skills for the Legend stack: preflight, dispatch, triage, cleanup, backport, stack release train and post-release verification"
+    }
+  ]
+}
