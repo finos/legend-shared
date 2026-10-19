@@ -54,11 +54,6 @@ jobs:
           gpg-private-key: ${{ secrets.CI_GPG_PRIVATE_KEY }}
           gpg-passphrase: CI_GPG_PASSPHRASE
 
-      - name: Collect Workflow Telemetry
-        uses: runforesight/workflow-telemetry-action@v1
-        with:
-          theme: dark
-
       - name: Build release
         run: mvn -B -e -T2 -DskipTests -Drevision=${{ github.event.inputs.releaseVersion }} install -P release,docker
         env:
