@@ -18,12 +18,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import org.pac4j.core.authorization.authorizer.AbstractCheckAuthenticationAuthorizer;
 import org.pac4j.core.context.WebContext;
+import org.pac4j.core.context.session.SessionStore;
+import org.pac4j.core.profile.UserProfile;
 import org.pac4j.oidc.profile.OidcProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unused")
-public class GitlabGroupAuthorizer extends AbstractCheckAuthenticationAuthorizer<OidcProfile>
+public class GitlabGroupAuthorizer extends AbstractCheckAuthenticationAuthorizer
 {
   private static final Logger logger = LoggerFactory.getLogger(GitlabGroupAuthorizer.class);
   @JsonProperty
@@ -31,8 +33,9 @@ public class GitlabGroupAuthorizer extends AbstractCheckAuthenticationAuthorizer
 
   @SuppressWarnings("unchecked")
   @Override
-  protected boolean isProfileAuthorized(WebContext context, OidcProfile profile)
+  protected boolean isProfileAuthorized(WebContext context, SessionStore sessionStore, UserProfile userProfile)
   {
+    OidcProfile profile = (OidcProfile) userProfile;
     String id = profile.getId();
     List<String> groups = (List<String>) profile.getAttribute("groups");
     if (groups != null)
@@ -52,8 +55,8 @@ public class GitlabGroupAuthorizer extends AbstractCheckAuthenticationAuthorizer
   }
 
   @Override
-  public boolean isAuthorized(WebContext context, List<OidcProfile> profiles)
+  public boolean isAuthorized(WebContext context, SessionStore sessionStore, List<UserProfile> profiles)
   {
-    return isAnyAuthorized(context, profiles);
+    return isAnyAuthorized(context, sessionStore, profiles);
   }
 }

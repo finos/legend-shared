@@ -71,6 +71,7 @@
         </plugins>
     </build>
 
+
     <dependencies>
         <!-- LEGEND -->
         <dependency>
@@ -110,29 +111,29 @@
             <artifactId>opentracing-jaxrs2</artifactId>
         </dependency>
 
-        <!-- JAXB - needed in java 11 -->
+        <!-- Provides CrossOriginFilter, which no longer arrives transitively via Dropwizard. -->
         <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
+            <groupId>org.eclipse.jetty.ee10</groupId>
+            <artifactId>jetty-ee10-servlets</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.xml.bind</groupId>
-            <artifactId>jaxb-impl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>activation</artifactId>
-        </dependency>
-        <!-- JAXB -->
+
 
         <!-- TEST -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- dropwizard-testing 5 has no JUnit 4 rules, so the bundle tests use Jupiter; the rest
+             stay on JUnit 4 via the vintage engine. -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

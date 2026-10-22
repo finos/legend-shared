@@ -21,14 +21,15 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
+import org.finos.legend.server.pac4j.SessionStoreTestUtil;
 import org.finos.legend.server.pac4j.mongostore.MongoDbSessionStore;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.pac4j.core.context.JEEContext;
-import org.pac4j.core.context.session.JEESessionStore;
+import org.pac4j.jee.context.JEEContext;
+import org.pac4j.jee.context.session.JEESessionStore;
 import org.pac4j.core.util.Pac4jConstants;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
@@ -36,7 +37,7 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.time.Instant;
@@ -54,6 +55,7 @@ import static org.mockito.Mockito.when;
 
 public class KerberosProfileTest
 {
+
 
     private static MongoServer server;
     private static MongoClient client;
@@ -206,7 +208,7 @@ public class KerberosProfileTest
         assertEquals(kerberosProfile.getId(), ((KerberosProfile) retrievedFromSession.get()).getId());
 
         // Extract SSO cookie
-        Cookie[] cookies = response.getCookies();
+        Cookie[] cookies = SessionStoreTestUtil.responseCookies(response);
         assertNotNull(cookies);
         assertTrue(cookies.length > 0);
 
@@ -264,7 +266,7 @@ public class KerberosProfileTest
         assertEquals(kerberosProfile.getId(), ((KerberosProfile) retrievedFromSession.get()).getId());
 
         // Extract SSO cookie
-        Cookie[] cookies = response.getCookies();
+        Cookie[] cookies = SessionStoreTestUtil.responseCookies(response);
         assertNotNull(cookies);
         assertTrue(cookies.length > 0);
 
@@ -333,7 +335,7 @@ public class KerberosProfileTest
         assertEquals(kerberosProfile.getId(), ((KerberosProfile) retrievedFromSession.get()).getId());
 
         // Extract SSO cookie
-        Cookie[] cookies = response.getCookies();
+        Cookie[] cookies = SessionStoreTestUtil.responseCookies(response);
         assertNotNull(cookies);
         assertTrue(cookies.length > 0);
 

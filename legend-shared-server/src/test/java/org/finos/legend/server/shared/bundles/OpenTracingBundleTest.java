@@ -14,39 +14,41 @@
 
 package org.finos.legend.server.shared.bundles;
 
-import io.dropwizard.Application;
-import io.dropwizard.Configuration;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.Application;
+import io.dropwizard.core.Configuration;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
+import io.dropwizard.testing.junit5.DropwizardAppExtension;
+import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
 import io.opentracing.log.Fields;
 import io.opentracing.mock.MockSpan;
 import io.opentracing.mock.MockTracer;
 import io.opentracing.tag.Tags;
 import io.opentracing.util.GlobalTracer;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 
-import javax.ws.rs.Consumes;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@ExtendWith(DropwizardExtensionsSupport.class)
 public class OpenTracingBundleTest
 {
   private static final CyclicBarrier REQ_BARR = new CyclicBarrier(2);
@@ -73,15 +75,13 @@ public class OpenTracingBundleTest
     }
   };
 
-  @ClassRule
-  public static final DropwizardAppRule<TestConfig> RULE =
-      new DropwizardAppRule<>(TestApp.class, ResourceHelpers.resourceFilePath("testConfig.json"));
+  public static final DropwizardAppExtension<TestConfig> RULE =
+      new DropwizardAppExtension<>(TestApp.class, ResourceHelpers.resourceFilePath("testConfig.json"));
 
-  @ClassRule
-  public static final DropwizardAppRule<TestConfig> RULE_THAT_LOG_READ_WRITE_ERRORS =
-          new DropwizardAppRule<>(TestAppThatLogReadWriteErrors.class, ResourceHelpers.resourceFilePath("testConfig.json"));
+  public static final DropwizardAppExtension<TestConfig> RULE_THAT_LOG_READ_WRITE_ERRORS =
+          new DropwizardAppExtension<>(TestAppThatLogReadWriteErrors.class, ResourceHelpers.resourceFilePath("testConfig.json"));
 
-  @After
+  @AfterEach
   public void tearDown()
   {
     REQ_BARR.reset();
@@ -96,11 +96,11 @@ public class OpenTracingBundleTest
     {
       assertEquals(response.readEntity(String.class), "Hello World!");
 
-      Assert.assertNull(response.getHeaderString("traceid"));
-      Assert.assertNull(response.getHeaderString("spanid"));
+      Assertions.assertNull(response.getHeaderString("traceid"));
+      Assertions.assertNull(response.getHeaderString("spanid"));
 
       List<MockSpan> finishedSpans = MOCK_TRACER.finishedSpans();
-      Assert.assertEquals(0, finishedSpans.size());
+      Assertions.assertEquals(0, finishedSpans.size());
     }
   }
 
@@ -112,37 +112,37 @@ public class OpenTracingBundleTest
     {
       assertEquals(response.readEntity(String.class), "Hello World!");
 
-      Assert.assertNotNull(response.getHeaderString("traceid"));
-      Assert.assertNotNull(response.getHeaderString("spanid"));
+      Assertions.assertNotNull(response.getHeaderString("traceid"));
+      Assertions.assertNotNull(response.getHeaderString("spanid"));
 
       // is a list of spans in the order they were close/finish
       // deserialization, serialization, and root
       List<MockSpan> finishedSpans = MOCK_TRACER.finishedSpans();
-      Assert.assertEquals(3, finishedSpans.size());
+      Assertions.assertEquals(3, finishedSpans.size());
 
       MockSpan deserializationSpan = finishedSpans.get(0);
-      Assert.assertEquals("deserialize", deserializationSpan.operationName());
-      Assert.assertEquals(2, deserializationSpan.tags().size());
-      Assert.assertNotNull(deserializationSpan.tags().get("entity.type"));
-      Assert.assertEquals(MediaType.TEXT_PLAIN, deserializationSpan.tags().get("media.type"));
-      Assert.assertEquals(0, deserializationSpan.logEntries().size());
+      Assertions.assertEquals("deserialize", deserializationSpan.operationName());
+      Assertions.assertEquals(2, deserializationSpan.tags().size());
+      Assertions.assertNotNull(deserializationSpan.tags().get("entity.type"));
+      Assertions.assertEquals(MediaType.TEXT_PLAIN, deserializationSpan.tags().get("media.type"));
+      Assertions.assertEquals(0, deserializationSpan.logEntries().size());
 
       MockSpan serializationSpan = finishedSpans.get(1);
-      Assert.assertEquals("serialize", serializationSpan.operationName());
-      Assert.assertEquals(2, serializationSpan.tags().size());
-      Assert.assertNotNull(serializationSpan.tags().get("entity.type"));
-      Assert.assertEquals(MediaType.TEXT_PLAIN, serializationSpan.tags().get("media.type"));
-      Assert.assertEquals(0, serializationSpan.logEntries().size());
+      Assertions.assertEquals("serialize", serializationSpan.operationName());
+      Assertions.assertEquals(2, serializationSpan.tags().size());
+      Assertions.assertNotNull(serializationSpan.tags().get("entity.type"));
+      Assertions.assertEquals(MediaType.TEXT_PLAIN, serializationSpan.tags().get("media.type"));
+      Assertions.assertEquals(0, serializationSpan.logEntries().size());
 
       MockSpan rootSpan = finishedSpans.get(2);
-      Assert.assertEquals("/test/" + methodPath, rootSpan.operationName());
-      Assert.assertEquals(5, rootSpan.tags().size());
-      Assert.assertNotNull(rootSpan.tags().get("serverHost"));
-      Assert.assertEquals("server", rootSpan.tags().get("span.kind"));
-      Assert.assertEquals("/api/test/happyPath", rootSpan.tags().get("http.url"));
-      Assert.assertEquals(200, rootSpan.tags().get("http.status_code"));
-      Assert.assertEquals("POST", rootSpan.tags().get("http.method"));
-      Assert.assertEquals(0, rootSpan.logEntries().size());
+      Assertions.assertEquals("/test/" + methodPath, rootSpan.operationName());
+      Assertions.assertEquals(5, rootSpan.tags().size());
+      Assertions.assertNotNull(rootSpan.tags().get("serverHost"));
+      Assertions.assertEquals("server", rootSpan.tags().get("span.kind"));
+      Assertions.assertEquals("/api/test/happyPath", rootSpan.tags().get("http.url"));
+      Assertions.assertEquals(200, rootSpan.tags().get("http.status_code"));
+      Assertions.assertEquals("POST", rootSpan.tags().get("http.method"));
+      Assertions.assertEquals(0, rootSpan.logEntries().size());
     }
   }
 
@@ -152,44 +152,44 @@ public class OpenTracingBundleTest
     String methodPath = "failSerializing";
     try(Response response = execPostCall(RULE, methodPath, 500))
     {
-      Assert.assertNotNull(response.getHeaderString("traceid"));
-      Assert.assertNotNull(response.getHeaderString("spanid"));
+      Assertions.assertNotNull(response.getHeaderString("traceid"));
+      Assertions.assertNotNull(response.getHeaderString("spanid"));
 
       // is a list of spans in the order they were close/finish
       // deserialization, serialization (response), serialization (error msg), and root
       List<MockSpan> finishedSpans = MOCK_TRACER.finishedSpans();
-      Assert.assertEquals(4, finishedSpans.size());
+      Assertions.assertEquals(4, finishedSpans.size());
 
       MockSpan deserializationSpan = finishedSpans.get(0);
-      Assert.assertEquals("deserialize", deserializationSpan.operationName());
-      Assert.assertEquals(2, deserializationSpan.tags().size());
-      Assert.assertNotNull(deserializationSpan.tags().get("entity.type"));
-      Assert.assertEquals(MediaType.TEXT_PLAIN, deserializationSpan.tags().get("media.type"));
-      Assert.assertEquals(0, deserializationSpan.logEntries().size());
+      Assertions.assertEquals("deserialize", deserializationSpan.operationName());
+      Assertions.assertEquals(2, deserializationSpan.tags().size());
+      Assertions.assertNotNull(deserializationSpan.tags().get("entity.type"));
+      Assertions.assertEquals(MediaType.TEXT_PLAIN, deserializationSpan.tags().get("media.type"));
+      Assertions.assertEquals(0, deserializationSpan.logEntries().size());
 
       MockSpan serializationSpan = finishedSpans.get(1);
-      Assert.assertEquals("serialize", serializationSpan.operationName());
-      Assert.assertEquals(3, serializationSpan.tags().size());
-      Assert.assertNotNull(serializationSpan.tags().get("entity.type"));
-      Assert.assertEquals(MediaType.TEXT_PLAIN, serializationSpan.tags().get("media.type"));
-      Assert.assertEquals(true, serializationSpan.tags().get(Tags.ERROR.getKey()));
-      Assert.assertEquals("Default interceptor does not log error on span", 0, serializationSpan.logEntries().size());
+      Assertions.assertEquals("serialize", serializationSpan.operationName());
+      Assertions.assertEquals(3, serializationSpan.tags().size());
+      Assertions.assertNotNull(serializationSpan.tags().get("entity.type"));
+      Assertions.assertEquals(MediaType.TEXT_PLAIN, serializationSpan.tags().get("media.type"));
+      Assertions.assertEquals(true, serializationSpan.tags().get(Tags.ERROR.getKey()));
+      Assertions.assertEquals(0, serializationSpan.logEntries().size(), "Default interceptor does not log error on span");
 
       MockSpan serializationErrorSpan = finishedSpans.get(2);
-      Assert.assertEquals("serialize", serializationErrorSpan.operationName());
-      Assert.assertEquals(2, serializationErrorSpan.tags().size());
-      Assert.assertEquals("io.dropwizard.jersey.errors.ErrorMessage", serializationErrorSpan.tags().get("entity.type"));
+      Assertions.assertEquals("serialize", serializationErrorSpan.operationName());
+      Assertions.assertEquals(2, serializationErrorSpan.tags().size());
+      Assertions.assertEquals("io.dropwizard.jersey.errors.ErrorMessage", serializationErrorSpan.tags().get("entity.type"));
 
       MockSpan rootSpan = finishedSpans.get(3);
-      Assert.assertEquals("/test/" + methodPath, rootSpan.operationName());
-      Assert.assertEquals(5, rootSpan.tags().size());
-      Assert.assertNotNull(rootSpan.tags().get("serverHost"));
-      Assert.assertEquals("server", rootSpan.tags().get("span.kind"));
-      Assert.assertEquals("/api/test/" + methodPath, rootSpan.tags().get("http.url"));
-      Assert.assertEquals(500, rootSpan.tags().get("http.status_code"));
-      Assert.assertEquals("POST", rootSpan.tags().get("http.method"));
-      Assert.assertNull("Default does not flag root span as error", rootSpan.tags().get(Tags.ERROR.getKey()));
-      Assert.assertEquals("Default does not log on root span on error", 0, rootSpan.logEntries().size());
+      Assertions.assertEquals("/test/" + methodPath, rootSpan.operationName());
+      Assertions.assertEquals(5, rootSpan.tags().size());
+      Assertions.assertNotNull(rootSpan.tags().get("serverHost"));
+      Assertions.assertEquals("server", rootSpan.tags().get("span.kind"));
+      Assertions.assertEquals("/api/test/" + methodPath, rootSpan.tags().get("http.url"));
+      Assertions.assertEquals(500, rootSpan.tags().get("http.status_code"));
+      Assertions.assertEquals("POST", rootSpan.tags().get("http.method"));
+      Assertions.assertNull(rootSpan.tags().get(Tags.ERROR.getKey()), "Default does not flag root span as error");
+      Assertions.assertEquals(0, rootSpan.logEntries().size(), "Default does not log on root span on error");
     }
   }
 
@@ -199,50 +199,50 @@ public class OpenTracingBundleTest
     String methodPath = "failSerializing";
     try(Response response = execPostCall(RULE_THAT_LOG_READ_WRITE_ERRORS, methodPath, 500))
     {
-      Assert.assertNotNull(response.getHeaderString("traceid"));
-      Assert.assertNotNull(response.getHeaderString("spanid"));
+      Assertions.assertNotNull(response.getHeaderString("traceid"));
+      Assertions.assertNotNull(response.getHeaderString("spanid"));
 
       // is a list of spans in the order they were close/finish
       // deserialization, serialization (response), serialization (error msg), and root
       List<MockSpan> finishedSpans = MOCK_TRACER.finishedSpans();
-      Assert.assertEquals(4, finishedSpans.size());
+      Assertions.assertEquals(4, finishedSpans.size());
 
       MockSpan deserializationSpan = finishedSpans.get(0);
-      Assert.assertEquals("deserialize", deserializationSpan.operationName());
-      Assert.assertEquals(2, deserializationSpan.tags().size());
-      Assert.assertNotNull(deserializationSpan.tags().get("entity.type"));
-      Assert.assertEquals(MediaType.TEXT_PLAIN, deserializationSpan.tags().get("media.type"));
-      Assert.assertEquals(0, deserializationSpan.logEntries().size());
+      Assertions.assertEquals("deserialize", deserializationSpan.operationName());
+      Assertions.assertEquals(2, deserializationSpan.tags().size());
+      Assertions.assertNotNull(deserializationSpan.tags().get("entity.type"));
+      Assertions.assertEquals(MediaType.TEXT_PLAIN, deserializationSpan.tags().get("media.type"));
+      Assertions.assertEquals(0, deserializationSpan.logEntries().size());
 
       MockSpan serializationSpan = finishedSpans.get(1);
-      Assert.assertEquals("serialize", serializationSpan.operationName());
-      Assert.assertEquals(3, serializationSpan.tags().size());
-      Assert.assertNotNull(serializationSpan.tags().get("entity.type"));
-      Assert.assertEquals(MediaType.TEXT_PLAIN, serializationSpan.tags().get("media.type"));
-      Assert.assertEquals(true, serializationSpan.tags().get(Tags.ERROR.getKey()));
-      Assert.assertEquals(1, serializationSpan.logEntries().size());
+      Assertions.assertEquals("serialize", serializationSpan.operationName());
+      Assertions.assertEquals(3, serializationSpan.tags().size());
+      Assertions.assertNotNull(serializationSpan.tags().get("entity.type"));
+      Assertions.assertEquals(MediaType.TEXT_PLAIN, serializationSpan.tags().get("media.type"));
+      Assertions.assertEquals(true, serializationSpan.tags().get(Tags.ERROR.getKey()));
+      Assertions.assertEquals(1, serializationSpan.logEntries().size());
       Map<String, ?> serializationSpanErrorLogFields = serializationSpan.logEntries().get(0).fields();
-      Assert.assertEquals("error", serializationSpanErrorLogFields.get(Fields.EVENT));
-      Assert.assertTrue(serializationSpanErrorLogFields.get(Fields.ERROR_OBJECT) instanceof Exception);
+      Assertions.assertEquals("error", serializationSpanErrorLogFields.get(Fields.EVENT));
+      Assertions.assertTrue(serializationSpanErrorLogFields.get(Fields.ERROR_OBJECT) instanceof Exception);
 
       MockSpan serializationErrorSpan = finishedSpans.get(2);
-      Assert.assertEquals("serialize", serializationErrorSpan.operationName());
-      Assert.assertEquals(2, serializationErrorSpan.tags().size());
-      Assert.assertEquals("io.dropwizard.jersey.errors.ErrorMessage", serializationErrorSpan.tags().get("entity.type"));
+      Assertions.assertEquals("serialize", serializationErrorSpan.operationName());
+      Assertions.assertEquals(2, serializationErrorSpan.tags().size());
+      Assertions.assertEquals("io.dropwizard.jersey.errors.ErrorMessage", serializationErrorSpan.tags().get("entity.type"));
 
       MockSpan rootSpan = finishedSpans.get(3);
-      Assert.assertEquals("/test/" + methodPath, rootSpan.operationName());
-      Assert.assertEquals(6, rootSpan.tags().size());
-      Assert.assertNotNull(rootSpan.tags().get("serverHost"));
-      Assert.assertEquals("server", rootSpan.tags().get("span.kind"));
-      Assert.assertEquals("/api/test/" + methodPath, rootSpan.tags().get("http.url"));
-      Assert.assertEquals(500, rootSpan.tags().get("http.status_code"));
-      Assert.assertEquals("POST", rootSpan.tags().get("http.method"));
-      Assert.assertEquals(true, rootSpan.tags().get(Tags.ERROR.getKey()));
-      Assert.assertEquals(1, rootSpan.logEntries().size());
+      Assertions.assertEquals("/test/" + methodPath, rootSpan.operationName());
+      Assertions.assertEquals(6, rootSpan.tags().size());
+      Assertions.assertNotNull(rootSpan.tags().get("serverHost"));
+      Assertions.assertEquals("server", rootSpan.tags().get("span.kind"));
+      Assertions.assertEquals("/api/test/" + methodPath, rootSpan.tags().get("http.url"));
+      Assertions.assertEquals(500, rootSpan.tags().get("http.status_code"));
+      Assertions.assertEquals("POST", rootSpan.tags().get("http.method"));
+      Assertions.assertEquals(true, rootSpan.tags().get(Tags.ERROR.getKey()));
+      Assertions.assertEquals(1, rootSpan.logEntries().size());
       Map<String, ?> rootSpanErrorLogFields = rootSpan.logEntries().get(0).fields();
-      Assert.assertEquals("error", rootSpanErrorLogFields.get(Fields.EVENT));
-      Assert.assertEquals("Error on serialize", rootSpanErrorLogFields.get(Fields.MESSAGE));
+      Assertions.assertEquals("error", rootSpanErrorLogFields.get(Fields.EVENT));
+      Assertions.assertEquals("Error on serialize", rootSpanErrorLogFields.get(Fields.MESSAGE));
     }
   }
 
@@ -252,47 +252,47 @@ public class OpenTracingBundleTest
     String methodPath = "failDeserializing";
     try(Response response = execPostCall(RULE_THAT_LOG_READ_WRITE_ERRORS, methodPath, 415))
     {
-      Assert.assertNotNull(response.getHeaderString("traceid"));
-      Assert.assertNotNull(response.getHeaderString("spanid"));
+      Assertions.assertNotNull(response.getHeaderString("traceid"));
+      Assertions.assertNotNull(response.getHeaderString("spanid"));
 
       // is a list of spans in the order they were close/finish
       // deserialization, serialization (error msg), and root
       List<MockSpan> finishedSpans = MOCK_TRACER.finishedSpans();
-      Assert.assertEquals(3, finishedSpans.size());
+      Assertions.assertEquals(3, finishedSpans.size());
 
       MockSpan deserializationSpan = finishedSpans.get(0);
-      Assert.assertEquals("deserialize", deserializationSpan.operationName());
-      Assert.assertEquals(3, deserializationSpan.tags().size());
-      Assert.assertNotNull(deserializationSpan.tags().get("entity.type"));
-      Assert.assertEquals(MediaType.TEXT_PLAIN, deserializationSpan.tags().get("media.type"));
-      Assert.assertEquals(true, deserializationSpan.tags().get(Tags.ERROR.getKey()));
-      Assert.assertEquals(1, deserializationSpan.logEntries().size());
+      Assertions.assertEquals("deserialize", deserializationSpan.operationName());
+      Assertions.assertEquals(3, deserializationSpan.tags().size());
+      Assertions.assertNotNull(deserializationSpan.tags().get("entity.type"));
+      Assertions.assertEquals(MediaType.TEXT_PLAIN, deserializationSpan.tags().get("media.type"));
+      Assertions.assertEquals(true, deserializationSpan.tags().get(Tags.ERROR.getKey()));
+      Assertions.assertEquals(1, deserializationSpan.logEntries().size());
       Map<String, ?> deserializationSpanErrorLogFields = deserializationSpan.logEntries().get(0).fields();
-      Assert.assertEquals("error", deserializationSpanErrorLogFields.get(Fields.EVENT));
-      Assert.assertTrue(deserializationSpanErrorLogFields.get(Fields.ERROR_OBJECT) instanceof Exception);
+      Assertions.assertEquals("error", deserializationSpanErrorLogFields.get(Fields.EVENT));
+      Assertions.assertTrue(deserializationSpanErrorLogFields.get(Fields.ERROR_OBJECT) instanceof Exception);
 
       MockSpan serializationErrorSpan = finishedSpans.get(1);
-      Assert.assertEquals("serialize", serializationErrorSpan.operationName());
-      Assert.assertEquals(2, serializationErrorSpan.tags().size());
-      Assert.assertEquals("io.dropwizard.jersey.errors.ErrorMessage", serializationErrorSpan.tags().get("entity.type"));
+      Assertions.assertEquals("serialize", serializationErrorSpan.operationName());
+      Assertions.assertEquals(2, serializationErrorSpan.tags().size());
+      Assertions.assertEquals("io.dropwizard.jersey.errors.ErrorMessage", serializationErrorSpan.tags().get("entity.type"));
 
       MockSpan rootSpan = finishedSpans.get(2);
-      Assert.assertEquals("/test/" + methodPath, rootSpan.operationName());
-      Assert.assertEquals(6, rootSpan.tags().size());
-      Assert.assertNotNull(rootSpan.tags().get("serverHost"));
-      Assert.assertEquals("server", rootSpan.tags().get("span.kind"));
-      Assert.assertEquals("/api/test/" + methodPath, rootSpan.tags().get("http.url"));
-      Assert.assertEquals(415, rootSpan.tags().get("http.status_code"));
-      Assert.assertEquals("POST", rootSpan.tags().get("http.method"));
-      Assert.assertEquals(true, rootSpan.tags().get(Tags.ERROR.getKey()));
-      Assert.assertEquals(1, rootSpan.logEntries().size());
+      Assertions.assertEquals("/test/" + methodPath, rootSpan.operationName());
+      Assertions.assertEquals(6, rootSpan.tags().size());
+      Assertions.assertNotNull(rootSpan.tags().get("serverHost"));
+      Assertions.assertEquals("server", rootSpan.tags().get("span.kind"));
+      Assertions.assertEquals("/api/test/" + methodPath, rootSpan.tags().get("http.url"));
+      Assertions.assertEquals(415, rootSpan.tags().get("http.status_code"));
+      Assertions.assertEquals("POST", rootSpan.tags().get("http.method"));
+      Assertions.assertEquals(true, rootSpan.tags().get(Tags.ERROR.getKey()));
+      Assertions.assertEquals(1, rootSpan.logEntries().size());
       Map<String, ?> rootSpanErrorLogFields = rootSpan.logEntries().get(0).fields();
-      Assert.assertEquals("error", rootSpanErrorLogFields.get(Fields.EVENT));
-      Assert.assertEquals("Error on deserialize", rootSpanErrorLogFields.get(Fields.MESSAGE));
+      Assertions.assertEquals("error", rootSpanErrorLogFields.get(Fields.EVENT));
+      Assertions.assertEquals("Error on deserialize", rootSpanErrorLogFields.get(Fields.MESSAGE));
     }
   }
 
-  private Response execPostCall(DropwizardAppRule<TestConfig> appRule, String methodPath, int status) throws Exception
+  private Response execPostCall(DropwizardAppExtension<TestConfig> appRule, String methodPath, int status) throws Exception
   {
     Client client = appRule.client();
     Response response =

@@ -16,7 +16,7 @@ package org.finos.legend.server.shared.staticserver;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.dropwizard.Configuration;
+import io.dropwizard.core.Configuration;
 import java.util.List;
 import java.util.Map;
 import org.finos.legend.server.pac4j.LegendPac4jConfiguration;

@@ -21,14 +21,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javax.annotation.Priority;
-import javax.servlet.FilterChain;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlet.FilterMapping;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import jakarta.annotation.Priority;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.ee10.servlet.FilterHolder;
+import org.eclipse.jetty.ee10.servlet.FilterMapping;
+import org.eclipse.jetty.ee10.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHandler;
+import org.eclipse.jetty.ee10.servlet.ServletHolder;
 
 @SuppressWarnings("unused")
 public class ChainFixingFilterHandler extends ServletHandler
@@ -108,7 +108,7 @@ public class ChainFixingFilterHandler extends ServletHandler
 
   @Override
   protected synchronized FilterChain getFilterChain(
-      Request baseRequest, String pathInContext, ServletHolder servletHolder)
+      HttpServletRequest baseRequest, String pathInContext, ServletHolder servletHolder)
   {
     if (!reordered)
     {

@@ -14,28 +14,29 @@
 
 package org.finos.legend.server.shared.bundles;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.dropwizard.Application;
-import io.dropwizard.Configuration;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.Application;
+import io.dropwizard.core.Configuration;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import io.dropwizard.testing.ResourceHelpers;
-import io.dropwizard.testing.junit.DropwizardAppRule;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.core.Response;
-import org.junit.ClassRule;
-import org.junit.Test;
+import io.dropwizard.testing.junit5.DropwizardAppExtension;
+import io.dropwizard.testing.junit5.DropwizardExtensionsSupport;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.core.Response;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.Test;
 
+@ExtendWith(DropwizardExtensionsSupport.class)
 public class HtmlRouterRedirectBundleTest
 {
 
-  @ClassRule
-  public static final DropwizardAppRule<TestConfig> RULE =
-      new DropwizardAppRule<>(TestApp.class, ResourceHelpers.resourceFilePath("testConfig.json"));
+  public static final DropwizardAppExtension<TestConfig> RULE =
+      new DropwizardAppExtension<>(TestApp.class, ResourceHelpers.resourceFilePath("testConfig.json"));
 
   @Test
   public void testHtmlRouterRedirect()

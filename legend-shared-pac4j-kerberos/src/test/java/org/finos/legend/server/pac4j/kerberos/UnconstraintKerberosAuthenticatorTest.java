@@ -24,14 +24,17 @@ import org.ietf.jgss.Oid;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
-import org.pac4j.core.context.JEEContext;
+import org.pac4j.jee.context.JEEContext;
+import org.pac4j.core.context.CallContext;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.kerberos.credentials.KerberosCredentials;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
 
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosPrincipal;
 import javax.security.auth.kerberos.KerberosTicket;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Base64;
 
 import static org.junit.Assert.assertEquals;
@@ -89,7 +92,7 @@ public class UnconstraintKerberosAuthenticatorTest
 
             byte[] spnegoToken = new byte[] {1, 2, 3};
             KerberosCredentials credentials = new KerberosCredentials(spnegoToken);
-            delegationKerberosAuth.validate(credentials, mokcedWebContext);
+            delegationKerberosAuth.validate(new CallContext(mokcedWebContext, null), credentials);
 
             assertNotNull(credentials.getUserProfile());
             assertTrue(credentials.getUserProfile() instanceof KerberosProfile);
@@ -101,6 +104,43 @@ public class UnconstraintKerberosAuthenticatorTest
             verify(mokcedWebContext).setResponseHeader(eq("WWW-Authenticate"),
                     argThat(h -> h.startsWith("Negotiate " + Base64.getEncoder().encodeToString(responseToken))));
             verify(mockedContext).acceptSecContext(eq(spnegoToken), eq(0), eq(spnegoToken.length));
+        }
+    }
+
+    @Test
+    public void testMutualAuthTokenReachesTheServletResponse() throws Exception
+    {
+        GSSManager mockedManager = mock(GSSManager.class);
+        GSSCredential mockedAcceptCred = mock(GSSCredential.class);
+        GSSContext mockedContext = mock(GSSContext.class);
+        GSSName mockedGSSName = mock(GSSName.class);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        JEEContext webContext = new JEEContext(new MockHttpServletRequest(), response);
+        byte[] responseToken = new byte[] {10, 20, 30};
+        try (MockedStatic<GSSUtil> gssUtilMockedStatic = mockStatic(GSSUtil.class);
+             MockedStatic<GSSManager> gssManagerMockedStatic = mockStatic(GSSManager.class))
+        {
+            gssManagerMockedStatic.when(GSSManager::getInstance).thenReturn(mockedManager);
+
+            when(mockedManager.createCredential(any(), anyInt(), (Oid) any(), anyInt())).thenReturn(mockedAcceptCred);
+            when(mockedManager.createContext(mockedAcceptCred)).thenReturn(mockedContext);
+
+            when(mockedContext.acceptSecContext(any(), eq(0), anyInt())).thenReturn(responseToken);
+            when(mockedContext.getCredDelegState()).thenReturn(true);
+            when(mockedContext.getSrcName()).thenReturn(mockedGSSName);
+            when(mockedGSSName.toString()).thenReturn("mockUser@REALM");
+            when(mockedContext.getDelegCred()).thenReturn(mock(GSSCredential.class));
+
+            Subject fakeSubject = new Subject();
+            fakeSubject.getPrincipals().add(new KerberosPrincipal("mockUser@REALM"));
+            fakeSubject.getPrivateCredentials().add(mock(KerberosTicket.class));
+            gssUtilMockedStatic.when(() -> GSSUtil.createSubject(mockedGSSName, mockedContext.getDelegCred())).thenReturn(fakeSubject);
+
+            delegationKerberosAuth.validate(new CallContext(webContext, null), new KerberosCredentials(new byte[] {1, 2, 3}));
+
+            String expected = "Negotiate " + Base64.getEncoder().encodeToString(responseToken);
+            assertEquals(expected, response.getHeader("WWW-Authenticate"));
+            assertEquals(expected, webContext.getResponseHeader("WWW-Authenticate").orElse(null));
         }
     }
 
@@ -138,7 +178,7 @@ public class UnconstraintKerberosAuthenticatorTest
             byte[] spnegoToken = new byte[] {1, 2, 3};
             KerberosCredentials credentials = new KerberosCredentials(spnegoToken);
             TemporaryRedirectAction exception = assertThrows(TemporaryRedirectAction.class,
-                    () -> delegationKerberosAuth.validate(credentials, mokcedWebContext));
+                    () -> delegationKerberosAuth.validate(new CallContext(mokcedWebContext, null), credentials));
 
             assertEquals(307, exception.getCode());
             assertEquals("https://test.service.com/path?query=value", exception.getLocation());

@@ -14,22 +14,23 @@
 
 package org.finos.legend.server.shared.bundles;
 
-import io.dropwizard.Bundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.Configuration;
+import io.dropwizard.core.ConfiguredBundle;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.util.EnumSet;
-import javax.servlet.DispatcherType;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 
-public class HostnameHeaderBundle implements Bundle
+public class HostnameHeaderBundle implements ConfiguredBundle<Configuration>
 {
 
   @Override
@@ -39,7 +40,7 @@ public class HostnameHeaderBundle implements Bundle
   }
 
   @Override
-  public void run(Environment environment)
+  public void run(Configuration configuration, Environment environment)
   {
     environment.servlets().addFilter(getClass().getName(), Enricher.class)
         .addMappingForUrlPatterns(EnumSet.allOf(DispatcherType.class), true, "/*");

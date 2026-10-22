@@ -24,8 +24,10 @@ import org.ietf.jgss.GSSException;
 import org.ietf.jgss.GSSManager;
 import org.ietf.jgss.GSSName;
 import org.ietf.jgss.Oid;
-import org.pac4j.core.context.JEEContext;
+import org.pac4j.jee.context.JEEContext;
+import org.pac4j.core.context.CallContext;
 import org.pac4j.core.context.WebContext;
+import org.pac4j.core.credentials.Credentials;
 import org.pac4j.core.credentials.authenticator.Authenticator;
 import org.pac4j.core.exception.BadCredentialsException;
 import org.pac4j.core.exception.CredentialsException;
@@ -39,14 +41,14 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Base64;
+import java.util.Optional;
 import javax.security.auth.Subject;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
-public class UnconstraintKerberosAuthenticator implements Authenticator<KerberosCredentials>
+public class UnconstraintKerberosAuthenticator implements Authenticator
 {
     private static final Logger LOGGER = LoggerFactory.getLogger(UnconstraintKerberosAuthenticator.class);
     private final String servicePrincipal;
@@ -69,8 +71,10 @@ public class UnconstraintKerberosAuthenticator implements Authenticator<Kerberos
     }
 
     @Override
-    public void validate(KerberosCredentials credentials, WebContext webContext)
+    public Optional<Credentials> validate(CallContext ctx, Credentials rawCredentials)
     {
+        WebContext webContext = ctx.webContext();
+        KerberosCredentials credentials = (KerberosCredentials) rawCredentials;
         try
         {
             GSSManager manager = GSSManager.getInstance();
@@ -122,7 +126,7 @@ public class UnconstraintKerberosAuthenticator implements Authenticator<Kerberos
 
             KerberosProfile profile = createProfile(context);
             credentials.setUserProfile(profile);
-            webContext.setResponseHeader("WWW-Authenticate", "Negotiate " + Base64.getEncoder().encodeToString(resToken));
+            NegotiateResponseHeader.write(webContext, resToken);
         }
         catch (CredentialsException e)
         {
@@ -145,6 +149,7 @@ public class UnconstraintKerberosAuthenticator implements Authenticator<Kerberos
             LOGGER.error("Validate failed:  {} {}",message,cause);
             throw new BadCredentialsException(message, cause);
         }
+        return Optional.of(rawCredentials);
     }
 
     private void writeToResponse(WebContext webContext, String baseMessage) throws IOException

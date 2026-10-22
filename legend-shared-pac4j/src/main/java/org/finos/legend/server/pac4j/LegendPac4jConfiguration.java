@@ -47,6 +47,7 @@ public final class LegendPac4jConfiguration
     private String callbackBaseUrl = "";
 
     private String sessionTokenName;
+    private String sessionTokenSameSite;
     private List<String> bypassPaths = ImmutableList.of();
     private List<String> bypassBranches = ImmutableList.of();
     private List<String> trustedPackages = ImmutableList.of();
@@ -56,6 +57,20 @@ public final class LegendPac4jConfiguration
     public String getSessionTokenName()
     {
         return this.sessionTokenName;
+    }
+
+    /**
+     * The session token cookie's {@code SameSite}: {@code Strict}, {@code Lax} or {@code None}.
+     * Unset means {@code Lax}.
+     */
+    public String getSessionTokenSameSite()
+    {
+        return this.sessionTokenSameSite;
+    }
+
+    public void setSessionTokenSameSite(String sessionTokenSameSite)
+    {
+        this.sessionTokenSameSite = sessionTokenSameSite;
     }
 
     public void setDefaults(String defaults)

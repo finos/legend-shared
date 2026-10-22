@@ -16,10 +16,11 @@ package org.finos.legend.server.pac4j.gitlab;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.finos.legend.server.pac4j.SerializableProfile;
+import org.pac4j.core.client.BaseClient;
 import org.pac4j.core.client.DirectClient;
 
 @SerializableProfile
-public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonalAccessTokenCredentials>
+public class GitlabPersonalAccessTokenClient extends DirectClient
 {
     public static final String GITLAB_PERSONAL_ACCESS_TOKEN_CLIENT_NAME = "gitlabPAToken";
 
@@ -44,9 +45,10 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     public String gitlabApiVersion;
 
     @Override
-    public void setName(String name)
+    public BaseClient setName(String name)
     {
         this.name = name;
+        return this;
     }
 
     @Override
@@ -56,15 +58,15 @@ public class GitlabPersonalAccessTokenClient extends DirectClient<GitlabPersonal
     }
 
     @Override
-    protected void clientInit()
+    protected void internalInit(boolean forceReinit)
     {
-        defaultAuthenticator(new GitlabPersonalAccessTokenAuthenticator(
+        setAuthenticatorIfUndefined(new GitlabPersonalAccessTokenAuthenticator(
                 this.scheme,
                 this.host != null ? this.host : this.gitlabHost,
                 this.port,
                 this.apiVersion != null ? this.apiVersion : this.gitlabApiVersion
         ));
-        defaultCredentialsExtractor(new GitlabPersonalAccessTokenExtractor(this.headerTokenName));
-        defaultProfileCreator(new GitlabPersonalAccessTokenProfileCreator(this.host != null ? this.host : this.gitlabHost));
+        setCredentialsExtractorIfUndefined(new GitlabPersonalAccessTokenExtractor(this.headerTokenName));
+        setProfileCreatorIfUndefined(new GitlabPersonalAccessTokenProfileCreator(this.host != null ? this.host : this.gitlabHost));
     }
 }

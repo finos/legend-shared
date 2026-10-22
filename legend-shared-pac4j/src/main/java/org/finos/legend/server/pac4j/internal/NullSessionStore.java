@@ -19,7 +19,7 @@ import org.pac4j.core.context.session.SessionStore;
 
 import java.util.Optional;
 
-public class NullSessionStore implements SessionStore<WebContext>
+public class NullSessionStore implements SessionStore
 {
 
   public static final NullSessionStore INSTANCE = new NullSessionStore();
@@ -29,9 +29,9 @@ public class NullSessionStore implements SessionStore<WebContext>
   }
 
   @Override
-  public String getOrCreateSessionId(WebContext context)
+  public Optional<String> getSessionId(WebContext context, boolean createSession)
   {
-    return null;
+    return Optional.empty();
   }
 
   @Override
@@ -53,14 +53,14 @@ public class NullSessionStore implements SessionStore<WebContext>
   }
 
   @Override
-  public Optional getTrackableSession(WebContext context)
+  public Optional<Object> getTrackableSession(WebContext context)
   {
     return Optional.empty();
   }
 
   @Override
-  public Optional<SessionStore<WebContext>> buildFromTrackableSession(WebContext context,
-                                                                      Object trackableSession)
+  public Optional<SessionStore> buildFromTrackableSession(WebContext context,
+                                                         Object trackableSession)
   {
     return Optional.empty();
   }

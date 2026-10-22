@@ -23,7 +23,7 @@ public class LegendRequestHandlerTest
         when(context.getFullRequestURL())
                 .thenReturn("http://localhost.com:8080/path?query=value#fragment");
 
-        String result = handler.getRequestedUrl(context);
+        String result = handler.getRequestedUrl(context, null);
 
         assertEquals("https://localhost.com:8080/path?query=value#fragment", result);
     }
@@ -39,7 +39,7 @@ public class LegendRequestHandlerTest
         when(context.getFullRequestURL())
                 .thenReturn("http://localhost.com:8080/path");
 
-        String result = handler.getRequestedUrl(context);
+        String result = handler.getRequestedUrl(context, null);
 
         assertEquals("http://localhost.com:8080/path", result);
     }

@@ -14,9 +14,9 @@ package org.finos.legend.opentracing.jaxrs2;
 import io.opentracing.Span;
 import io.opentracing.tag.Tags;
 
-import javax.ws.rs.ext.InterceptorContext;
-import javax.ws.rs.ext.ReaderInterceptorContext;
-import javax.ws.rs.ext.WriterInterceptorContext;
+import jakarta.ws.rs.ext.InterceptorContext;
+import jakarta.ws.rs.ext.ReaderInterceptorContext;
+import jakarta.ws.rs.ext.WriterInterceptorContext;
 
 public interface InterceptorSpanDecorator
 {

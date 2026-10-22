@@ -16,11 +16,14 @@ package org.finos.legend.server.pac4j.gitlab;
 
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import com.nimbusds.oauth2.sdk.token.RefreshToken;
+import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.pac4j.core.context.CallContext;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.exception.TechnicalException;
@@ -46,6 +49,8 @@ import static org.mockito.Mockito.when;
 
 public class GitlabClientRenewProfileTest
 {
+    private SessionStore mockSessionStore;
+
     private MockWebServer mockServer;
     private String discoveryUrl;
 
@@ -55,6 +60,31 @@ public class GitlabClientRenewProfileTest
         mockServer = new MockWebServer();
         mockServer.start();
         discoveryUrl = mockServer.url("/.well-known/openid-configuration").toString();
+        // Answer by path, not from an enqueue list: pac4j 6's SpringResourceLoader sends an extra
+        // conditional request for the metadata, and MockWebServer blocks once its queue drains.
+        mockServer.setDispatcher(new Dispatcher()
+        {
+            @Override
+            public MockResponse dispatch(RecordedRequest request)
+            {
+                String path = request.getPath() == null ? "" : request.getPath();
+                if (path.startsWith("/.well-known/openid-configuration"))
+                {
+                    // No body on HEAD: unread bytes desync the keep-alive connection, and the next
+                    // POST /token then fails as "Invalid Http response" instead of its 400.
+                    if ("HEAD".equals(request.getMethod()))
+                    {
+                        return new MockResponse().setResponseCode(200).setHeader("Content-Type", "application/json");
+                    }
+                    return createDiscoveryResponse();
+                }
+                if (path.startsWith("/token"))
+                {
+                    return createTokenErrorResponse();
+                }
+                return new MockResponse().setResponseCode(404);
+            }
+        });
     }
 
     @After
@@ -75,14 +105,12 @@ public class GitlabClientRenewProfileTest
         assertNull("Configuration should be null before init() is called",
                 client.getConfiguration());
 
-        mockServer.enqueue(createDiscoveryResponse());
-        mockServer.enqueue(createTokenErrorResponse());
 
         OidcProfile expiredProfile = createExpiredProfile();
         WebContext mockContext = createMockWebContext();
 
         TechnicalException e = assertThrows(TechnicalException.class,
-                () -> client.renewUserProfile(expiredProfile, mockContext));
+                () -> client.renewUserProfile(new CallContext(mockContext, this.mockSessionStore), expiredProfile));
         assertFalse("init() was not called before accessing getConfiguration()",
                 e.getMessage().contains("configuration cannot be null"));
         assertNotNull("Configuration should be non-null after renewUserProfile() triggers init()",
@@ -98,18 +126,16 @@ public class GitlabClientRenewProfileTest
         client.setDiscoveryUri(discoveryUrl);
         client.setCallbackUrl("http://localhost:8080/callback");
 
-        mockServer.enqueue(createDiscoveryResponse());
         client.init();
 
         assertNotNull("Configuration should be set after init()", client.getConfiguration());
 
-        mockServer.enqueue(createTokenErrorResponse());
 
         OidcProfile expiredProfile = createExpiredProfile();
         WebContext mockContext = createMockWebContext();
 
         TechnicalException e = assertThrows(TechnicalException.class,
-                () -> client.renewUserProfile(expiredProfile, mockContext));
+                () -> client.renewUserProfile(new CallContext(mockContext, this.mockSessionStore), expiredProfile));
         assertFalse("Should not get 'configuration cannot be null' on an initialized client",
                 e.getMessage().contains("configuration cannot be null"));
         assertNotNull("Configuration should still be non-null", client.getConfiguration());
@@ -124,10 +150,8 @@ public class GitlabClientRenewProfileTest
         client.setDiscoveryUri(discoveryUrl);
         client.setCallbackUrl("http://localhost:8080/callback");
 
-        mockServer.enqueue(createDiscoveryResponse());
         client.init();
 
-        mockServer.enqueue(createTokenErrorResponse());
 
         OidcProfile expiredProfile = createExpiredProfile();
 
@@ -144,10 +168,9 @@ public class GitlabClientRenewProfileTest
 
         WebContext mockContext = mock(WebContext.class);
         SessionStore sessionStore = mock(SessionStore.class);
-        when(mockContext.getSessionStore()).thenReturn(sessionStore);
         when(sessionStore.get(mockContext, "pac4jUserProfiles")).thenReturn(Optional.of(sessionProfiles));
 
-        Optional<UserProfile> result = client.renewUserProfile(expiredProfile, mockContext);
+        Optional<UserProfile> result = client.renewUserProfile(new CallContext(mockContext, sessionStore), expiredProfile);
 
         assertTrue("Should return the renewed profile from session", result.isPresent());
         assertEquals("new-access-token", ((OidcProfile) result.get()).getAccessToken().getValue());
@@ -162,10 +185,8 @@ public class GitlabClientRenewProfileTest
         client.setDiscoveryUri(discoveryUrl);
         client.setCallbackUrl("http://localhost:8080/callback");
 
-        mockServer.enqueue(createDiscoveryResponse());
         client.init();
 
-        mockServer.enqueue(createTokenErrorResponse());
 
         OidcProfile expiredProfile = createExpiredProfile();
 
@@ -174,11 +195,10 @@ public class GitlabClientRenewProfileTest
 
         WebContext mockContext = mock(WebContext.class);
         SessionStore sessionStore = mock(SessionStore.class);
-        when(mockContext.getSessionStore()).thenReturn(sessionStore);
         when(sessionStore.get(mockContext, "pac4jUserProfiles")).thenReturn(Optional.of(sessionProfiles));
 
         TechnicalException e = assertThrows(TechnicalException.class,
-                () -> client.renewUserProfile(expiredProfile, mockContext));
+                () -> client.renewUserProfile(new CallContext(mockContext, sessionStore), expiredProfile));
         assertTrue("Should be invalid_grant error",
                 e.getMessage().contains("invalid_grant"));
     }
@@ -198,9 +218,8 @@ public class GitlabClientRenewProfileTest
     private WebContext createMockWebContext()
     {
         WebContext context = mock(WebContext.class);
-        SessionStore sessionStore = mock(SessionStore.class);
-        when(context.getSessionStore()).thenReturn(sessionStore);
-        when(sessionStore.get(any(), anyString())).thenReturn(Optional.empty());
+        this.mockSessionStore = mock(SessionStore.class);
+        when(this.mockSessionStore.get(any(), anyString())).thenReturn(Optional.empty());
         return context;
     }
 

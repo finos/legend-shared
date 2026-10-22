@@ -29,6 +29,7 @@
     <name>Legend Shared - Pac4j</name>
     <url>https://legend.finos.org</url>
 
+
     <dependencies>
         <dependency>
             <groupId>org.pac4j</groupId>
@@ -37,6 +38,10 @@
         <dependency>
             <groupId>org.pac4j</groupId>
             <artifactId>dropwizard-pac4j</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.pac4j</groupId>
+            <artifactId>pac4j-jakartaee</artifactId>
         </dependency>
         <dependency>
             <groupId>org.commonjava.mimeparse</groupId>
@@ -56,8 +61,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
@@ -88,6 +93,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>de.bwaldvogel</groupId>
             <artifactId>mongo-java-server</artifactId>
             <scope>test</scope>
@@ -99,4 +109,21 @@
         </dependency>
         <!-- TEST -->
     </dependencies>
+
+    <build>
+        <plugins>
+            <!-- The test helpers (SessionStoreTestUtil) are consumed by the kerberos and ping module tests. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

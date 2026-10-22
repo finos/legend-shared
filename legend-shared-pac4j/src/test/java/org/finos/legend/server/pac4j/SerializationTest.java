@@ -3,7 +3,7 @@ package org.finos.legend.server.pac4j;
 import org.finos.legend.otherpackage.SerializbaleThing;
 import org.junit.Assert;
 import org.junit.Test;
-import org.pac4j.core.util.JavaSerializationHelper;
+import org.pac4j.core.util.serializer.JavaSerializer;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import java.util.ArrayList;
 
 public class SerializationTest
 {
-  private final static JavaSerializationHelper helper = LegendPac4jBundle.getSerializationHelper(new ArrayList<>());
+  private final static JavaSerializer helper = LegendPac4jBundle.getSerializationHelper(new ArrayList<>());
   private final static SerializbaleThing serializableThing = new SerializbaleThing("A random string");
 
   @Test()
