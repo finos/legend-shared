@@ -15,18 +15,18 @@
 package org.finos.legend.server.pac4j.internal;
 
 import java.io.IOException;
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
-import org.eclipse.jetty.security.DefaultUserIdentity;
-import org.eclipse.jetty.security.UserAuthentication;
-import org.eclipse.jetty.server.HttpConnection;
+import jakarta.servlet.Filter;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.FilterConfig;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.ee10.servlet.ServletContextRequest;
+import org.eclipse.jetty.security.AuthenticationState;
+import org.eclipse.jetty.security.UserIdentity;
+import org.eclipse.jetty.security.authentication.LoginAuthenticator;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.UserIdentity;
 
 public class UsernameFilter implements Filter
 {
@@ -40,13 +40,13 @@ public class UsernameFilter implements Filter
       throws IOException, ServletException
   {
     HttpServletRequest httpServletRequest = (HttpServletRequest) request;
-    Request httpRequest = HttpConnection.getCurrentConnection().getHttpChannel().getRequest();
-    if (httpRequest != null && httpServletRequest.getUserPrincipal() != null
+    if (httpServletRequest.getUserPrincipal() != null
         && httpServletRequest.getUserPrincipal().getName() != null)
     {
-      UserIdentity userId =
-          new DefaultUserIdentity(null, httpServletRequest.getUserPrincipal(), null);
-      httpRequest.setAuthentication(new UserAuthentication(null, userId));
+      Request httpRequest = ServletContextRequest.getServletContextRequest(request);
+      UserIdentity userId = UserIdentity.from(null, httpServletRequest.getUserPrincipal());
+      AuthenticationState.setAuthenticationState(
+          httpRequest, new LoginAuthenticator.UserAuthenticationSucceeded(null, userId));
     }
     chain.doFilter(request, response);
   }

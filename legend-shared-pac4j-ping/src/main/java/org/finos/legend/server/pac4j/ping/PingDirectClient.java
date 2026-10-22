@@ -22,10 +22,11 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.Map;
 import org.finos.legend.server.pac4j.SerializableProfile;
-import org.pac4j.core.profile.creator.AuthenticatorProfileCreator;
+import org.pac4j.core.credentials.authenticator.Authenticator;
 import org.pac4j.http.client.direct.DirectBearerAuthClient;
+import org.pac4j.oidc.client.OidcClient;
 import org.pac4j.oidc.config.OidcConfiguration;
-import org.pac4j.oidc.credentials.authenticator.UserInfoOidcAuthenticator;
+import org.pac4j.oidc.profile.creator.OidcProfileCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,8 +57,34 @@ public class PingDirectClient extends DirectBearerAuthClient
     @JsonProperty
     private Map<String, String> customParams;
 
+    /**
+     * Not rebuilt on {@code reinit()}: its inputs are fixed at deserialization, and it caches the
+     * resolved OP metadata.
+     */
+    private OidcConfiguration oidcConfiguration;
+    private OidcProfileCreator oidcProfileCreator;
+
     @Override
-    protected void clientInit()
+    protected void internalInit(boolean forceReinit)
+    {
+        if (this.oidcConfiguration == null)
+        {
+            this.oidcConfiguration = buildConfiguration();
+            // OidcProfileCreator needs an OidcClient, which this is not. The throwaway client is only
+            // dereferenced on the authorization-code flow, never on the bearer path.
+            this.oidcProfileCreator =
+                    new OidcProfileCreator(this.oidcConfiguration, new OidcClient(this.oidcConfiguration));
+        }
+
+        // ALWAYS_VALIDATE is not "no validation": it passes the token to OidcProfileCreator, whose
+        // userinfo call yields no profile (a 401) for a revoked or invalid token. NEVER_VALIDATE
+        // would reject every request before the profile creator runs.
+        setAuthenticator(Authenticator.ALWAYS_VALIDATE);
+        setProfileCreator(this.oidcProfileCreator);
+        super.internalInit(forceReinit);
+    }
+
+    private OidcConfiguration buildConfiguration()
     {
         OidcConfiguration config = new OidcConfiguration();
         config.setClientId(clientId);
@@ -80,9 +107,6 @@ public class PingDirectClient extends DirectBearerAuthClient
             scope = "openid profile";
         }
         config.setScope(scope);
-
-        setAuthenticator(new UserInfoOidcAuthenticator(config));
-        setProfileCreator(new AuthenticatorProfileCreator<>());
-        super.clientInit();
+        return config;
     }
 }

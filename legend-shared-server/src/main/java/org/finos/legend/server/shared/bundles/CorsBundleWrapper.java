@@ -14,13 +14,13 @@
 
 package org.finos.legend.server.shared.bundles;
 
-import io.dropwizard.ConfiguredBundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.ConfiguredBundle;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import java.util.EnumSet;
-import javax.servlet.DispatcherType;
-import javax.servlet.FilterRegistration;
-import org.eclipse.jetty.servlets.CrossOriginFilter;
+import jakarta.servlet.DispatcherType;
+import jakarta.servlet.FilterRegistration;
+import org.eclipse.jetty.ee10.servlets.CrossOriginFilter;
 
 @SuppressWarnings("unused")
 public class CorsBundleWrapper<T> implements ConfiguredBundle<T>

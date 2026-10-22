@@ -8,18 +8,19 @@ import com.mongodb.client.MongoDatabase;
 import com.nimbusds.oauth2.sdk.token.BearerAccessToken;
 import de.bwaldvogel.mongo.MongoServer;
 import de.bwaldvogel.mongo.backend.memory.MemoryBackend;
+import org.finos.legend.server.pac4j.SessionStoreTestUtil;
 import org.finos.legend.server.pac4j.mongostore.MongoDbSessionStore;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.pac4j.core.context.JEEContext;
-import org.pac4j.core.context.session.JEESessionStore;
+import org.pac4j.jee.context.JEEContext;
+import org.pac4j.jee.context.session.JEESessionStore;
 import org.pac4j.core.util.Pac4jConstants;
 import org.pac4j.oidc.profile.OidcProfile;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
-import javax.servlet.http.Cookie;
+import jakarta.servlet.http.Cookie;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 public class OidcProfileTest
 {
+
     private static MongoServer server;
     private static MongoClient client;
     private static MongoDatabase db;
@@ -88,7 +90,7 @@ public class OidcProfileTest
         assertEquals(oidcProfile.getId(), ((OidcProfile) retrievedFromSession.get()).getId());
 
         // Extract SSO cookie
-        Cookie[] cookies = response.getCookies();
+        Cookie[] cookies = SessionStoreTestUtil.responseCookies(response);
         assertNotNull(cookies);
         assertTrue(cookies.length > 0);
 

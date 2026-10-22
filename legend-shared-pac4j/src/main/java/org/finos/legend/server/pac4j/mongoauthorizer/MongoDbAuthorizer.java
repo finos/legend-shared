@@ -22,12 +22,13 @@ import org.bson.Document;
 import org.finos.legend.server.pac4j.MongoDbConsumer;
 import org.pac4j.core.authorization.authorizer.AbstractCheckAuthenticationAuthorizer;
 import org.pac4j.core.context.WebContext;
-import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.context.session.SessionStore;
+import org.pac4j.core.profile.UserProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @SuppressWarnings("unused")
-public class MongoDbAuthorizer extends AbstractCheckAuthenticationAuthorizer<CommonProfile>
+public class MongoDbAuthorizer extends AbstractCheckAuthenticationAuthorizer
     implements MongoDbConsumer
 {
   public static final String NAME = "mongoAuthorizer";
@@ -38,7 +39,7 @@ public class MongoDbAuthorizer extends AbstractCheckAuthenticationAuthorizer<Com
   private String collectionName;
 
   @Override
-  protected boolean isProfileAuthorized(WebContext webContext, CommonProfile u)
+  protected boolean isProfileAuthorized(WebContext webContext, SessionStore sessionStore, UserProfile u)
   {
     String id = u.getId();
     Document doc = collection.find(new Document("_id", id)).first();
@@ -54,9 +55,9 @@ public class MongoDbAuthorizer extends AbstractCheckAuthenticationAuthorizer<Com
   }
 
   @Override
-  public boolean isAuthorized(WebContext context, List<CommonProfile> profiles)
+  public boolean isAuthorized(WebContext context, SessionStore sessionStore, List<UserProfile> profiles)
   {
-    return isAnyAuthorized(context, profiles);
+    return isAnyAuthorized(context, sessionStore, profiles);
   }
 
   @Override

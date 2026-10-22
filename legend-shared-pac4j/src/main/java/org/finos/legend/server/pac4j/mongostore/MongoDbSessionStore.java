@@ -25,7 +25,7 @@ import org.finos.legend.server.pac4j.sessionutil.UuidUtils;
 import org.pac4j.core.util.Pac4jConstants;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
-import org.pac4j.core.util.JavaSerializationHelper;
+import org.pac4j.core.util.serializer.JavaSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.Serializable;
@@ -47,10 +47,11 @@ public class MongoDbSessionStore extends HttpSessionStore
     private final MongoCollection<Document> userSessions;
     private final SessionCrypt sessionCrypt;
     private final int maxSessionLength;
-    private final JavaSerializationHelper serializationHelper;
+    private final JavaSerializer serializationHelper;
     private final SubjectExecutor subjectExecutor;
 
     private String sessionTokenName;
+    private String sameSitePolicy = SessionToken.DEFAULT_SAME_SITE_POLICY;
 
     /**
      * Create MongoDb session store.
@@ -62,7 +63,7 @@ public class MongoDbSessionStore extends HttpSessionStore
      */
     public MongoDbSessionStore(
             String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
-            Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores, List<String> extraTrustedPackages, String sessionTokenName)
+            Map<Class<? extends WebContext>, SessionStore> underlyingStores, List<String> extraTrustedPackages, String sessionTokenName)
     {
         this(algorithm, maxSessionLength, userSessions, underlyingStores, new SubjectExecutor(null),extraTrustedPackages, sessionTokenName);
     }
@@ -78,7 +79,7 @@ public class MongoDbSessionStore extends HttpSessionStore
      */
     public MongoDbSessionStore(
             String algorithm, int maxSessionLength, MongoCollection<Document> userSessions,
-            Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores,
+            Map<Class<? extends WebContext>, SessionStore> underlyingStores,
             SubjectExecutor subjectExecutor, List<String> extraTrustedPackages, String sessionTokenName)
     {
         super(underlyingStores);
@@ -111,7 +112,7 @@ public class MongoDbSessionStore extends HttpSessionStore
     {
         SessionToken token;
         token = SessionToken.generate();
-        token.saveInContext(this.sessionTokenName, context, maxSessionLength);
+        token.saveInContext(this.sessionTokenName, context, maxSessionLength, this.sameSitePolicy);
         SessionToken finalToken = token;
         this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
         {
@@ -127,10 +128,15 @@ public class MongoDbSessionStore extends HttpSessionStore
     }
 
     @Override
-    public String getOrCreateSessionId(WebContext context)
+    public Optional<String> getSessionId(WebContext context, boolean createSession)
     {
-        getOrCreateSsoKey(context);
-        return super.getOrCreateSessionId(context);
+        // pac4j 6 passes createSession=false on paths that must stay side-effect free (matchers,
+        // bypassed paths, logout); minting a token there leaves a cookie and a Mongo row behind.
+        if (createSession)
+        {
+            getOrCreateSsoKey(context);
+        }
+        return super.getSessionId(context, createSession);
     }
 
     @Override
@@ -139,7 +145,13 @@ public class MongoDbSessionStore extends HttpSessionStore
         Object res = super.get(context, key).orElse(null);
         if (res == null)
         {
-            final SessionToken token = getOrCreateSsoKey(context);
+            // Must not mint a token: pac4j 6 ProfileManager.retrieveAll calls get() directly on
+            // every request, including anonymous ones, without asking for a session id first.
+            final SessionToken token = SessionToken.fromContext(this.sessionTokenName, context);
+            if (token == null)
+            {
+                return Optional.empty();
+            }
             Document doc = this.subjectExecutor.execute(() -> userSessions.find(getSearchSpec(token)).first());
             if (doc != null)
             {
@@ -151,17 +163,34 @@ public class MongoDbSessionStore extends HttpSessionStore
                         res =
                                 serializationHelper.deserializeFromBytes(
                                         sessionCrypt.fromCryptedString(serialized, token));
-                        //Once we have it, store it in the regular session store for later access
-                        super.set(context, key, res);
-                    } catch (GeneralSecurityException e)
+                    } catch (GeneralSecurityException | RuntimeException e)
                     {
-                        logger.warn("Unable to deserialize session data for user", e);
+                        // RuntimeException is deliberate: pac4j 6 dropped a field from the
+                        // Externalizable BasicUserProfile without changing its serialVersionUID, so a
+                        // pac4j 4/5 blob is mis-parsed and JavaSerializer throws ClassCastException.
+                        // Unset the key, or the failure repeats on every request until the TTL expires.
+                        logger.warn("Discarding unreadable session data for key {}", key, e);
+                        final SessionToken evictFor = token;
+                        this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
+                        {
+                            userSessions.updateOne(getSearchSpec(evictFor),
+                                    new Document("$unset", new Document(key, "")));
+                            return null;
+                        });
+                        res = null;
+                    }
+
+                    if (res != null)
+                    {
+                        // Outside the try: a failure here (e.g. an invalidated HTTP session) says
+                        // nothing about the stored bytes and must not evict them.
+                        super.set(context, key, res);
                     }
                 }
             }
             else
             {
-                token.removeFromContext(this.sessionTokenName, context); //force the token to expire because it doesn't match any credential in session store.
+                token.removeFromContext(this.sessionTokenName, context, this.sameSitePolicy); //force the token to expire because it doesn't match any credential in session store.
             }
         }
         else if (SessionToken.fromContext(this.sessionTokenName, context) == null)
@@ -184,7 +213,7 @@ public class MongoDbSessionStore extends HttpSessionStore
         {
             final SessionToken token = getOrCreateSsoKey(context);
             Serializable serializable = (Serializable) value;
-            byte[] serialized = new JavaSerializationHelper().serializeToBytes(serializable);
+            byte[] serialized = serializationHelper.serializeToBytes(serializable);
             try
             {
                 this.subjectExecutor.executeWithException(() -> userSessions.updateOne(
@@ -202,13 +231,27 @@ public class MongoDbSessionStore extends HttpSessionStore
     public boolean destroySession(WebContext context)
     {
         final SessionToken token = getOrCreateSsoKey(context);
-        token.saveInContext(this.sessionTokenName, context, 0);
+        token.saveInContext(this.sessionTokenName, context, 0, this.sameSitePolicy);
         this.subjectExecutor.execute(() -> userSessions.deleteMany(getSearchSpec(token)));
         return super.destroySession(context);
     }
 
-    public JavaSerializationHelper getSerializationHelper()
+    public JavaSerializer getSerializationHelper()
     {
         return serializationHelper;
+    }
+
+    /**
+     * Strict, Lax or None (case-insensitive); anything else throws. Null or empty means
+     * {@link SessionToken#DEFAULT_SAME_SITE_POLICY}.
+     */
+    public void setSameSitePolicy(String sameSitePolicy)
+    {
+        this.sameSitePolicy = SessionToken.sameSitePolicy(sameSitePolicy);
+    }
+
+    public String getSameSitePolicy()
+    {
+        return this.sameSitePolicy;
     }
 }

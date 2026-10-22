@@ -38,29 +38,38 @@ public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
     private static final long serialVersionUID = -8691865551996919736L;
     private Subject serviceSubject;
     private Subject subject;
+    // pac4j 6's KerberosProfile no longer takes or exposes the GSSContext, so it is held here.
+    private final transient GSSContext gssContext;
 
 
     public KerberosProfile(Subject subject, final GSSContext gssContext)
     {
-        super(gssContext);
+        this.gssContext = gssContext;
         this.subject = subject;
     }
 
     public KerberosProfile(Subject subject, Subject serviceSubject, final GSSContext gssContext)
     {
-        super(gssContext);
+        this.gssContext = gssContext;
         this.subject = subject;
         this.serviceSubject = serviceSubject;
     }
 
+    public GSSContext getGssContext()
+    {
+        return this.gssContext;
+    }
+
     public KerberosProfile(LocalCredentials creds)
     {
+        this.gssContext = null;
         setId(creds.getUserId());
         this.subject = creds.getSubject();
     }
 
     public KerberosProfile()
     {
+        this.gssContext = null;
     }
 
     public Subject getSubject()

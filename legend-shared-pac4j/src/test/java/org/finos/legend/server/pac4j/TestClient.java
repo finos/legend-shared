@@ -15,11 +15,9 @@
 package org.finos.legend.server.pac4j;
 
 import org.pac4j.core.client.DirectClient;
-import org.pac4j.core.credentials.Credentials;
-import org.pac4j.core.profile.CommonProfile;
 
 @SerializableProfile
-public class TestClient extends DirectClient<Credentials>
+public class TestClient extends DirectClient
 {
     public TestClient()
     {
@@ -31,7 +29,7 @@ public class TestClient extends DirectClient<Credentials>
     }
 
     @Override
-  protected void clientInit()
+  protected void internalInit(boolean forceReinit)
   {
 
   }

@@ -20,7 +20,6 @@ import org.mockito.Mockito;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.client.Clients;
 import org.pac4j.core.context.WebContext;
-import org.pac4j.core.credentials.Credentials;
 import org.pac4j.core.util.Pac4jConstants;
 
 import java.util.Arrays;
@@ -43,13 +42,86 @@ public class LegendClientFinderTest
         WebContext mockedWebContext = Mockito.mock(WebContext.class);
         when(mockedWebContext.getRequestParameter(Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER)).thenReturn(Optional.of("testclient"));
         Clients mockedClients = Mockito.mock(Clients.class);
-        when(mockedClients.findClient("testclient")).thenReturn(Optional.of(new TestClient()));
+        when(mockedClients.findClient("testclient")).thenReturn(Optional.of((Client) new TestClient()));
 
         LegendClientFinder legendClientFinder = new LegendClientFinder(Collections.emptyList());
-        List<Client<? extends Credentials>> testClient = legendClientFinder.find(mockedClients, mockedWebContext, "testclient");
+        List<Client> testClient = legendClientFinder.find(mockedClients, mockedWebContext, "testclient");
 
         assertNotNull(testClient);
         verify(mockedWebContext).getRequestParameter(Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER);
+    }
+
+    @Test
+    public void clientNameParameterForcesASingleClient()
+    {
+        WebContext mockedWebContext = Mockito.mock(WebContext.class);
+        when(mockedWebContext.getRequestParameter(Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER)).thenReturn(Optional.of("testclient1"));
+
+        List<Client> found = findWithTwoDefaultClients(mockedWebContext);
+
+        assertEquals("?client_name=testclient1 must force exactly that client", 1, found.size());
+        assertEquals("testclient1", found.get(0).getName());
+    }
+
+    /**
+     * Deliberately deviates from pac4j 6: only {@code client_name} is honoured, which is what UIs,
+     * deep links and bookmarks already carry.
+     */
+    @Test
+    public void forceClientParameterIsIgnored()
+    {
+        WebContext mockedWebContext = Mockito.mock(WebContext.class);
+        when(mockedWebContext.getRequestParameter(Pac4jConstants.DEFAULT_FORCE_CLIENT_PARAMETER)).thenReturn(Optional.of("testclient1"));
+
+        assertEquals("?force_client= must be ignored", 2, findWithTwoDefaultClients(mockedWebContext).size());
+    }
+
+    @Test
+    public void clientNameDecidesWhenForceClientIsAlsoPresent()
+    {
+        WebContext mockedWebContext = Mockito.mock(WebContext.class);
+        when(mockedWebContext.getRequestParameter(Pac4jConstants.DEFAULT_FORCE_CLIENT_PARAMETER)).thenReturn(Optional.of("testclient1"));
+        when(mockedWebContext.getRequestParameter(Pac4jConstants.DEFAULT_CLIENT_NAME_PARAMETER)).thenReturn(Optional.of("testclient2"));
+
+        List<Client> found = findWithTwoDefaultClients(mockedWebContext);
+
+        assertEquals(1, found.size());
+        assertEquals("testclient2", found.get(0).getName());
+    }
+
+    @Test
+    public void anUnknownForceClientIsIgnored()
+    {
+        WebContext mockedWebContext = Mockito.mock(WebContext.class);
+        when(mockedWebContext.getRequestParameter(Pac4jConstants.DEFAULT_FORCE_CLIENT_PARAMETER)).thenReturn(Optional.of("bogus"));
+
+        assertEquals(2, findWithTwoDefaultClients(mockedWebContext).size());
+    }
+
+    @Test
+    public void withNeitherParameterTheDefaultClientsAreUsed()
+    {
+        WebContext mockedWebContext = Mockito.mock(WebContext.class);
+
+        Clients mockedClients = Mockito.mock(Clients.class);
+        when(mockedClients.findClient("testclient1")).thenReturn(Optional.of((Client) new TestClient("testclient1")));
+        when(mockedClients.findClient("testclient2")).thenReturn(Optional.of((Client) new TestClient("testclient2")));
+
+        LegendClientFinder legendClientFinder =
+                new LegendClientFinder(Arrays.asList("testclient1", "testclient2"));
+
+        assertEquals(2,
+                legendClientFinder.find(mockedClients, mockedWebContext, "testclient1,testclient2").size());
+    }
+
+    private static List<Client> findWithTwoDefaultClients(WebContext context)
+    {
+        Clients mockedClients = Mockito.mock(Clients.class);
+        when(mockedClients.findClient("testclient1")).thenReturn(Optional.of((Client) new TestClient("testclient1")));
+        when(mockedClients.findClient("testclient2")).thenReturn(Optional.of((Client) new TestClient("testclient2")));
+
+        LegendClientFinder legendClientFinder = new LegendClientFinder(Arrays.asList("testclient1", "testclient2"));
+        return legendClientFinder.find(mockedClients, context, "testclient1,testclient2");
     }
 
     @Test
@@ -58,11 +130,11 @@ public class LegendClientFinderTest
         WebContext mockedWebContext = Mockito.mock(WebContext.class);
 
         Clients mockedClients = Mockito.mock(Clients.class);
-        when(mockedClients.findClient("testclient1")).thenReturn(Optional.of(new TestClient()));
-        when(mockedClients.findClient("testclient2")).thenReturn(Optional.of(new TestClient()));
+        when(mockedClients.findClient("testclient1")).thenReturn(Optional.of((Client) new TestClient()));
+        when(mockedClients.findClient("testclient2")).thenReturn(Optional.of((Client) new TestClient()));
 
         LegendClientFinder legendClientFinder = new LegendClientFinder(Arrays.asList("testclient1","testclient2"));
-        List<Client<? extends Credentials>> testClient = legendClientFinder.find(mockedClients, mockedWebContext, "testclient1,testclient2");
+        List<Client> testClient = legendClientFinder.find(mockedClients, mockedWebContext, "testclient1,testclient2");
 
         assertNotNull(testClient);
         assertEquals(2,testClient.size());
@@ -76,12 +148,12 @@ public class LegendClientFinderTest
         when(mockedWebContext.getRequestAttribute(CLIENT_TO_EXCLUDE)).thenReturn(Optional.of(Collections.singletonList("testclient")));
 
         Clients mockedClients = Mockito.mock(Clients.class);
-        when(mockedClients.findClient("testclient1")).thenReturn(Optional.of(new TestClient("testclient1")));
-        when(mockedClients.findClient("testclient2")).thenReturn(Optional.of(new TestClient("testclient2")));
-        when(mockedClients.findClient("testclient")).thenReturn(Optional.of(new TestClient("testclient")));
+        when(mockedClients.findClient("testclient1")).thenReturn(Optional.of((Client) new TestClient("testclient1")));
+        when(mockedClients.findClient("testclient2")).thenReturn(Optional.of((Client) new TestClient("testclient2")));
+        when(mockedClients.findClient("testclient")).thenReturn(Optional.of((Client) new TestClient("testclient")));
 
         LegendClientFinder legendClientFinder = new LegendClientFinder(Arrays.asList("testclient1","testclient2","testclient"));
-        List<Client<? extends Credentials>> testClient = legendClientFinder.find(mockedClients, mockedWebContext, "testclient1,testclient2,testclient");
+        List<Client> testClient = legendClientFinder.find(mockedClients, mockedWebContext, "testclient1,testclient2,testclient");
 
         assertNotNull(testClient);
         assertEquals(2,testClient.size());
@@ -97,12 +169,12 @@ public class LegendClientFinderTest
         when(mockedWebContext.getRequestAttribute(CLIENT_TO_EXCLUDE)).thenReturn(Optional.of(Arrays.asList("testclient","testclient1")));
 
         Clients mockedClients = Mockito.mock(Clients.class);
-        when(mockedClients.findClient("testclient1")).thenReturn(Optional.of(new TestClient("testclient1")));
-        when(mockedClients.findClient("testclient2")).thenReturn(Optional.of(new TestClient("testclient2")));
-        when(mockedClients.findClient("testclient")).thenReturn(Optional.of(new TestClient("testclient")));
+        when(mockedClients.findClient("testclient1")).thenReturn(Optional.of((Client) new TestClient("testclient1")));
+        when(mockedClients.findClient("testclient2")).thenReturn(Optional.of((Client) new TestClient("testclient2")));
+        when(mockedClients.findClient("testclient")).thenReturn(Optional.of((Client) new TestClient("testclient")));
 
         LegendClientFinder legendClientFinder = new LegendClientFinder(Arrays.asList("testclient1","testclient2","testclient"));
-        List<Client<? extends Credentials>> testClient = legendClientFinder.find(mockedClients, mockedWebContext, "testclient1,testclient2,testclient");
+        List<Client> testClient = legendClientFinder.find(mockedClients, mockedWebContext, "testclient1,testclient2,testclient");
 
         assertNotNull(testClient);
         assertEquals(1,testClient.size());

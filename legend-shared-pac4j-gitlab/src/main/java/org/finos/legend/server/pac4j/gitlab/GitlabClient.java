@@ -19,14 +19,17 @@ import com.nimbusds.jose.util.DefaultResourceRetriever;
 import com.nimbusds.oauth2.sdk.util.StringUtils;
 import org.finos.legend.server.pac4j.SerializableProfile;
 import org.finos.legend.server.pac4j.gitlab.ssl.TrustManagerComposite;
+import org.pac4j.core.client.BaseClient;
+import org.pac4j.core.context.CallContext;
 import org.pac4j.core.context.WebContext;
+import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.exception.TechnicalException;
 import org.pac4j.core.http.url.DefaultUrlResolver;
 import org.pac4j.core.util.Pac4jConstants;
 import org.pac4j.core.profile.UserProfile;
 import org.pac4j.oidc.client.OidcClient;
 import org.pac4j.oidc.config.OidcConfiguration;
-import org.pac4j.oidc.credentials.OidcCredentials;
+import org.pac4j.core.credentials.Credentials;
 import org.pac4j.oidc.credentials.authenticator.OidcAuthenticator;
 import org.pac4j.oidc.profile.OidcProfile;
 import org.pac4j.oidc.profile.creator.OidcProfileCreator;
@@ -43,7 +46,7 @@ import java.util.Optional;
 
 @SuppressWarnings("unused")
 @SerializableProfile
-public class GitlabClient extends OidcClient<OidcConfiguration>
+public class GitlabClient extends OidcClient
 {
     private static final Logger logger = LoggerFactory.getLogger(GitlabClient.class);
     public static final String GITLAB_CLIENT_NAME = "gitlab";
@@ -68,9 +71,10 @@ public class GitlabClient extends OidcClient<OidcConfiguration>
     protected String sslKeystore;
 
     @Override
-    public void setName(String name)
+    public BaseClient setName(String name)
     {
         this.name = name;
+        return this;
     }
 
     @Override
@@ -80,7 +84,7 @@ public class GitlabClient extends OidcClient<OidcConfiguration>
     }
 
     @Override
-    protected void clientInit()
+    protected void beforeInternalInit(boolean forceReinit)
     {
 
         if (StringUtils.isNotBlank(sslKeystore))
@@ -122,45 +126,60 @@ public class GitlabClient extends OidcClient<OidcConfiguration>
         }
         config.setScope(scope);
         setConfiguration(config);
+        super.beforeInternalInit(forceReinit);
+    }
+
+    @Override
+    protected void internalInit(boolean forceReinit)
+    {
+        OidcConfiguration config = getConfiguration();
         setAuthenticator(
                 new OidcAuthenticator(config, this)
                 {
                     @Override
-                    public void validate(OidcCredentials credentials, WebContext context)
+                    public Optional<Credentials> validate(CallContext ctx, Credentials credentials)
                     {
                         if (proxyHost != null && !"".equals(proxyHost))
                         {
                             System.setProperty("https.proxyHost", proxyHost);
                             System.setProperty("https.proxyPort", String.valueOf(proxyPort));
-                            super.validate(credentials, context);
+                            Optional<Credentials> validated = super.validate(ctx, credentials);
                             System.setProperty("https.proxyHost", "");
                             System.setProperty("https.proxyPort", "");
+                            return validated;
                         }
                         else
                         {
-                            super.validate(credentials, context);
+                            return super.validate(ctx, credentials);
                         }
                     }
                 });
         setProfileCreator(
-                new OidcProfileCreator<OidcProfile>(config,this)
+                new OidcProfileCreator(config, this)
                 {
                     @Override
-                    public Optional<UserProfile> create(OidcCredentials credentials, WebContext context)
+                    public Optional<UserProfile> create(CallContext ctx, Credentials credentials)
                     {
-                        OidcProfile profile = (OidcProfile)super.create(credentials, context).get();
+                        Optional<UserProfile> created = super.create(ctx, credentials);
+                        if (!created.isPresent())
+                        {
+                            return created;
+                        }
+                        OidcProfile profile = (OidcProfile) created.get();
                         profile.setId(profile.getNickname());
                         return Optional.of(profile);
                     }
                 });
         setUrlResolver(new DefaultUrlResolver(true));
-        super.clientInit();
+        super.internalInit(forceReinit);
     }
 
     @Override
     @SuppressWarnings("unchecked")
-    public Optional<UserProfile> renewUserProfile(UserProfile profile, WebContext context)
+    public Optional<UserProfile> renewUserProfile(CallContext ctx, UserProfile profile)
     {
+        WebContext context = ctx.webContext();
+        SessionStore sessionStore = ctx.sessionStore();
         init();
 
         OidcProfile oidcProfile = (OidcProfile) profile;
@@ -171,14 +190,14 @@ public class GitlabClient extends OidcClient<OidcConfiguration>
 
         try
         {
-            return super.renewUserProfile(profile, context);
+            return super.renewUserProfile(ctx, profile);
         }
         catch (TechnicalException technicalException)
         {
             if (technicalException.getMessage() != null && technicalException.getMessage().contains("invalid_grant"))
             {
                 logger.debug("Refresh token rejected (invalid_grant), checking session for renewed profile", technicalException);
-                Optional<Object> sessionAttr = context.getSessionStore().get(context, Pac4jConstants.USER_PROFILES);
+                Optional<Object> sessionAttr = sessionStore.get(context, Pac4jConstants.USER_PROFILES);
                 if (sessionAttr.isPresent() && sessionAttr.get() instanceof Map)
                 {
                     Map<String, UserProfile> profiles = (Map<String, UserProfile>) sessionAttr.get();

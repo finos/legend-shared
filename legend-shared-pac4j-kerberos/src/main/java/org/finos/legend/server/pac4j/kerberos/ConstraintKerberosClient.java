@@ -29,10 +29,10 @@ public class ConstraintKerberosClient extends DirectKerberosClient
   private String keyTabLocation;
 
   @Override
-  public void clientInit()
+  protected void internalInit(boolean forceReinit)
   {
-    defaultAuthenticator(
+    setAuthenticatorIfUndefined(
         new ConstraintKerberosAuthenticator(servicePrincipal, keyTabLocation));
-    super.clientInit();
+    super.internalInit(forceReinit);
   }
 }

@@ -14,9 +14,9 @@
 
 package org.finos.legend.server.shared.bundles;
 
-import io.dropwizard.ConfiguredBundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.ConfiguredBundle;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.function.Function;

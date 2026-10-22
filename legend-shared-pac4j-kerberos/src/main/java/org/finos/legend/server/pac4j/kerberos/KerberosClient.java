@@ -32,10 +32,10 @@ public class KerberosClient extends DirectKerberosClient
   private String noDelegRedirectHost;
 
   @Override
-  public void clientInit()
+  protected void internalInit(boolean forceReinit)
   {
-    defaultAuthenticator(
+    setAuthenticatorIfUndefined(
         new UnconstraintKerberosAuthenticator(servicePrincipal, keyTabLocation,noDelegRedirectHost));
-    super.clientInit();
+    super.internalInit(forceReinit);
   }
 }

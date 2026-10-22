@@ -16,13 +16,13 @@ package org.finos.legend.server.shared.staticserver;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
-import io.dropwizard.Configuration;
-import io.dropwizard.ConfiguredBundle;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.Configuration;
+import io.dropwizard.core.ConfiguredBundle;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import java.util.List;
 import java.util.function.Function;
-import org.eclipse.jetty.servlet.ErrorPageErrorHandler;
+import org.eclipse.jetty.ee10.servlet.ErrorPageErrorHandler;
 import org.finos.legend.server.pac4j.LegendPac4jBundle;
 import org.finos.legend.server.shared.bundles.HostnameHeaderBundle;
 import org.finos.legend.server.shared.bundles.HtmlRouterRedirectBundle;
@@ -77,7 +77,7 @@ public class StaticServerBundle<C extends Configuration> implements ConfiguredBu
       }
       String trimmedStaticPath = staticPath != null && staticPath.endsWith("/") ? staticPath.substring(0, staticPath.length() - 1) : staticPath;
       new HtmlRouterRedirectBundle(trimmedStaticPath, skipPaths, trimmedStaticPath + "/index.html")
-          .run(environment);
+          .run(config, environment);
     }
     environment.healthChecks().register("Static", new org.finos.legend.server.shared.staticserver.StaticHealthcheck());
   }

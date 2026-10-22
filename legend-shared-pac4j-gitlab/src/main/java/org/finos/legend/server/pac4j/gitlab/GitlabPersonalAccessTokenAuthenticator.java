@@ -18,15 +18,17 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.databind.json.JsonMapper;
-import org.pac4j.core.context.WebContext;
+import org.pac4j.core.context.CallContext;
+import org.pac4j.core.credentials.Credentials;
 import org.pac4j.core.credentials.authenticator.Authenticator;
 import org.pac4j.core.exception.CredentialsException;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Optional;
 
-public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<GitlabPersonalAccessTokenCredentials>
+public class GitlabPersonalAccessTokenAuthenticator implements Authenticator
 {
     private final String apiVersion;
     private final String host;
@@ -49,11 +51,13 @@ public class GitlabPersonalAccessTokenAuthenticator implements Authenticator<Git
     }
 
     @Override
-    public void validate(GitlabPersonalAccessTokenCredentials credentials, WebContext webContext)
+    public Optional<Credentials> validate(CallContext ctx, Credentials rawCredentials)
     {
+        GitlabPersonalAccessTokenCredentials credentials = (GitlabPersonalAccessTokenCredentials) rawCredentials;
         UserInformation userInfo = getUserInformation(credentials.getPersonalAccessToken());
         credentials.setUserId(userInfo.username);
         credentials.setUserName(userInfo.name);
+        return Optional.of(credentials);
     }
 
     private UserInformation getUserInformation(String personalAccessToken)

@@ -18,25 +18,24 @@ import java.util.List;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.client.DirectClient;
 import org.pac4j.core.context.WebContext;
-import org.pac4j.core.engine.decision.ProfileStorageDecision;
-import org.pac4j.core.profile.CommonProfile;
 import org.pac4j.core.profile.UserProfile;
 
-public class LegendUserProfileStorageDecision<C extends WebContext> implements ProfileStorageDecision<C>
+/**
+ * Uses the session only when every client in play is annotated {@link SerializableProfile}.
+ */
+public class LegendUserProfileStorageDecision
 {
 
   public LegendUserProfileStorageDecision()
   {
   }
 
-  @Override
-  public boolean mustLoadProfilesFromSession(C context, List<Client> currentClients)
+  public boolean mustLoadProfilesFromSession(WebContext context, List<Client> currentClients)
   {
     return checkForSerializableAnnotation(currentClients);
   }
 
-  @Override
-  public boolean mustSaveProfileInSession(C context, List<Client> currentClients, DirectClient directClient, UserProfile userProfile)
+  public boolean mustSaveProfileInSession(WebContext context, List<Client> currentClients, DirectClient directClient, UserProfile userProfile)
   {
     return checkForSerializableAnnotation(currentClients);
   }

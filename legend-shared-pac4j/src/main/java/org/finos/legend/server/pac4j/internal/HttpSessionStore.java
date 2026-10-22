@@ -20,21 +20,19 @@ import java.util.Optional;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 
-public class HttpSessionStore implements SessionStore<WebContext>
+public class HttpSessionStore implements SessionStore
 {
 
-  private final Map<Class<? extends WebContext>, SessionStore<? extends WebContext>>
-      underlyingStores;
+  private final Map<Class<? extends WebContext>, SessionStore> underlyingStores;
 
-  public HttpSessionStore(
-      Map<Class<? extends WebContext>, SessionStore<? extends WebContext>> underlyingStores)
+  public HttpSessionStore(Map<Class<? extends WebContext>, SessionStore> underlyingStores)
   {
     this.underlyingStores = underlyingStores;
   }
 
   private SessionStore getUnderlyingSessionStore(WebContext context)
   {
-    SessionStore<? extends WebContext> sessionStore = this.underlyingStores.get(context.getClass());
+    SessionStore sessionStore = this.underlyingStores.get(context.getClass());
     if (sessionStore == null)
     {
       return NullSessionStore.INSTANCE;
@@ -43,9 +41,9 @@ public class HttpSessionStore implements SessionStore<WebContext>
   }
 
   @Override
-  public String getOrCreateSessionId(WebContext context)
+  public Optional<String> getSessionId(WebContext context, boolean createSession)
   {
-    return getUnderlyingSessionStore(context).getOrCreateSessionId(context);
+    return getUnderlyingSessionStore(context).getSessionId(context, createSession);
   }
 
   @Override
@@ -67,13 +65,13 @@ public class HttpSessionStore implements SessionStore<WebContext>
   }
 
   @Override
-  public Optional getTrackableSession(WebContext context)
+  public Optional<Object> getTrackableSession(WebContext context)
   {
     return getUnderlyingSessionStore(context).getTrackableSession(context);
   }
 
   @Override
-  public Optional<SessionStore<WebContext>> buildFromTrackableSession(
+  public Optional<SessionStore> buildFromTrackableSession(
       WebContext context, Object trackableSession)
   {
     return getUnderlyingSessionStore(context).buildFromTrackableSession(context, trackableSession);

@@ -14,7 +14,7 @@ The important tenets for this project are:
 
 ## Development setup
 
-This application uses Maven 3.6+ and JDK 8. Simply run `mvn install` to compile.
+This application uses Maven 3.6+ and JDK 17. Simply run `mvn install` to compile.
 
 ## Release manager skills
 

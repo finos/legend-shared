@@ -41,46 +41,54 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm</maven.build.timestamp.format>
-        <maven.compiler.release>8</maven.compiler.release>
-        <java.version.range>[11,12),[17,18),[21,22),[25,26)</java.version.range>
+        <maven.compiler.release>17</maven.compiler.release>
+        <java.version.range>[17,18),[21,22),[25,26)</java.version.range>
         <publish.server.id>central</publish.server.id>
 
         <!-- Dependencies -->
         <commons.lang3.version>3.18.0</commons.lang3.version>
         <commons.text.version>1.10.0</commons.text.version>
-        <dropwizard.version>1.3.29</dropwizard.version>
-        <dropwizard.pac4j.version>4.0.0</dropwizard.pac4j.version>
+        <dropwizard.version>5.0.2</dropwizard.version>
+        <!-- dropwizard-pac4j 8.0.1 pins Dropwizard 5.0.2, pac4j 6.5.8, jersey3-pac4j 7.0.1 and
+             jakartaee-pac4j 8.0.3; keep those versions in step with it. -->
+        <dropwizard.pac4j.version>8.0.1</dropwizard.pac4j.version>
+        <jax-rs-pac4j.version>7.0.1</jax-rs-pac4j.version>
+        <jakartaee-pac4j.version>8.0.3</jakartaee-pac4j.version>
+        <pac4j-jakartaee.version>6.5.8</pac4j-jakartaee.version>
         <guava.version>33.4.6-jre</guava.version>
-        <jackson.version>2.10.5</jackson.version>
-        <jackson.databind.version>2.10.5.1</jackson.databind.version>
-        <jackson.dataformat.yaml.version>2.11.2</jackson.dataformat.yaml.version>
-        <jakarta.xml.bind.version>2.3.2</jakarta.xml.bind.version>
-        <javax.jax-rs.version>2.1.1</javax.jax-rs.version>
-        <javax.activation.version>1.1.1</javax.activation.version>
-        <javax.servlet.api.version>3.1.0</javax.servlet.api.version>
-        <jaxb.version>2.3.0</jaxb.version>
-        <jaxb.runtime.version>2.3.2</jaxb.runtime.version>
-        <jersey.client.version>2.23.2</jersey.client.version>
-        <jersey.test.framework.version>2.23.1</jersey.test.framework.version>
-        <jetty.version>9.4.44.v20210927</jetty.version>
+        <jackson.bom.version>2.21.4</jackson.bom.version>
+        <jakarta.xml.bind.version>4.0.2</jakarta.xml.bind.version>
+        <jakarta.jax-rs.version>3.1.0</jakarta.jax-rs.version>
+        <jakarta.annotation.version>2.1.1</jakarta.annotation.version>
+        <jakarta.servlet.api.version>6.0.0</jakarta.servlet.api.version>
+        <jaxb.runtime.version>4.0.5</jaxb.runtime.version>
+        <!-- Must track the Jersey that Dropwizard 5.0.2 ships (3.1.11); mixing lines gives AbstractMethodError. -->
+        <jersey.client.version>3.1.11</jersey.client.version>
+        <jersey.test.framework.version>3.1.11</jersey.test.framework.version>
+        <!-- Deliberately above Dropwizard 5.0.2's Jetty (12.1.9): CVE-2026-10050 and a second
+             advisory covering 12.1.0-12.1.10 put the floor at 12.1.11. -->
+        <jetty.version>12.1.13</jetty.version>
         <junit.version>4.13.1</junit.version>
-        <slf4j.version>1.7.36</slf4j.version>
+        <junit5.version>5.11.0</junit5.version>
+        <slf4j.version>2.0.17</slf4j.version>
         <mimeparse.version>0.1.3.3</mimeparse.version>
         <mockwebserver.version>4.9.0</mockwebserver.version>
         <mockito.version>5.21.0</mockito.version>
         <mockito-inline.version>5.2.0</mockito-inline.version>
         <mongo.driver.version>5.3.1</mongo.driver.version>
         <mongo.server.version>1.46.0</mongo.server.version>
-        <nimbus.jwt.version>8.0</nimbus.jwt.version>
+        <!-- Must track pac4j 6.5.8's pin: pac4j-oidc calls IOUtils.readInputStreamToString(InputStream),
+             which 8.x lacks, so an older version fails at runtime with NoSuchMethodError. -->
+        <nimbus.jwt.version>10.9.1</nimbus.jwt.version>
         <opentracing.jaxrs2.version>0.5.0</opentracing.jaxrs2.version>
         <opentracing.brave.version>0.37.2</opentracing.brave.version>
         <opentracing.api.version>0.32.0</opentracing.api.version>
-        <pac4j.version>4.5.8</pac4j.version>
+        <pac4j.version>6.5.8</pac4j.version>
         <prometheus.version>0.8.1</prometheus.version>
-        <snakeyaml.version>1.33</snakeyaml.version>
-        <spring.test.version>4.3.24.RELEASE</spring.test.version>
+        <snakeyaml.version>2.5</snakeyaml.version>
+        <spring.test.version>6.2.19</spring.test.version>
         <spring.boot.autoconfigure.version>2.3.3.RELEASE</spring.boot.autoconfigure.version>
-        <json-smart.version>2.4.2</json-smart.version>
+        <json-smart.version>2.6.0</json-smart.version>
         <hazelcast.version>5.3.1</hazelcast.version>
 
         <!-- Plugins -->
@@ -90,7 +98,7 @@
         <maven.compiler.plugin.version>3.8.0</maven.compiler.plugin.version>
         <maven.source.plugin.version>3.2.0</maven.source.plugin.version>
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
-        <maven.dependency.plugin.version>2.10</maven.dependency.plugin.version>
+        <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <maven.shade.plugin.version>3.2.1</maven.shade.plugin.version>
         <maven.plugin.plugin.version>3.6.0</maven.plugin.plugin.version>
         <maven.jar.plugin.version>3.1.2</maven.jar.plugin.version>
@@ -131,7 +139,7 @@
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${maven.javadoc.plugin.version}</version>
                     <configuration>
-                        <source>8</source>
+                        <source>${maven.compiler.release}</source>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -139,8 +147,6 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>${maven.compiler.plugin.version}</version>
                     <configuration>
-                        <source>${maven.compiler.source}</source>
-                        <target>${maven.compiler.target}</target>
                         <release>${maven.compiler.release}</release>
                     </configuration>
                 </plugin>
@@ -357,6 +363,13 @@
             </dependency>
             <dependency>
                 <groupId>org.finos.legend.shared</groupId>
+                <artifactId>legend-shared-pac4j</artifactId>
+                <version>${project.version}</version>
+                <type>test-jar</type>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.finos.legend.shared</groupId>
                 <artifactId>legend-shared-pac4j-kerberos</artifactId>
                 <version>${project.version}</version>
             </dependency>
@@ -399,6 +412,12 @@
             <dependency>
                 <groupId>org.springframework</groupId>
                 <artifactId>spring-test</artifactId>
+                <version>${spring.test.version}</version>
+            </dependency>
+            <dependency>
+                <!-- spring-test 6's MockHttpServletResponse needs org.springframework.http.MediaType from spring-web. -->
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-web</artifactId>
                 <version>${spring.test.version}</version>
             </dependency>
             <dependency>
@@ -459,28 +478,51 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.pac4j</groupId>
+                <artifactId>jersey3-pac4j</artifactId>
+                <version>${jax-rs-pac4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.pac4j</groupId>
+                        <artifactId>pac4j-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <!-- Provides org.pac4j.jee.context.JEEContext / JEESessionStore. -->
+                <groupId>org.pac4j</groupId>
+                <artifactId>pac4j-jakartaee</artifactId>
+                <version>${pac4j-jakartaee.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.pac4j</groupId>
+                        <artifactId>pac4j-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.pac4j</groupId>
+                <artifactId>jakartaee-pac4j</artifactId>
+                <version>${jakartaee-pac4j.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.pac4j</groupId>
+                        <artifactId>pac4j-core</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <!-- Pac4j -->
 
             <!-- Jackson -->
             <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-annotations</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-databind</artifactId>
-                <version>${jackson.databind.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.dataformat</groupId>
-                <artifactId>jackson-dataformat-yaml</artifactId>
-                <version>${jackson.dataformat.yaml.version}</version>
+                <!-- A BOM rather than per-artifact pins: from 2.20 jackson-annotations is versioned
+                     separately (2.21, not 2.21.4). -->
+                <groupId>com.fasterxml.jackson</groupId>
+                <artifactId>jackson-bom</artifactId>
+                <version>${jackson.bom.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <!-- Jackson -->
 
@@ -572,29 +614,18 @@
 
             <!-- JUnit -->
             <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit5.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
             </dependency>
             <!-- JUnit -->
-
-            <!-- JAXB - needed in java 11 -->
-            <dependency>
-                <groupId>javax.xml.bind</groupId>
-                <artifactId>jaxb-api</artifactId>
-                <version>${jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-core</artifactId>
-                <version>${jaxb.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.sun.xml.bind</groupId>
-                <artifactId>jaxb-impl</artifactId>
-                <version>${jaxb.version}</version>
-            </dependency>
-            <!-- JAXB -->
 
             <!-- JAXB Runtime, com.sun.xml.bind module -->
             <dependency>
@@ -603,24 +634,24 @@
                 <version>${jaxb.runtime.version}</version>
             </dependency>
 
-            <!-- Javax -->
+            <!-- Jakarta -->
             <dependency>
-                <groupId>javax.servlet</groupId>
-                <artifactId>javax.servlet-api</artifactId>
-                <version>${javax.servlet.api.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>${javax.activation.version}</version>
+                <groupId>jakarta.servlet</groupId>
+                <artifactId>jakarta.servlet-api</artifactId>
+                <version>${jakarta.servlet.api.version}</version>
             </dependency>
             <dependency>
                 <!-- JAX RS -->
-                <groupId>javax.ws.rs</groupId>
-                <artifactId>javax.ws.rs-api</artifactId>
-                <version>${javax.jax-rs.version}</version>
+                <groupId>jakarta.ws.rs</groupId>
+                <artifactId>jakarta.ws.rs-api</artifactId>
+                <version>${jakarta.jax-rs.version}</version>
             </dependency>
-            <!-- Javax -->
+            <dependency>
+                <groupId>jakarta.annotation</groupId>
+                <artifactId>jakarta.annotation-api</artifactId>
+                <version>${jakarta.annotation.version}</version>
+            </dependency>
+            <!-- Jakarta -->
 
             <!-- API, java.xml.bind module -->
             <dependency>
@@ -705,11 +736,6 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-servlets</artifactId>
-                <version>${jetty.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-util</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
@@ -725,17 +751,23 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-webapp</artifactId>
+                <artifactId>jetty-session</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <!-- ee10, the Jetty EE tier Dropwizard 5.0.2 is built on. -->
+            <dependency>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-servlet</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-servlet</artifactId>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-servlets</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-continuation</artifactId>
+                <groupId>org.eclipse.jetty.ee10</groupId>
+                <artifactId>jetty-ee10-webapp</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
 

@@ -1,6 +1,7 @@
 package org.finos.legend.server.pac4j;
 
 import org.pac4j.core.context.WebContext;
+import org.pac4j.core.context.session.SessionStore;
 import org.pac4j.core.engine.savedrequest.DefaultSavedRequestHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +16,7 @@ public class LegendRequestHandler extends DefaultSavedRequestHandler
     public static final String REDIRECT_PROTO_ATTRIBUTE = "DEFAULT_PROTO_ATTRIBUTE";
 
     @Override
-    protected String getRequestedUrl(WebContext context)
+    protected String getRequestedUrl(WebContext context, SessionStore sessionStore)
     {
         Optional<String> protocol = context.getRequestAttribute(REDIRECT_PROTO_ATTRIBUTE);
         if (protocol.isPresent())

@@ -15,9 +15,9 @@ import io.opentracing.Tracer;
 import io.opentracing.contrib.jaxrs2.internal.CastUtils;
 import io.opentracing.contrib.jaxrs2.internal.SpanWrapper;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.ext.InterceptorContext;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.ext.InterceptorContext;
 import java.util.List;
 
 import static io.opentracing.contrib.jaxrs2.internal.SpanWrapper.PROPERTY_NAME;

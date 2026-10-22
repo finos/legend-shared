@@ -15,16 +15,16 @@
 package org.finos.legend.server.shared.staticserver;
 
 import com.google.common.base.Strings;
-import io.dropwizard.Application;
+import io.dropwizard.core.Application;
 import io.dropwizard.configuration.EnvironmentVariableSubstitutor;
 import io.dropwizard.configuration.SubstitutingSourceProvider;
-import io.dropwizard.setup.Bootstrap;
-import io.dropwizard.setup.Environment;
+import io.dropwizard.core.setup.Bootstrap;
+import io.dropwizard.core.setup.Environment;
 import org.eclipse.jetty.http.HttpCookie;
-import org.eclipse.jetty.server.handler.ContextHandler;
-import org.eclipse.jetty.server.session.SessionHandler;
+import org.eclipse.jetty.ee10.servlet.SessionHandler;
 
-import javax.servlet.SessionCookieConfig;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.SessionCookieConfig;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -123,14 +123,15 @@ public class Server extends Application<org.finos.legend.server.shared.staticser
         makeSessionCookieSecure(environment.getApplicationContext().getServletContext());
     }
 
-    private void makeSessionCookieSecure(ContextHandler.Context servletContext)
+    private void makeSessionCookieSecure(ServletContext servletContext)
     {
         SessionCookieConfig sessionCookieConfig = servletContext.getSessionCookieConfig();
         if (sessionCookieConfig != null)
         {
             sessionCookieConfig.setSecure(true);
             sessionCookieConfig.setHttpOnly(true);
+            // HttpCookie.SAME_SITE_ATTRIBUTE is the cookie attribute name "SameSite", not a context-attribute key.
+            sessionCookieConfig.setAttribute(HttpCookie.SAME_SITE_ATTRIBUTE, "Strict");
         }
-        servletContext.setAttribute(HttpCookie.SAME_SITE_DEFAULT_ATTRIBUTE, "STRICT");
     }
 }

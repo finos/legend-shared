@@ -27,14 +27,14 @@ import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Optional;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpServletResponseWrapper;
-import javax.ws.rs.core.CacheControl;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponseWrapper;
+import jakarta.ws.rs.core.CacheControl;
+import jakarta.ws.rs.core.HttpHeaders;
+import jakarta.ws.rs.core.MediaType;
 
 public class LocalAssetServlet extends AssetServlet
 {
@@ -97,7 +97,7 @@ public class LocalAssetServlet extends AssetServlet
     final String absoluteRequestedResourcePath = getPath(req);
     try
     {
-      URL requestedResourceUrl = getResourceUrl(absoluteRequestedResourcePath);
+      URL requestedResourceUrl = getResourceURL(absoluteRequestedResourcePath);
       try
       {
         if (ResourceURL.isDirectory(requestedResourceUrl) && !absoluteRequestedResourcePath
@@ -144,7 +144,7 @@ public class LocalAssetServlet extends AssetServlet
   }
 
   @Override
-  protected URL getResourceUrl(String requestedResourcePath)
+  protected URL getResourceURL(String requestedResourcePath)
   {
     final String absoluteRequestedResourcePath =
         requestedResourcePath.startsWith("/") ? requestedResourcePath : "/" + requestedResourcePath;
@@ -162,10 +162,10 @@ public class LocalAssetServlet extends AssetServlet
       }
     } else if (Strings.isNullOrEmpty(this.resourcePath))
     {
-      return super.getResourceUrl(absoluteRequestedResourcePath.substring(1));
+      return super.getResourceURL(absoluteRequestedResourcePath.substring(1));
     } else
     {
-      return super.getResourceUrl(this.resourcePath + absoluteRequestedResourcePath);
+      return super.getResourceURL(this.resourcePath + absoluteRequestedResourcePath);
     }
   }
 
