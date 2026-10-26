@@ -15,6 +15,10 @@
 package org.finos.legend.server.pac4j;
 
 import org.pac4j.core.client.DirectClient;
+import org.pac4j.core.credentials.authenticator.Authenticator;
+import org.pac4j.core.profile.creator.AuthenticatorProfileCreator;
+
+import java.util.Optional;
 
 @SerializableProfile
 public class TestClient extends DirectClient
@@ -26,6 +30,18 @@ public class TestClient extends DirectClient
     public TestClient(String name)
     {
         this.setName(name);
+    }
+
+    /**
+     * Never finds credentials, so pac4j answers 401 rather than failing to initialise the client.
+     */
+    public static TestClient withoutCredentials(String name)
+    {
+        TestClient client = new TestClient(name);
+        client.setCredentialsExtractor(ctx -> Optional.empty());
+        client.setAuthenticator(Authenticator.ALWAYS_VALIDATE);
+        client.setProfileCreator(AuthenticatorProfileCreator.INSTANCE);
+        return client;
     }
 
     @Override

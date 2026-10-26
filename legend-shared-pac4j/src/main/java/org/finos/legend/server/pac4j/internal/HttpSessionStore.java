@@ -30,6 +30,12 @@ public class HttpSessionStore implements SessionStore
     this.underlyingStores = underlyingStores;
   }
 
+  protected boolean renewExistingHttpSession(WebContext context)
+  {
+    SessionStore sessionStore = getUnderlyingSessionStore(context);
+    return !sessionStore.getSessionId(context, false).isPresent() || sessionStore.renewSession(context);
+  }
+
   private SessionStore getUnderlyingSessionStore(WebContext context)
   {
     SessionStore sessionStore = this.underlyingStores.get(context.getClass());

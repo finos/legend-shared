@@ -1,6 +1,7 @@
 {
   "mongoUri": "defaultMongoUri",
   "mongoDb": "defaultMongoDb",
+  "sessionTokenSameSite": "None",
   "mongoSession": {
     "enabled": true,
     "collection": "defaultMongoSession"

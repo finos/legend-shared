@@ -39,9 +39,17 @@ public class LegendCallbackLogic extends DefaultCallbackLogic
         return this.multiProfile;
     }
 
+    /**
+     * Renews the session before saving the profile, not after as pac4j does: the SSO session stores move the
+     * session to a new token on renewal, and the profile must not be written under the pre-sign-in token.
+     */
     @Override
     protected void saveUserProfile(CallContext ctx, Config config, UserProfile profile, boolean saveInSession, boolean clientMultiProfile, boolean renewSession)
     {
-        super.saveUserProfile(ctx, config, profile, saveInSession, this.multiProfile, renewSession);
+        if (profile != null && renewSession)
+        {
+            renewSession(ctx, config);
+        }
+        super.saveUserProfile(ctx, config, profile, saveInSession, this.multiProfile, false);
     }
 }

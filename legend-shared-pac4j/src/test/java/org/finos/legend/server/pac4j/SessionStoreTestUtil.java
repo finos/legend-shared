@@ -15,17 +15,28 @@
 package org.finos.legend.server.pac4j;
 
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
+import org.finos.legend.server.pac4j.sessionutil.SessionToken;
+import org.finos.legend.server.pac4j.sessionutil.UuidUtils;
+import org.pac4j.core.profile.CommonProfile;
+import org.pac4j.core.profile.ProfileManager;
+import org.pac4j.core.profile.UserProfile;
+import org.pac4j.core.util.Pac4jConstants;
 import org.pac4j.jee.context.JEEContext;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
 import jakarta.servlet.http.Cookie;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class SessionStoreTestUtil {
@@ -136,5 +147,276 @@ public class SessionStoreTestUtil {
         assertEquals("testValue", store.get(requestContext, "testKey").get());
         Cookie[] secondaryResponseCookies = responseCookies(newResponse);
         assertNotEquals(secondaryResponseCookies, initialResponseCookies);
+    }
+
+    public static void testMalformedTokenCookieIsNoSession(HttpSessionStore store)
+    {
+        for (String value : new String[]{"x", "a-b", "zz-zz/1-2", "1-2/", "1-2/3"})
+        {
+            assertNull(value, SessionToken.fromContext("LegendSSOTest", malformedCookieRequest(value, new MockHttpServletResponse())));
+            assertFalse(value, store.get(malformedCookieRequest(value, new MockHttpServletResponse()), Pac4jConstants.USER_PROFILES).isPresent());
+
+            MockHttpServletResponse logoutResponse = new MockHttpServletResponse();
+            store.destroySession(malformedCookieRequest(value, logoutResponse));
+            assertEquals(value, 0, logoutResponse.getHeaders("Set-Cookie").size());
+
+            MockHttpServletResponse loginResponse = new MockHttpServletResponse();
+            store.set(malformedCookieRequest(value, loginResponse), "testKey", "testValue");
+            Cookie[] cookies = responseCookies(loginResponse);
+            assertEquals(value, 1, cookies.length);
+            assertEquals(value, "LegendSSOTest", cookies[0].getName());
+            assertNotEquals(value, value, cookies[0].getValue());
+        }
+    }
+
+    private static JEEContext malformedCookieRequest(String value, MockHttpServletResponse response)
+    {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setCookies(new Cookie("LegendSSOTest", value));
+        return new JEEContext(request, response);
+    }
+
+    public static void testOwnSessionIsFoundBehindOtherTokens(HttpSessionStore store, Predicate<String> storeHasSession)
+    {
+        String own = login(store, "testValue");
+        String foreign = foreignTokenValue();
+        String otherForeign = foreignTokenValue();
+        List<List<String>> arrangements = Arrays.asList(
+                Arrays.asList("x", own),
+                Arrays.asList(own, "x"),
+                Arrays.asList(foreign, own),
+                Arrays.asList(own, foreign),
+                Arrays.asList(foreign, "x", otherForeign, own));
+        for (List<String> cookies : arrangements)
+        {
+            MockHttpServletResponse response = new MockHttpServletResponse();
+            assertEquals(cookies.toString(), "testValue", store.get(requestWith(response, cookies), "testKey").orElse(null));
+            assertEquals(cookies + ": reading must not expire or replace a cookie", 0, response.getHeaders("Set-Cookie").size());
+        }
+        assertFalse("a foreign token must not be adopted", storeHasSession.test(foreign));
+        assertFalse("a foreign token must not be adopted", storeHasSession.test(otherForeign));
+    }
+
+    public static void testNoneOfSeveralTokensIsNoSession(HttpSessionStore store, Predicate<String> storeHasSession)
+    {
+        String foreign = foreignTokenValue();
+        String otherForeign = foreignTokenValue();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        JEEContext context = requestWith(response, Arrays.asList(foreign, otherForeign));
+
+        assertFalse(store.get(context, "testKey").isPresent());
+        assertEquals("an expiry could only hit our own cookie, not the foreign ones", 0, response.getHeaders("Set-Cookie").size());
+        assertFalse(storeHasSession.test(foreign));
+        assertFalse(storeHasSession.test(otherForeign));
+
+        store.set(context, "testKey", "testValue");
+        Cookie[] cookies = responseCookies(response);
+        assertEquals(1, cookies.length);
+        assertNotEquals(foreign, cookies[0].getValue());
+        assertNotEquals(otherForeign, cookies[0].getValue());
+        assertTrue(storeHasSession.test(cookies[0].getValue()));
+        assertFalse(storeHasSession.test(foreign));
+        assertFalse(storeHasSession.test(otherForeign));
+        assertEquals("testValue", store.get(requestWith(new MockHttpServletResponse(), Arrays.asList(cookies[0].getValue())), "testKey").orElse(null));
+    }
+
+    public static void testWritesGoToTheOwnSessionBehindAForeignToken(HttpSessionStore store, Predicate<String> storeHasSession)
+    {
+        String own = login(store, "testValue");
+        String foreign = foreignTokenValue();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        store.set(requestWith(response, Arrays.asList(foreign, own)), "testKey", "newValue");
+
+        assertEquals("the own session exists, so no new cookie", 0, response.getHeaders("Set-Cookie").size());
+        assertEquals("newValue", store.get(requestWith(new MockHttpServletResponse(), Arrays.asList(own)), "testKey").orElse(null));
+        assertFalse(storeHasSession.test(foreign));
+    }
+
+    public static void testLogoutDestroysTheOwnSessionBehindAForeignToken(HttpSessionStore store, Predicate<String> storeHasSession)
+    {
+        String own = login(store, "testValue");
+        String foreign = foreignTokenValue();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        store.destroySession(requestWith(response, Arrays.asList(foreign, own)));
+
+        assertFalse(storeHasSession.test(own));
+        Cookie[] cookies = responseCookies(response);
+        assertEquals(1, cookies.length);
+        assertEquals("the own cookie is the one expired", own, cookies[0].getValue());
+        assertEquals(0, cookies[0].getMaxAge());
+    }
+
+    public static void testTheFirstLiveSessionWins(HttpSessionStore store)
+    {
+        String first = login(store, "first");
+        String second = login(store, "second");
+
+        assertEquals("first", store.get(requestWith(new MockHttpServletResponse(), Arrays.asList(first, second)), "testKey").orElse(null));
+        assertEquals("second", store.get(requestWith(new MockHttpServletResponse(), Arrays.asList(second, first)), "testKey").orElse(null));
+    }
+
+    public static void testSignInRotatesAPreSignInToken(HttpSessionStore store)
+    {
+        MockHttpServletResponse anonymousResponse = new MockHttpServletResponse();
+        store.set(new JEEContext(new MockHttpServletRequest(), anonymousResponse), Pac4jConstants.REQUESTED_URL, "/requested");
+        String preSignIn = responseCookies(anonymousResponse)[0].getValue();
+
+        MockHttpServletResponse signInResponse = new MockHttpServletResponse();
+        signIn(requestWith(signInResponse, Arrays.asList(preSignIn)), store, false, profile("A"));
+
+        Cookie[] cookies = responseCookies(signInResponse);
+        assertEquals(1, cookies.length);
+        String signedIn = cookies[0].getValue();
+        assertNotEquals("sign-in must issue a new token", preSignIn, signedIn);
+        assertTrue(profiles(store, preSignIn).isEmpty());
+        assertNull("the pre-sign-in token carries no data",
+                store.get(requestWith(new MockHttpServletResponse(), Arrays.asList(preSignIn)), Pac4jConstants.REQUESTED_URL).orElse(null));
+        assertEquals("alice", profiles(store, signedIn).get(0).getId());
+        assertEquals("the session's data moves to the new token", "/requested",
+                store.get(requestWith(new MockHttpServletResponse(), Arrays.asList(signedIn)), Pac4jConstants.REQUESTED_URL).orElse(null));
+    }
+
+    public static void testSignInRotatesAChosenToken(HttpSessionStore store)
+    {
+        String chosen = foreignTokenValue();
+        JEEContext victim = requestWith(new MockHttpServletResponse(), Arrays.asList(chosen));
+
+        store.get(victim, Pac4jConstants.USER_PROFILES);
+        signIn(victim, store, false, profile("A"));
+
+        assertTrue(profiles(store, chosen).isEmpty());
+    }
+
+    public static void testATokenMintedBySigningInIsNotRotated(HttpSessionStore store)
+    {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        signIn(new JEEContext(new MockHttpServletRequest(), response), store, true, profile("A"), profile("B"));
+
+        assertEquals(1, responseCookies(response).length);
+        assertEquals(2, profiles(store, responseCookies(response)[0].getValue()).size());
+    }
+
+    public static void testEverySignInRotates(HttpSessionStore store)
+    {
+        MockHttpServletResponse first = new MockHttpServletResponse();
+        signIn(new JEEContext(new MockHttpServletRequest(), first), store, true, profile("A"));
+        String token = responseCookies(first)[0].getValue();
+
+        MockHttpServletResponse second = new MockHttpServletResponse();
+        signIn(requestWith(second, Arrays.asList(token)), store, true, profile("B"));
+
+        Cookie[] cookies = responseCookies(second);
+        assertEquals(1, cookies.length);
+        assertNotEquals(token, cookies[0].getValue());
+        assertEquals(2, profiles(store, cookies[0].getValue()).size());
+        assertTrue(profiles(store, token).isEmpty());
+    }
+
+    public static void testAProfileWriteOutsideASignInKeepsTheToken(HttpSessionStore store)
+    {
+        MockHttpServletResponse anonymousResponse = new MockHttpServletResponse();
+        store.set(new JEEContext(new MockHttpServletRequest(), anonymousResponse), Pac4jConstants.REQUESTED_URL, "/requested");
+        String token = responseCookies(anonymousResponse)[0].getValue();
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        new ProfileManager(requestWith(response, Arrays.asList(token)), store).save(true, profile("A"), false);
+
+        assertEquals(0, response.getHeaders("Set-Cookie").size());
+        assertEquals("alice", profiles(store, token).get(0).getId());
+    }
+
+    public static void signIn(JEEContext context, HttpSessionStore store, boolean multiProfile, UserProfile... profiles)
+    {
+        ProfileManager manager = new StorageDecisionProfileManager(context, store, new LegendUserProfileStorageDecision());
+        for (UserProfile profile : profiles)
+        {
+            manager.save(true, profile, multiProfile);
+        }
+    }
+
+    public static void testNothingIsWrittenAfterLogout(HttpSessionStore store, Predicate<String> storeHasSession)
+    {
+        String token = login(store, "before");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        JEEContext ctx = requestWith(response, Arrays.asList(token));
+
+        store.destroySession(ctx);
+        store.set(ctx, Pac4jConstants.REQUESTED_URL, "after");
+        store.getSessionId(ctx, true);
+
+        assertFalse("the destroyed session is not recreated", storeHasSession.test(token));
+        Cookie[] cookies = responseCookies(response);
+        assertEquals("only the expired cookie", 1, cookies.length);
+        assertEquals(0, cookies[0].getMaxAge());
+    }
+
+    public static void testRemoveProfilesClearsASessionReachedByItsCookieAlone(HttpSessionStore store)
+    {
+        MockHttpServletResponse signIn = new MockHttpServletResponse();
+        new ProfileManager(new JEEContext(new MockHttpServletRequest(), signIn), store).save(true, profile("A"), false);
+        String token = responseCookies(signIn)[0].getValue();
+
+        JEEContext otherNode = requestWith(new MockHttpServletResponse(), Arrays.asList(token));
+        assertTrue(store.getSessionId(otherNode, false).isPresent());
+        new ProfileManager(otherNode, store).removeProfiles();
+
+        assertTrue(profiles(store, token).isEmpty());
+    }
+
+    public static void testTheSessionIdOfASessionReachedByItsCookieAloneCreatesNothing(HttpSessionStore store)
+    {
+        String token = login(store, "value");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        JEEContext otherNode = requestWith(response, Arrays.asList(token));
+
+        assertTrue(store.getSessionId(otherNode, false).isPresent());
+        assertNull(otherNode.getNativeRequest().getSession(false));
+        assertEquals(0, response.getHeaders("Set-Cookie").size());
+    }
+
+    public static void testNoSessionIdWithoutAStoredSession(HttpSessionStore store)
+    {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        JEEContext ctx = requestWith(response, Arrays.asList(foreignTokenValue()));
+
+        assertFalse(store.getSessionId(ctx, false).isPresent());
+        assertEquals(0, response.getHeaders("Set-Cookie").size());
+        assertNull(ctx.getNativeRequest().getSession(false));
+    }
+
+    private static CommonProfile profile(String clientName)
+    {
+        CommonProfile profile = new CommonProfile();
+        profile.setId("alice");
+        profile.setClientName(clientName);
+        return profile;
+    }
+
+    public static List<UserProfile> profiles(HttpSessionStore store, String token)
+    {
+        return new ProfileManager(requestWith(new MockHttpServletResponse(), Arrays.asList(token)), store).getProfiles();
+    }
+
+    /** Returns the SSO cookie's value. */
+    public static String login(HttpSessionStore store, String value)
+    {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        store.set(new JEEContext(new MockHttpServletRequest(), response), "testKey", value);
+        return responseCookies(response)[0].getValue();
+    }
+
+    public static String foreignTokenValue()
+    {
+        return UuidUtils.toHexString(UUID.randomUUID()) + "/" + UuidUtils.toHexString(UUID.randomUUID());
+    }
+
+    public static JEEContext requestWith(MockHttpServletResponse response, List<String> ssoCookieValues)
+    {
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/thing");
+        request.setCookies(ssoCookieValues.stream().map(v -> new Cookie("LegendSSOTest", v)).toArray(Cookie[]::new));
+        request.addHeader("User-Agent", "curl/8.0");
+        return new JEEContext(request, response);
     }
 }

@@ -73,6 +73,14 @@ public final class LegendPac4jConfiguration
         this.sessionTokenSameSite = sessionTokenSameSite;
     }
 
+    private void defaultSessionTokenSameSite(String sessionTokenSameSite)
+    {
+        if (Strings.isNullOrEmpty(this.sessionTokenSameSite))
+        {
+            this.sessionTokenSameSite = sessionTokenSameSite;
+        }
+    }
+
     public void setDefaults(String defaults)
     {
         this.defaults = defaults;
@@ -311,6 +319,7 @@ public final class LegendPac4jConfiguration
             this.defaultMongoDb(other.getMongoDb());
             this.defaultMongoSession(other.getMongoSession());
             this.defaultMongoUri(other.getMongoUri());
+            this.defaultSessionTokenSameSite(other.getSessionTokenSameSite());
         }
     }
 

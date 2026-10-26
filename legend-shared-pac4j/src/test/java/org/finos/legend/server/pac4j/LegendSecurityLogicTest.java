@@ -29,17 +29,19 @@ import org.pac4j.core.profile.AnonymousProfile;
 import org.pac4j.core.profile.ProfileManager;
 import org.pac4j.core.profile.UserProfile;
 import org.pac4j.core.profile.creator.ProfileCreator;
+import org.pac4j.core.util.Pac4jConstants;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 
 import static org.finos.legend.server.pac4j.LegendRequestHandler.REDIRECT_PROTO_ATTRIBUTE;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
@@ -54,6 +56,10 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+/**
+ * Clients expected to save are given {@code setSaveProfileInSession(true)}, as {@link LegendPac4jBundle} does:
+ * the browser branch needs both the storage decision and the client's flag.
+ */
 public class LegendSecurityLogicTest
 {
     @Mock
@@ -109,6 +115,7 @@ public class LegendSecurityLogicTest
         ClientFinder clientFinder = mock(ClientFinder.class);
         AnonymousClient anonymousClient = new AnonymousClient();
         anonymousClient.setProfileCreator(profileCreator);
+        anonymousClient.setSaveProfileInSession(true);
         when(clientFinder.find(any(), any(), anyString())).thenReturn(Collections.singletonList(anonymousClient));
 
         legendSecurityLogic.setClientFinder(clientFinder);
@@ -119,7 +126,7 @@ public class LegendSecurityLogicTest
 
         when(legendSecurityLogic.getProfileStorageDecision()).thenReturn(profileStorageDecision);
         when(profileStorageDecision.mustSaveProfileInSession(any(),anyList(),any(),any())).thenReturn(true);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),eq("none"),anyString(),any(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), eq("none"), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(true);
         legendSecurityLogic.perform(
@@ -161,7 +168,7 @@ public class LegendSecurityLogicTest
         when(profileStorageDecision.mustLoadProfilesFromSession(any(), anyList())).thenReturn(false);
         when(profileStorageDecision.mustSaveProfileInSession(any(), anyList(), any(), any())).thenReturn(true);
         doReturn(mock(Object.class)).when(legendSecurityLogic)
-                .callParentPerform(any(), any(), any(), any(), eq("none"), anyString(), any(), any(), any());
+                .callParentPerform(any(), any(), any(), eq("none"), anyString(), any());
 
         boolean loadProfilesBefore = legendSecurityLogic.isLoadProfilesFromSession();
         legendSecurityLogic.setMultiProfile(true);
@@ -197,6 +204,7 @@ public class LegendSecurityLogicTest
         AnonymousClient anonymousClient = new AnonymousClient();
         anonymousClient.setName("AnonymousClient");
         anonymousClient.setProfileCreator(profileCreator);
+        anonymousClient.setSaveProfileInSession(true);
         when(clientFinder.find(any(), any(), anyString())).thenReturn(Collections.singletonList(anonymousClient));
 
         legendSecurityLogic.setClientFinder(clientFinder);
@@ -207,7 +215,7 @@ public class LegendSecurityLogicTest
         when(profileStorageDecision.mustLoadProfilesFromSession(any(), anyList())).thenReturn(false);
         when(profileStorageDecision.mustSaveProfileInSession(any(), anyList(), any(), any())).thenReturn(true);
         doReturn(mock(Object.class)).when(legendSecurityLogic)
-                .callParentPerform(any(), any(), any(), any(), eq("none"), anyString(), any(), any(), any());
+                .callParentPerform(any(), any(), any(), eq("none"), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(true);
         legendSecurityLogic.perform(config, adapter, "AnonymousClient", "", "matchers", null);
@@ -247,7 +255,7 @@ public class LegendSecurityLogicTest
         when(legendSecurityLogic.getProfileStorageDecision()).thenReturn(profileStorageDecision);
         when(profileStorageDecision.mustLoadProfilesFromSession(any(), anyList())).thenReturn(true);
         doReturn(mock(Object.class)).when(legendSecurityLogic)
-                .callParentPerform(any(), any(), any(), any(), eq("none"), anyString(), any(), any(), any());
+                .callParentPerform(any(), any(), any(), eq("none"), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(true);
         legendSecurityLogic.perform(config, adapter, "AnonymousClient", "", "matchers", null);
@@ -287,59 +295,14 @@ public class LegendSecurityLogicTest
         when(profileStorageDecision.mustSaveProfileInSession(any(), anyList(), any(), any())).thenReturn(true);
 
         doReturn(mock(Object.class)).when(legendSecurityLogic)
-                .callParentPerform(any(), any(), any(), any(), eq("none"), anyString(), any(), any(), any());
+                .callParentPerform(any(), any(), any(), eq("none"), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(true);
         legendSecurityLogic.perform(config, adapter, "AnonymousClient", "", "matchers", null);
 
         verify(clientFinder, times(1)).find(any(), any(), anyString());
         verify(profileManager, times(1)).getProfiles();
-
-        ArgumentCaptor<List<Client>> clientsCaptor = ArgumentCaptor.forClass(List.class);
-        ArgumentCaptor<List<UserProfile>> profilesCaptor = ArgumentCaptor.forClass(List.class);
-        verify(legendSecurityLogic).callParentPerform(any(), any(), any(), any(), eq("none"), anyString(), any(),
-                clientsCaptor.capture(), profilesCaptor.capture());
-        assertEquals(Collections.singletonList(anonymousClient), clientsCaptor.getValue());
-        assertNotNull("the profiles already read must be handed down, not re-read",
-                profilesCaptor.getValue());
-    }
-
-    /**
-     * The one {@code ClientFinder.find} still expected is {@code DefaultSecurityLogic.perform}'s own,
-     * not extra work by {@code callParentPerform}.
-     */
-    @Test
-    public void testCallParentPerform_WithKnownClientsAndProfiles_AddsNoExtraWork() throws Exception
-    {
-        UserProfile staleProfile = mock(UserProfile.class);
-        when(staleProfile.getClientName()).thenReturn("clientA");
-
-        ProfileManager profileManager = mock(ProfileManager.class);
-        legendSecurityLogic.setProfileManagerFactory((c, ss) -> profileManager);
-
-        ClientFinder clientFinder = mock(ClientFinder.class);
-        IndirectClient clientB = mock(IndirectClient.class);
-        when(clientB.getName()).thenReturn("clientB");
-        when(clientFinder.find(any(), any(), anyString()))
-                .thenReturn(Collections.singletonList(clientB));
-        legendSecurityLogic.setClientFinder(clientFinder);
-
-        legendSecurityLogic.setMatchingChecker(matchingChecker);
-        when(matchingChecker.matches(any(), any(), any(), anyList())).thenReturn(false);
-
-        Clients clients = mock(Clients.class);
-        when(config.getClients()).thenReturn(clients);
-        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
-
-        legendSecurityLogic.setMultiProfile(true);
-        legendSecurityLogic.callParentPerform(
-                legendSecurityLogic.buildContext(config, null), config, adapter,
-                "clientB", "", "matchers", null,
-                Collections.singletonList((Client) clientB), Collections.singletonList(staleProfile));
-
-        verify(profileManager, times(1)).removeProfiles();
-        verify(profileManager, never()).getProfiles();
-        verify(clientFinder, times(1)).find(any(), any(), anyString());
+        verify(legendSecurityLogic).callParentPerform(any(), any(), any(), eq("none"), anyString(), any());
     }
 
     @Test
@@ -401,6 +364,7 @@ public class LegendSecurityLogicTest
         ClientFinder clientFinder = mock(ClientFinder.class);
         AnonymousClient anonymousClient = new AnonymousClient();
         anonymousClient.setProfileCreator(profileCreator);
+        anonymousClient.setSaveProfileInSession(true);
         IndirectClient indirectClient = mock(IndirectClient.class);
         when(indirectClient.getCallbackUrl()).thenReturn("/callback");
         when(indirectClient.getUrlResolver()).thenReturn(new DefaultUrlResolver());
@@ -462,6 +426,7 @@ public class LegendSecurityLogicTest
         ClientFinder clientFinder = mock(ClientFinder.class);
         AnonymousClient anonymousClient = new AnonymousClient();
         anonymousClient.setProfileCreator(profileCreator);
+        anonymousClient.setSaveProfileInSession(true);
         when(clientFinder.find(any(), any(), anyString())).thenReturn(Collections.singletonList(anonymousClient));
 
         legendSecurityLogic.setClientFinder(clientFinder);
@@ -472,7 +437,7 @@ public class LegendSecurityLogicTest
 
         when(legendSecurityLogic.getProfileStorageDecision()).thenReturn(profileStorageDecision);
         when(profileStorageDecision.mustSaveProfileInSession(any(),anyList(),any(),any())).thenReturn(true);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),eq("none"),anyString(),any(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), eq("none"), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(true);
         legendSecurityLogic.perform(
@@ -513,8 +478,10 @@ public class LegendSecurityLogicTest
         AnonymousClient directClient1 = new AnonymousClient();
         directClient1.setName("directClient1");
         directClient1.setProfileCreator(profileCreator);
+        directClient1.setSaveProfileInSession(true);
         AnonymousClient directClient2 = new AnonymousClient();
         directClient2.setProfileCreator(profileCreator);
+        directClient2.setSaveProfileInSession(true);
         IndirectClient indirectClient = mock(IndirectClient.class);
         when(indirectClient.getName()).thenReturn("indirectClient");
         when(indirectClient.getCallbackUrl()).thenReturn("/callback");
@@ -545,7 +512,7 @@ public class LegendSecurityLogicTest
         Clients clients = mock(Clients.class);
         when(config.getClients()).thenReturn(clients);
         when(clients.getAjaxRequestResolver()).thenReturn(null);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),anyString(),any(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), any(), anyString(), any());
 
         //call for first two clients, second client is indirect client so redirect expected
         legendSecurityLogic.setMultiProfile(true);
@@ -601,7 +568,7 @@ public class LegendSecurityLogicTest
         when(profileStorageDecision.mustSaveProfileInSession(any(),anyList(),any(),any())).thenReturn(true);
 
         ArgumentCaptor<HttpAction> httpActionCaptor = ArgumentCaptor.forClass(HttpAction.class);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),anyString(),any(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), any(), anyString(), any());
         legendSecurityLogic.setMultiProfile(true);
         legendSecurityLogic.perform(
                 config,
@@ -636,6 +603,7 @@ public class LegendSecurityLogicTest
         anonymousClient.setProfileCreator(profileCreator);
         when(clientFinder.find(any(), any(), anyString())).thenReturn(Collections.singletonList(anonymousClient));
         when(config.getClients()).thenReturn(new Clients());
+        when(userProfile.getClientName()).thenReturn(anonymousClient.getName());
         ProfileManager profileManager = mock(ProfileManager.class);
         when(profileManager.getProfiles()).thenReturn(Collections.singletonList(userProfile));
 
@@ -644,6 +612,7 @@ public class LegendSecurityLogicTest
         legendSecurityLogic.setProfileManagerFactory((c, ss) -> profileManager);
 
         when(legendSecurityLogic.getProfileStorageDecision()).thenReturn(profileStorageDecision);
+        when(profileStorageDecision.mustLoadProfilesFromSession(any(), anyList())).thenReturn(true);
         when(profileStorageDecision.mustSaveProfileInSession(any(),anyList(),any(),any())).thenReturn(true);
 
         legendSecurityLogic.setMultiProfile(true);
@@ -654,7 +623,7 @@ public class LegendSecurityLogicTest
         );
 
         // Verify
-        verify(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),anyString(),anyString(),any(),any(),any());
+        verify(legendSecurityLogic).callParentPerform(any(), any(), any(), anyString(), anyString(), any());
         verify(profileManager,never()).save(false, userProfile,true);
         verify(adapter).adapt(eq(webContext), eq(sessionStore), any());
         verify(webContext, never()).setRequestAttribute(eq(REDIRECT_PROTO_ATTRIBUTE), any());
@@ -668,7 +637,7 @@ public class LegendSecurityLogicTest
         legendSecurityLogic.setProfileManagerFactory((c, ss) -> profileManager);
         SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
         when(adapter.adapt(any(), any(), (Collection<UserProfile>) any())).thenReturn(null);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),anyString(),anyString(),any(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), anyString(), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(false);
         legendSecurityLogic.perform(
@@ -691,7 +660,7 @@ public class LegendSecurityLogicTest
         legendSecurityLogic.setProfileManagerFactory((c, ss) -> profileManager);
         SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
         when(adapter.adapt(any(), any(), (Collection<UserProfile>) any())).thenReturn(null);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),anyString(),anyString(),any(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), anyString(), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(true);
         legendSecurityLogic.perform(
@@ -715,7 +684,7 @@ public class LegendSecurityLogicTest
         legendSecurityLogic.setProfileManagerFactory((c, ss) -> profileManager);
         SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
         when(adapter.adapt(any(), any(), (Collection<UserProfile>) any())).thenReturn(null);
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),anyString(),anyString(),any(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), anyString(), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(false);
         legendSecurityLogic.perform(
@@ -747,6 +716,7 @@ public class LegendSecurityLogicTest
         AnonymousClient anonymousClient = new AnonymousClient();
         anonymousClient.setName("AnonymousClient");
         anonymousClient.setProfileCreator(profileCreator);
+        anonymousClient.setSaveProfileInSession(true);
         when(clientFinder.find(any(), any(), anyString())).thenReturn(Collections.singletonList(anonymousClient));
 
         legendSecurityLogic.setClientFinder(clientFinder);
@@ -759,7 +729,7 @@ public class LegendSecurityLogicTest
         when(legendSecurityLogic.getProfileStorageDecision()).thenReturn(profileStorageDecision);
         when(profileStorageDecision.mustSaveProfileInSession(any(),anyList(),any(),any())).thenReturn(true);
 
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),any(),anyString(),any(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), any(), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(true);
         legendSecurityLogic.perform(
@@ -789,6 +759,7 @@ public class LegendSecurityLogicTest
         AnonymousClient anonymousClient = new AnonymousClient();
         anonymousClient.setName("AnonymousClient");
         anonymousClient.setProfileCreator(profileCreator);
+        anonymousClient.setSaveProfileInSession(true);
         when(clientFinder.find(any(), any(), anyString())).thenReturn(Collections.singletonList(anonymousClient));
 
         legendSecurityLogic.setClientFinder(clientFinder);
@@ -801,7 +772,7 @@ public class LegendSecurityLogicTest
         when(legendSecurityLogic.getProfileStorageDecision()).thenReturn(profileStorageDecision);
         when(profileStorageDecision.mustSaveProfileInSession(any(),anyList(),any(),any())).thenReturn(true);
 
-        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(),any(),any(),any(),eq("none"),anyString(),any(),any(),any());
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), eq("none"), anyString(), any());
 
         legendSecurityLogic.setMultiProfile(true);
         legendSecurityLogic.perform(
@@ -835,6 +806,7 @@ public class LegendSecurityLogicTest
         ClientFinder clientFinder = mock(ClientFinder.class);
         AnonymousClient directClient = new AnonymousClient();
         directClient.setProfileCreator(profileCreator);
+        directClient.setSaveProfileInSession(true);
         directClient.setName("AnnonymousClient");
         IndirectClient indirectClient = mock(IndirectClient.class);
         when(indirectClient.getName()).thenReturn("oidc");
@@ -878,139 +850,115 @@ public class LegendSecurityLogicTest
     }
 
     @Test
-    public void testCallParentPerform_StaleSessionProfile_ClearsSession() throws Exception
+    public void testLoadProfiles_StaleSessionProfile_ClearsSession() throws Exception
     {
         UserProfile staleProfile = mock(UserProfile.class);
         when(staleProfile.getClientName()).thenReturn("clientA");
-
         ProfileManager profileManager = mock(ProfileManager.class);
         when(profileManager.getProfiles()).thenReturn(Collections.singletonList(staleProfile));
-        legendSecurityLogic.setProfileManagerFactory((c, ss) -> profileManager);
 
-        ClientFinder clientFinder = mock(ClientFinder.class);
-        IndirectClient clientB = mock(IndirectClient.class);
-        when(clientB.getName()).thenReturn("clientB");
-        when(clientFinder.find(any(), any(), anyString()))
-                .thenReturn(Collections.singletonList(clientB));
-        legendSecurityLogic.setClientFinder(clientFinder);
+        List<UserProfile> loaded = loadProfiles(profileManager, true, "clientB");
 
-        // Make super.perform short-circuit to the grant-access path.
-        legendSecurityLogic.setMatchingChecker(matchingChecker);
-        when(matchingChecker.matches(any(), any(), any(), anyList())).thenReturn(false);
-
-        Clients clients = mock(Clients.class);
-        when(config.getClients()).thenReturn(clients);
-        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
-
-        legendSecurityLogic.setMultiProfile(true);
-        legendSecurityLogic.callParentPerform(
-                legendSecurityLogic.buildContext(config, null), config, adapter,
-                "clientB", "", "matchers", null, null, null);
-
-
-        verify(profileManager, times(1)).removeProfiles();
-        verify(clientFinder, times(2)).find(any(), any(), anyString());
+        assertTrue(loaded.isEmpty());
+        verifyCleared(profileManager, true);
     }
 
     @Test
-    public void testCallParentPerform_MatchingSessionProfile_KeepsSession() throws Exception
+    public void testLoadProfiles_MatchingSessionProfile_KeepsSession() throws Exception
     {
         UserProfile matchingProfile = mock(UserProfile.class);
         when(matchingProfile.getClientName()).thenReturn("clientB");
-
         ProfileManager profileManager = mock(ProfileManager.class);
         when(profileManager.getProfiles()).thenReturn(Collections.singletonList(matchingProfile));
-        legendSecurityLogic.setProfileManagerFactory((c, ss) -> profileManager);
 
-        ClientFinder clientFinder = mock(ClientFinder.class);
-        IndirectClient clientB = mock(IndirectClient.class);
-        when(clientB.getName()).thenReturn("clientB");
-        when(clientFinder.find(any(), any(), anyString()))
-                .thenReturn(Collections.singletonList(clientB));
-        legendSecurityLogic.setClientFinder(clientFinder);
+        List<UserProfile> loaded = loadProfiles(profileManager, true, "clientB");
 
-        legendSecurityLogic.setMatchingChecker(matchingChecker);
-        when(matchingChecker.matches(any(), any(), any(), anyList())).thenReturn(false);
-
-        Clients clients = mock(Clients.class);
-        when(config.getClients()).thenReturn(clients);
-        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
-
-        legendSecurityLogic.setMultiProfile(true);
-        legendSecurityLogic.callParentPerform(
-                legendSecurityLogic.buildContext(config, null), config, adapter,
-                "clientB", "", "matchers", null, null, null);
-
-        verify(profileManager, never()).removeProfiles();
-        verify(clientFinder, times(2)).find(any(), any(), anyString());
+        assertEquals(Collections.singletonList(matchingProfile), loaded);
+        verifyNotCleared(profileManager);
     }
 
     @Test
-    public void testCallParentPerform_EmptySession_NoRemoval() throws Exception
+    public void testLoadProfiles_EmptySession_NoRemoval() throws Exception
     {
         ProfileManager profileManager = mock(ProfileManager.class);
         when(profileManager.getProfiles()).thenReturn(Collections.emptyList());
-        legendSecurityLogic.setProfileManagerFactory((c, ss) -> profileManager);
 
-        ClientFinder clientFinder = mock(ClientFinder.class);
-        IndirectClient clientB = mock(IndirectClient.class);
-        when(clientB.getName()).thenReturn("clientB");
-        when(clientFinder.find(any(), any(), anyString()))
-                .thenReturn(Collections.singletonList(clientB));
-        legendSecurityLogic.setClientFinder(clientFinder);
-
-        legendSecurityLogic.setMatchingChecker(matchingChecker);
-        when(matchingChecker.matches(any(), any(), any(), anyList())).thenReturn(false);
-
-        Clients clients = mock(Clients.class);
-        when(config.getClients()).thenReturn(clients);
-        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
-
-        legendSecurityLogic.setMultiProfile(true);
-        legendSecurityLogic.callParentPerform(
-                legendSecurityLogic.buildContext(config, null), config, adapter,
-                "clientB", "", "matchers", null, null, null);
-
-        verify(profileManager, never()).removeProfiles();
-        verify(clientFinder, times(2)).find(any(), any(), anyString());
+        assertTrue(loadProfiles(profileManager, true, "clientB").isEmpty());
+        verifyNotCleared(profileManager);
     }
 
     @Test
-    public void testCallParentPerform_MixedProfiles_AnyStaleClearsWholeSession() throws Exception
+    public void testLoadProfiles_MixedProfiles_AnyStaleClearsWholeSession() throws Exception
     {
         UserProfile validProfile = mock(UserProfile.class);
         when(validProfile.getClientName()).thenReturn("clientB");
         UserProfile staleProfile = mock(UserProfile.class);
         when(staleProfile.getClientName()).thenReturn("clientX");
-
         ProfileManager profileManager = mock(ProfileManager.class);
-        when(profileManager.getProfiles())
-                .thenReturn(java.util.Arrays.asList(validProfile, staleProfile));
-        legendSecurityLogic.setProfileManagerFactory((c, ss) -> profileManager);
+        when(profileManager.getProfiles()).thenReturn(java.util.Arrays.asList(validProfile, staleProfile));
 
-        ClientFinder clientFinder = mock(ClientFinder.class);
-        IndirectClient clientB = mock(IndirectClient.class);
-        when(clientB.getName()).thenReturn("clientB");
-        IndirectClient clientC = mock(IndirectClient.class);
-        when(clientC.getName()).thenReturn("clientC");
-        when(clientFinder.find(any(), any(), anyString()))
-                .thenReturn(java.util.Arrays.asList(clientB, clientC));
-        legendSecurityLogic.setClientFinder(clientFinder);
+        assertTrue(loadProfiles(profileManager, true, "clientB", "clientC").isEmpty());
+        verifyCleared(profileManager, true);
+    }
 
-        legendSecurityLogic.setMatchingChecker(matchingChecker);
-        when(matchingChecker.matches(any(), any(), any(), anyList())).thenReturn(false);
+    @Test
+    public void testLoadProfiles_RefusedSessionRead_SeesOnlyThisRequestsProfiles() throws Exception
+    {
+        UserProfile requestProfile = mock(UserProfile.class);
+        when(requestProfile.getClientName()).thenReturn("clientB");
+        LinkedHashMap<String, UserProfile> requestProfiles = new LinkedHashMap<>();
+        requestProfiles.put("clientB", requestProfile);
+        when(webContext.getRequestAttribute(Pac4jConstants.USER_PROFILES)).thenReturn(Optional.of(requestProfiles));
+        ProfileManager profileManager = mock(ProfileManager.class);
 
-        Clients clients = mock(Clients.class);
-        when(config.getClients()).thenReturn(clients);
-        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
+        List<UserProfile> loaded = loadProfiles(profileManager, false, "clientB");
 
-        legendSecurityLogic.setMultiProfile(true);
-        legendSecurityLogic.callParentPerform(
-                legendSecurityLogic.buildContext(config, null), config, adapter,
-                "clientB,clientC", "", "matchers", null, null, null);
+        assertEquals(Collections.singletonList(requestProfile), loaded);
+        verify(profileManager, never()).getProfiles();
+        verifyNotCleared(profileManager);
+    }
 
-        verify(profileManager, times(1)).removeProfiles();
-        verify(clientFinder, times(2)).find(any(), any(), anyString());
+    @Test
+    public void testLoadProfiles_RefusedSessionRead_StaleRequestProfileLeavesTheSessionAlone() throws Exception
+    {
+        UserProfile staleProfile = mock(UserProfile.class);
+        when(staleProfile.getClientName()).thenReturn("clientA");
+        LinkedHashMap<String, UserProfile> requestProfiles = new LinkedHashMap<>();
+        requestProfiles.put("clientA", staleProfile);
+        when(webContext.getRequestAttribute(Pac4jConstants.USER_PROFILES)).thenReturn(Optional.of(requestProfiles));
+        ProfileManager profileManager = mock(ProfileManager.class);
+
+        assertTrue(loadProfiles(profileManager, false, "clientB").isEmpty());
+        verify(profileManager, never()).getProfiles();
+        verifyCleared(profileManager, false);
+    }
+
+    private List<UserProfile> loadProfiles(ProfileManager profileManager, boolean loadFromSession, String... clientNames)
+    {
+        List<Client> clients = new ArrayList<>();
+        for (String name : clientNames)
+        {
+            IndirectClient client = mock(IndirectClient.class);
+            when(client.getName()).thenReturn(name);
+            clients.add(client);
+        }
+        when(legendSecurityLogic.getProfileStorageDecision()).thenReturn(profileStorageDecision);
+        when(profileStorageDecision.mustLoadProfilesFromSession(any(), anyList())).thenReturn(loadFromSession);
+        return legendSecurityLogic.loadProfiles(legendSecurityLogic.buildContext(config, null), profileManager, clients);
+    }
+
+    private void verifyCleared(ProfileManager profileManager, boolean fromSession)
+    {
+        verify(profileManager, times(fromSession ? 1 : 0)).removeProfiles();
+        verify(webContext, times(fromSession ? 0 : 1)).setRequestAttribute(Pac4jConstants.USER_PROFILES, new LinkedHashMap<>());
+        verify(sessionStore, never()).set(any(), eq(Pac4jConstants.USER_PROFILES), any());
+    }
+
+    private void verifyNotCleared(ProfileManager profileManager)
+    {
+        verify(profileManager, never()).removeProfiles();
+        verify(sessionStore, never()).set(any(), eq(Pac4jConstants.USER_PROFILES), any());
+        verify(webContext, never()).setRequestAttribute(eq(Pac4jConstants.USER_PROFILES), any());
     }
 
     private class TestableLegendSecurityLogic extends LegendSecurityLogic {

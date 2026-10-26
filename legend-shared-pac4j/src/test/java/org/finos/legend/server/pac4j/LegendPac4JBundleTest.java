@@ -14,11 +14,14 @@
 
 package org.finos.legend.server.pac4j;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
+import com.hazelcast.core.Hazelcast;
 import io.dropwizard.core.Configuration;
 import io.dropwizard.core.setup.Environment;
 import org.eclipse.jetty.ee10.servlet.FilterHolder;
 import org.eclipse.jetty.ee10.servlet.ServletHandler;
+import org.finos.legend.server.pac4j.hazelcaststore.HazelcastSessionStore;
 import org.junit.Test;
 import org.pac4j.core.client.BaseClient;
 import org.pac4j.core.client.Client;
@@ -28,9 +31,11 @@ import org.pac4j.core.config.Config;
 import org.pac4j.core.engine.DefaultSecurityLogic;
 import org.pac4j.core.exception.TechnicalException;
 import org.pac4j.dropwizard.Pac4jFactory;
+import org.pac4j.dropwizard.Pac4jMixins;
 import org.pac4j.jee.filter.SecurityFilter;
 
 import java.util.Collections;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -70,7 +75,7 @@ public class LegendPac4JBundleTest
   }
 
   @Test
-  public void unannotatedClientDoesNotSaveProfileInSession()
+  public void anUnsetSaveProfileInSessionDoesNotVeto()
   {
     LegendPac4jConfiguration config = new LegendPac4jConfiguration();
     config.setCallbackPrefix("/test");
@@ -81,9 +86,28 @@ public class LegendPac4JBundleTest
 
     for (Client client : builtConfig.getClients().getClients())
     {
-      assertNotEquals("no client may save profiles when any client is unannotated: " + client,
+      assertEquals("an unset flag must not veto saving: " + client,
               Boolean.TRUE, ((DirectClient) client).getSaveProfileInSession());
     }
+  }
+
+  @Test
+  public void aConfiguredSaveProfileInSessionIsKept() throws Exception
+  {
+    ObjectMapper mapper = new ObjectMapper();
+    mapper.addMixIn(Client.class, Pac4jMixins.ClientMixin.class);
+    mapper.addMixIn(BaseClient.class, LegendPac4jBundle.IgnoreClientConfigMixin.class);
+    Client fromYaml = mapper.readValue(
+            "{\"" + TestClient.class.getName() + "\":{\"name\":\"A\",\"saveProfileInSession\":false}}", Client.class);
+    LegendPac4jConfiguration config = new LegendPac4jConfiguration();
+    config.setCallbackPrefix("/test");
+    config.setClients(ImmutableList.of(fromYaml));
+
+    Config builtConfig = new LegendPac4jBundle<>(c -> config)
+            .getPac4jFactory(new Configuration()).build();
+
+    assertEquals("a configured saveProfileInSession: false must survive the build",
+            Boolean.FALSE, ((DirectClient) builtConfig.getClients().getClients().get(0)).getSaveProfileInSession());
   }
 
   @Test
@@ -209,6 +233,41 @@ public class LegendPac4JBundleTest
     catch (IllegalArgumentException expected)
     {
       assertTrue(expected.getMessage(), expected.getMessage().contains("Strictt"));
+    }
+  }
+
+  @Test
+  public void theBundleDefaultSameSiteAppliesWhenNoneIsConfigured()
+  {
+    assertEquals("Strict", sessionStoreSameSite(null));
+  }
+
+  @Test
+  public void aConfiguredSameSiteWinsOverTheBundleDefault()
+  {
+    assertEquals("Lax", sessionStoreSameSite("Lax"));
+  }
+
+  private static String sessionStoreSameSite(String configured)
+  {
+    LegendPac4jConfiguration config = new LegendPac4jConfiguration();
+    config.setCallbackPrefix("/test");
+    config.setClients(ImmutableList.<Client>of(new TestClient()));
+    config.setSessionTokenSameSite(configured);
+    LegendPac4jConfiguration.HazelcastSessionConfiguration hazelcastSession = new LegendPac4jConfiguration.HazelcastSessionConfiguration();
+    hazelcastSession.setEnabled(true);
+    hazelcastSession.setConfigFilePath("src/test/resources/hazelcast.yaml");
+    config.setHazelcastSession(hazelcastSession);
+    try
+    {
+      Config builtConfig = new LegendPac4jBundle<>(c -> config)
+              .withDefaultSessionTokenSameSite("Strict")
+              .getPac4jFactory(new Configuration()).build();
+      return ((HazelcastSessionStore) builtConfig.getSessionStoreFactory().newSessionStore(null)).getSameSitePolicy();
+    }
+    finally
+    {
+      Hazelcast.shutdownAll();
     }
   }
 

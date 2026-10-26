@@ -39,4 +39,27 @@ public class LegendPac4JConfigurationTest
     Assert.assertEquals("defaultMongoSession", config.getMongoSession().getCollection());
 
   }
+
+  @Test
+  public void sessionTokenSameSiteComesFromTheDefaultsWhenUnset() throws IOException, ConfigurationException
+  {
+    LegendPac4jConfiguration config = new LegendPac4jConfiguration();
+    config.setDefaults("defaults.json");
+
+    config.loadDefaults(new ResourceConfigurationSourceProvider(), new ObjectMapper());
+
+    Assert.assertEquals("None", config.getSessionTokenSameSite());
+  }
+
+  @Test
+  public void aConfiguredSessionTokenSameSiteWinsOverTheDefaults() throws IOException, ConfigurationException
+  {
+    LegendPac4jConfiguration config = new LegendPac4jConfiguration();
+    config.setDefaults("defaults.json");
+    config.setSessionTokenSameSite("Strict");
+
+    config.loadDefaults(new ResourceConfigurationSourceProvider(), new ObjectMapper());
+
+    Assert.assertEquals("Strict", config.getSessionTokenSameSite());
+  }
 }

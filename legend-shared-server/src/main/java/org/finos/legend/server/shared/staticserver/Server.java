@@ -22,6 +22,7 @@ import io.dropwizard.core.setup.Bootstrap;
 import io.dropwizard.core.setup.Environment;
 import org.eclipse.jetty.http.HttpCookie;
 import org.eclipse.jetty.ee10.servlet.SessionHandler;
+import org.eclipse.jetty.server.HttpCookieUtils;
 
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.SessionCookieConfig;
@@ -37,7 +38,6 @@ import java.util.Enumeration;
 import java.util.Objects;
 import java.util.Scanner;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.jar.Manifest;
 
 public class Server extends Application<org.finos.legend.server.shared.staticserver.StaticServerConfiguration>
@@ -102,8 +102,10 @@ public class Server extends Application<org.finos.legend.server.shared.staticser
                 )
         );
         String staticPath = getStaticPathFromManifest();
+        // The servlet context's SameSite default does not reach the SSO token cookie, whose Set-Cookie
+        // header pac4j writes itself. Applied after the pac4j defaults file, so a SameSite set there still wins.
         bootstrap.addBundle(new org.finos.legend.server.shared.staticserver.StaticServerBundle<>(
-                staticPath, Function.identity()));
+                staticPath, c -> c, "Strict"));
     }
 
     @Override
@@ -133,5 +135,6 @@ public class Server extends Application<org.finos.legend.server.shared.staticser
             // HttpCookie.SAME_SITE_ATTRIBUTE is the cookie attribute name "SameSite", not a context-attribute key.
             sessionCookieConfig.setAttribute(HttpCookie.SAME_SITE_ATTRIBUTE, "Strict");
         }
+        servletContext.setAttribute(HttpCookieUtils.SAME_SITE_DEFAULT_ATTRIBUTE, "STRICT");
     }
 }
