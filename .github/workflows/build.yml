@@ -14,67 +14,51 @@
 
 name: Build CI
 
-env:
-  CI_DEPLOY_USERNAME: ${{ secrets.CI_DEPLOY_USERNAME }}
-  CI_DEPLOY_PASSWORD: ${{ secrets.CI_DEPLOY_PASSWORD }}
-  SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+on:
+  # Pushes build every branch of the canonical repo; the job below holds them
+  # to that repo, which a trigger filter cannot express. A fork's topic
+  # branch is built as its PR instead, rather than once in the fork and again
+  # for the PR, and a fork's master is only ever a sync of commits already
+  # built here.
+  # `branches` rather than `tags-ignore`, on purpose: a push filter that names
+  # only tags stops the workflow running for branch pushes as well, because
+  # branches are then the undefined ref, whereas naming every branch leaves
+  # tags undefined instead, which is what actually skips them. A release tag
+  # lands on a commit this workflow already built when it went onto the
+  # branch.
+  push:
+    branches:
+      - '**'
+  pull_request:
+  # On demand, for a result on a fork's branch before opening a PR.
+  workflow_dispatch:
 
-on: [push, pull_request]
-  
+concurrency:
+  # A newer push to a PR supersedes the run for the older one. Every other
+  # run gets a group of its own, so nothing ever cancels or holds back a
+  # branch build.
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   build:
     name: Build
-    if: "github.repository == 'finos/legend-shared'"
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout repo
-      uses: actions/checkout@v6
-
-    - name: Cache Maven dependencies
-      uses: actions/cache@v5
-      env:
-        cache-name: cache-mvn-deps
-      with:
-        path: ~/.m2/repository
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pom.xml') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
-          ${{ runner.os }}-build-
-          ${{ runner.os }}-
-
-    - name: Set up JDK
-      uses: actions/setup-java@v5
-      with:
-        distribution: 'temurin'
-        java-version: 25
-        java-package: jdk
-        server-id: central
-        server-username: CI_DEPLOY_USERNAME
-        server-password: CI_DEPLOY_PASSWORD
-
-    - name: Configure git
-      run: |
-        git config --global committer.email "infra@finos.org"
-        git config --global committer.name "FINOS Admin"
-        git config --global author.email "${GITHUB_ACTOR}@users.noreply.github.com"
-        git config --global author.name "${GITHUB_ACTOR}"
-
-    - name: Download deps and plugins
-      run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
-
-    - name: Build + Test
-      run: mvn install javadoc:javadoc -Dmaven.test.failure.ignore=true
-
-    - name: Upload Test Results
-      if: always()
-      uses: actions/upload-artifact@v7
-      with:
-        name: test-results
-        path: legend-shared-test-reports/surefire-reports-aggregate/*.xml
-
-    - name: Upload CI Event
-      if: always()
-      uses: actions/upload-artifact@v7
-      with:
-        name: event-file
-        path: ${{ github.event_path }}
+    # The pipeline itself lives in build-and-test.yml, which the release
+    # workflow calls too, so a release is tested the same way CI tests.
+    # `Publish Test Results` watches this workflow by name and, for a PR or a
+    # master build, needs the event payload uploaded alongside the surefire
+    # reports.
+    #
+    # Not for a push whose head commit finos-admin authored. Only the release
+    # workflows commit as that account, and all they push is the version bump
+    # after a release, which changes nothing but the snapshot version.
+    # Checking the author rather than the message means rewording the bump
+    # cannot quietly start building it again. Other events carry no head
+    # commit, so the check passes them.
+    if: >-
+      (github.event_name != 'push' || github.repository == 'finos/legend-shared')
+      && github.event.head_commit.author.username != 'finos-admin'
+    uses: ./.github/workflows/build-and-test.yml
+    with:
+      upload-event-file: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/master') }}
+    secrets: inherit
