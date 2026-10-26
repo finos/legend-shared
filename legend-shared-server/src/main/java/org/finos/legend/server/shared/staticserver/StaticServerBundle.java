@@ -34,6 +34,7 @@ public class StaticServerBundle<C extends Configuration> implements ConfiguredBu
 {
   private final String staticPath;
   private final Function<C, org.finos.legend.server.shared.staticserver.StaticServerConfiguration> configSupplier;
+  private final String defaultSessionTokenSameSite;
 
   public StaticServerBundle(String staticPath)
   {
@@ -44,8 +45,21 @@ public class StaticServerBundle<C extends Configuration> implements ConfiguredBu
       String staticPath,
       Function<C, org.finos.legend.server.shared.staticserver.StaticServerConfiguration> configSupplier)
   {
+    this(staticPath, configSupplier, null);
+  }
+
+  /**
+   * Sets the session token cookie's SameSite for when neither the pac4j configuration nor its defaults
+   * file sets one.
+   */
+  public StaticServerBundle(
+      String staticPath,
+      Function<C, org.finos.legend.server.shared.staticserver.StaticServerConfiguration> configSupplier,
+      String defaultSessionTokenSameSite)
+  {
     this.staticPath = staticPath;
     this.configSupplier = configSupplier;
+    this.defaultSessionTokenSameSite = defaultSessionTokenSameSite;
   }
 
   private String getStaticPath(org.finos.legend.server.shared.staticserver.StaticServerConfiguration config)
@@ -87,7 +101,8 @@ public class StaticServerBundle<C extends Configuration> implements ConfiguredBu
   public void initialize(Bootstrap<?> bootstrap)
   {
     bootstrap.addBundle(new HostnameHeaderBundle());
-    bootstrap.addBundle(new LegendPac4jBundle<>(c -> configSupplier.apply((C) c).getPac4j()));
+    bootstrap.addBundle(new LegendPac4jBundle<>(c -> configSupplier.apply((C) c).getPac4j())
+        .withDefaultSessionTokenSameSite(defaultSessionTokenSameSite));
     bootstrap.addBundle(new OpenTracingBundle());
     bootstrap.addBundle(
         new LocalAssetBundle<>("web", c -> configSupplier.apply((C) c).getLocalAssetPaths()));

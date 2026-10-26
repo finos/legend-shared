@@ -27,14 +27,19 @@ import org.pac4j.core.engine.DefaultSecurityLogic;
 import org.pac4j.core.engine.SecurityGrantedAccessAdapter;
 import org.pac4j.core.exception.http.HttpAction;
 import org.pac4j.core.http.adapter.HttpActionAdapter;
+import org.pac4j.core.profile.ProfileHelper;
 import org.pac4j.core.profile.ProfileManager;
 import org.pac4j.core.profile.UserProfile;
+import org.pac4j.core.profile.factory.ProfileManagerFactory;
 import org.pac4j.core.util.CommonHelper;
+import org.pac4j.core.util.Pac4jConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -90,12 +95,12 @@ public class LegendSecurityLogic extends DefaultSecurityLogic
         if (!this.multiProfile)
         {
             LOGGER.debug("MultiProfile turned off falling back to default handling");
-            return callParentPerform(ctx, config, securityGrantedAccessAdapter, clients, authorizers, matchers, parameters, null, null);
+            return callParentPerform(config, securityGrantedAccessAdapter, clients, authorizers, matchers, parameters);
         }
         if (nonBrowserCall(context))
         {
             LOGGER.debug("Non-browser call detected, falling back to default handling");
-            return callParentPerform(ctx, config, securityGrantedAccessAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, parameters, null, null);
+            return callParentPerform(config, securityGrantedAccessAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, parameters);
         }
         LOGGER.debug("Browser call detected, using LegendSecurityLogic handling");
         LOGGER.debug("url: {}", context.getFullRequestURL());
@@ -116,10 +121,7 @@ public class LegendSecurityLogic extends DefaultSecurityLogic
             // Not setLoadProfilesFromSession(...): this instance is shared by every request.
             ProfileManager manager = ctx.profileManagerFactory().apply(context, sessionStore);
             manager.setConfig(config);
-            // Gated as DefaultSecurityLogic gates it: a refused session read must not honour a stored profile.
-            List<UserProfile> profiles = loadProfilesFromSession
-                    ? manager.getProfiles()
-                    : Collections.emptyList();
+            List<UserProfile> profiles = readProfiles(context, manager, loadProfilesFromSession);
             LOGGER.debug("existing profiles: {}", profiles);
 
             for (Client currentClient : inputClients)
@@ -145,13 +147,13 @@ public class LegendSecurityLogic extends DefaultSecurityLogic
                 if (profile.isPresent())
                 {
                     LOGGER.debug("profile created. Saving profile for client: {}", currentClient);
-                    boolean saveProfileInSession = getProfileStorageDecision().mustSaveProfileInSession(context, inputClients, (DirectClient) currentClient, profile.get());
+                    // The client's flag can still veto: an application may turn it off after LegendPac4jBundle set it.
+                    boolean saveProfileInSession = getProfileStorageDecision().mustSaveProfileInSession(context, inputClients, (DirectClient) currentClient, profile.get())
+                            && Boolean.TRUE.equals(((DirectClient) currentClient).getSaveProfileInSession(context, profile.get()));
                     manager.save(saveProfileInSession, profile.get(), true);
                 }
             }
-            // profiles is reusable only if it was read from the session; null makes callParentPerform read it.
-            return callParentPerform(ctx, config, securityGrantedAccessAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, parameters,
-                    inputClients, loadProfilesFromSession ? profiles : null);
+            return callParentPerform(config, securityGrantedAccessAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, parameters);
         } catch (Exception e)
         {
             LOGGER.error("An error occurred during security logic processing", e);
@@ -175,33 +177,85 @@ public class LegendSecurityLogic extends DefaultSecurityLogic
     }
 
     /**
-     * Clears session profiles from clients outside {@code clients}, then delegates to
-     * {@link DefaultSecurityLogic#perform}. A null {@code knownClients} or {@code knownProfiles} is
-     * resolved here.
+     * Saves a direct client's profile only where the storage decision also allows it, decided over the same
+     * clients as the session read (see {@link StorageDecisionProfileManager}); pac4j 6 goes by the client's
+     * flag alone. A profile manager factory configured on purpose is left alone.
      */
-    Object callParentPerform(CallContext ctx, Config config, SecurityGrantedAccessAdapter securityGrantedAccessAdapter, String clients, String authorizers, String matchers, FrameworkParameters parameters,
-                             List<Client> knownClients, List<UserProfile> knownProfiles)
+    @Override
+    protected CallContext buildContext(Config config, FrameworkParameters parameters)
     {
-        WebContext context = ctx.webContext();
-        List<Client> currentClients = knownClients != null
-                ? knownClients
-                : getClientFinder().find(config.getClients(), context, clients);
-        Set<String> requested = currentClients.stream()
-                .map(Client::getName)
-                .collect(Collectors.toSet());
-
-        ProfileManager manager = ctx.profileManagerFactory().apply(context, ctx.sessionStore());
-        manager.setConfig(config);
-        List<UserProfile> currentProfiles = knownProfiles != null ? knownProfiles : manager.getProfiles();
-        boolean hasStaleProfile = currentProfiles.stream()
-                .anyMatch(p -> !requested.contains(p.getClientName()));
-        if (hasStaleProfile)
+        CallContext ctx = super.buildContext(config, parameters);
+        if (ctx.profileManagerFactory() != ProfileManagerFactory.DEFAULT)
         {
-            LOGGER.debug("Session contains profiles outside requested clients {} -> clearing session", requested);
-            manager.removeProfiles();
+            return ctx;
         }
+        return new CallContext(ctx.webContext(), ctx.sessionStore(),
+                (context, sessionStore) -> new StorageDecisionProfileManager(context, sessionStore, getProfileStorageDecision()));
+    }
+
+    Object callParentPerform(Config config, SecurityGrantedAccessAdapter securityGrantedAccessAdapter, String clients, String authorizers, String matchers, FrameworkParameters parameters)
+    {
         LOGGER.debug("Calling parent perform method");
         return super.perform(config, securityGrantedAccessAdapter, clients, authorizers, matchers, parameters);
+    }
+
+    /**
+     * Applies the storage decision, which {@link DefaultSecurityLogic} does not consult. A profile from a
+     * client outside {@code clients} clears them all, forcing re-authentication.
+     */
+    @Override
+    protected List<UserProfile> loadProfiles(CallContext ctx, ProfileManager manager, List<Client> clients)
+    {
+        WebContext context = ctx.webContext();
+        if (manager instanceof StorageDecisionProfileManager)
+        {
+            ((StorageDecisionProfileManager) manager).setCurrentClients(clients);
+        }
+        boolean loadProfilesFromSession = getProfileStorageDecision().mustLoadProfilesFromSession(context, clients);
+        LOGGER.debug("loadProfilesFromSession: {}", loadProfilesFromSession);
+        List<UserProfile> profiles = readProfiles(context, manager, loadProfilesFromSession);
+
+        Set<String> requested = clients.stream()
+                .map(Client::getName)
+                .collect(Collectors.toSet());
+        boolean hasStaleProfile = profiles.stream()
+                .anyMatch(p -> !requested.contains(p.getClientName()));
+        if (!hasStaleProfile)
+        {
+            return profiles;
+        }
+        LOGGER.debug("Profiles outside requested clients {} -> clearing them", requested);
+        // A refused session read leaves the session alone: only this request's profiles were looked at.
+        if (loadProfilesFromSession)
+        {
+            manager.removeProfiles();
+        }
+        else
+        {
+            context.setRequestAttribute(Pac4jConstants.USER_PROFILES, new LinkedHashMap<String, UserProfile>());
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * The profiles saved earlier in this request: pac4j 6 has no public equivalent of pac4j 4's
+     * {@code getAll(false)}.
+     */
+    @SuppressWarnings("unchecked")
+    private static List<UserProfile> readProfiles(WebContext context, ProfileManager manager, boolean loadProfilesFromSession)
+    {
+        if (loadProfilesFromSession)
+        {
+            return manager.getProfiles();
+        }
+        Optional<Object> requestProfiles = context.getRequestAttribute(Pac4jConstants.USER_PROFILES);
+        if (!requestProfiles.isPresent())
+        {
+            return Collections.emptyList();
+        }
+        return ProfileHelper.flatIntoAProfileList((Map<String, UserProfile>) requestProfiles.get()).stream()
+                .filter(p -> !p.isExpired())
+                .collect(Collectors.toList());
     }
 
     private boolean nonBrowserCall(WebContext context)

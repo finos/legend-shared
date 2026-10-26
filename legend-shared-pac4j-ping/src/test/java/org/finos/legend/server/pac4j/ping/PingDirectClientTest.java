@@ -14,11 +14,14 @@
 
 package org.finos.legend.server.pac4j.ping;
 
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpServer;
 import org.junit.Test;
 import org.pac4j.core.context.CallContext;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.credentials.Credentials;
 import org.pac4j.core.credentials.authenticator.Authenticator;
+import org.pac4j.core.profile.UserProfile;
 import org.pac4j.core.profile.creator.ProfileCreator;
 import org.pac4j.jee.context.JEEContext;
 import org.pac4j.jee.context.session.JEESessionStore;
@@ -27,10 +30,14 @@ import org.pac4j.oidc.profile.creator.OidcProfileCreator;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Optional;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -107,5 +114,52 @@ public class PingDirectClientTest
 
         assertSame("reinit() must not rebuild the OIDC configuration and profile creator",
                 first, client.getProfileCreator());
+    }
+
+    @Test
+    public void validBearerTokenYieldsAProfile() throws Exception
+    {
+        HttpServer server = HttpServer.create(new InetSocketAddress("127.0.0.1", 0), 0);
+        String base = "http://127.0.0.1:" + server.getAddress().getPort();
+        String discovery = "{\"issuer\":\"" + base + "\",\"authorization_endpoint\":\"" + base + "/auth\","
+                + "\"token_endpoint\":\"" + base + "/token\",\"userinfo_endpoint\":\"" + base + "/userinfo\","
+                + "\"jwks_uri\":\"" + base + "/jwks\",\"response_types_supported\":[\"code\"],"
+                + "\"subject_types_supported\":[\"public\"],\"id_token_signing_alg_values_supported\":[\"RS256\"]}";
+        server.createContext("/.well-known/openid-configuration", ex -> respond(ex, discovery));
+        server.createContext("/jwks", ex -> respond(ex, "{\"keys\":[]}"));
+        server.createContext("/userinfo", ex -> respond(ex, "{\"sub\":\"alice\",\"name\":\"Alice\"}"));
+        server.start();
+        try
+        {
+            PingDirectClient client = new PingDirectClient();
+            set(client, "clientId", "id");
+            set(client, "secret", "secret");
+            set(client, "discoveryUri", base + "/.well-known/openid-configuration");
+            set(client, "customParams", new HashMap<String, String>());
+            client.setName("ping");
+            client.init();
+
+            CallContext callContext = bearerRequest();
+            Credentials credentials = client.getCredentials(callContext)
+                    .flatMap(c -> client.validateCredentials(callContext, c))
+                    .get();
+            Optional<UserProfile> profile = client.getUserProfile(callContext, credentials);
+
+            assertTrue("a valid bearer token must yield a profile", profile.isPresent());
+            assertEquals("alice", profile.get().getId());
+        }
+        finally
+        {
+            server.stop(0);
+        }
+    }
+
+    private static void respond(HttpExchange exchange, String body) throws IOException
+    {
+        byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
+        exchange.getResponseHeaders().add("Content-Type", "application/json");
+        exchange.sendResponseHeaders(200, bytes.length);
+        exchange.getResponseBody().write(bytes);
+        exchange.close();
     }
 }

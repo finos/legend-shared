@@ -41,6 +41,7 @@ import jakarta.servlet.http.Cookie;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectStreamClass;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.security.GeneralSecurityException;
@@ -49,11 +50,12 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * The fixture is a real {@link KerberosProfile} serialized by this class compiled against pac4j
@@ -103,39 +105,43 @@ public class KerberosProfileCrossVersionTest
     }
 
     /**
-     * Failure is the expected outcome: the session stores contain it, the serializer does not fix it.
+     * A pac4j 4 node must fail on the class descriptor, which it treats as no session, not in readExternal,
+     * which throws a ClassCastException it does not catch.
      */
     @Test
-    public void legacyKerberosBlobStillBreaksTheRawSerializer()
+    public void serialVersionUIDIsNotTheOneOlderReleasesUse()
+    {
+        assertNotEquals(-8691865551996919736L, ObjectStreamClass.lookup(KerberosProfile.class).getSerialVersionUID());
+    }
+
+    @Test
+    public void legacyKerberosBlobIsUnreadableByTheRawSerializer()
     {
         JavaSerializer serializer = new JavaSerializer();
         serializer.addTrustedPackage("org.finos.legend.server.pac4j.kerberos");
         serializer.addTrustedPackage("javax.security.auth");
-        try
-        {
-            Object result = serializer.deserializeFromBytes(readResource(LEGACY_BLOB));
-            fail("expected a pac4j 5.7.1 KerberosProfile blob to be undecodable, got " + result);
-        }
-        catch (RuntimeException expected)
-        {
-            assertNotNull(expected.getClass().getName(), expected);
-        }
+        assertNull("JavaSerializer swallows the InvalidClassException",
+                serializer.deserializeFromBytes(readResource(LEGACY_BLOB)));
     }
 
+    /**
+     * Not evicted: a null from the serializer looks the same as a wrong session key, whose data must survive.
+     */
     @Test
-    public void legacyKerberosBlobReadsAsAbsentAndIsEvicted() throws GeneralSecurityException
+    public void legacyKerberosBlobReadsAsAbsentAndIsReplacedAtSignIn() throws GeneralSecurityException
     {
         SessionToken token = seedLegacyBlob();
 
         assertFalse("a legacy Kerberos session must read as absent, not throw",
                 store.get(contextWith(token), Pac4jConstants.USER_PROFILES).isPresent());
 
-        Document after = sessions.find(searchSpec(token)).first();
-        assertNotNull(after);
-        assertNull("the undecodable entry must be evicted",
-                after.getString(Pac4jConstants.USER_PROFILES));
+        KerberosProfile profile = new KerberosProfile(subjectWithPrincipal(), null);
+        profile.setId("alice");
+        store.set(contextWith(token), Pac4jConstants.USER_PROFILES, profile);
 
-        assertFalse(store.get(contextWith(token), Pac4jConstants.USER_PROFILES).isPresent());
+        Object retrieved = store.get(contextWith(token), Pac4jConstants.USER_PROFILES).orElse(null);
+        assertTrue(retrieved instanceof KerberosProfile);
+        assertEquals("alice", ((KerberosProfile) retrieved).getId());
     }
 
     @Test

@@ -37,7 +37,6 @@ import org.finos.legend.server.pac4j.internal.UsernameFilter;
 import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
 import org.finos.legend.server.pac4j.mongostore.MongoDbSessionStore;
 import org.finos.legend.server.pac4j.sessionutil.SessionToken;
-import org.pac4j.core.authorization.generator.AuthorizationGenerator;
 import org.pac4j.core.client.BaseClient;
 import org.pac4j.core.client.Client;
 import org.pac4j.core.client.Clients;
@@ -90,6 +89,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
 
     private String defaultSessionCookieName = "LegendSSO";
 
+    private String defaultSessionTokenSameSite;
+
     @SuppressWarnings("WeakerAccess")
     public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier)
     {
@@ -102,6 +103,16 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     {
         this.configSupplier = configSupplier;
         this.subjectSupplierSupplier = subjectSupplierSupplier;
+    }
+
+    /**
+     * The session token cookie's {@code SameSite} when neither the configuration nor its defaults file sets
+     * one; unset means {@link SessionToken#DEFAULT_SAME_SITE_POLICY}.
+     */
+    public LegendPac4jBundle<C> withDefaultSessionTokenSameSite(String defaultSessionTokenSameSite)
+    {
+        this.defaultSessionTokenSameSite = defaultSessionTokenSameSite;
+        return this;
     }
 
     private static String cleanUrl(String inUrl)
@@ -222,15 +233,14 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                     public Config build()
                     {
                         // pac4j has no ProfileStorageDecision SPI: DefaultSecurityLogic, used whenever
-                        // multiProfile is off or the call is non-browser, reads the client's
-                        // saveProfileInSession flag, which DirectClient defaults to false. Mirror the
-                        // storage decision onto direct clients so both paths agree; indirect clients
-                        // default to true and are left alone. The decision only reads the client list.
-                        boolean saveProfileInSession = profileStorageDecision
-                                .mustSaveProfileInSession(null, legendConfig.getClients(), null, null);
+                        // multiProfile is off or the call is non-browser, saves on the client's
+                        // saveProfileInSession flag, which DirectClient turns from unset to false.
+                        // LegendSecurityLogic applies the storage decision per request, so the flag only
+                        // vetoes: unset becomes true, and a configured value is kept. Indirect clients
+                        // default to true and are left alone.
                         legendConfig.getClients().stream()
-                                .filter(c -> c instanceof DirectClient)
-                                .forEach(c -> ((DirectClient) c).setSaveProfileInSession(saveProfileInSession));
+                                .filter(c -> c instanceof DirectClient && ((DirectClient) c).getSaveProfileInSession() == null)
+                                .forEach(c -> ((DirectClient) c).setSaveProfileInSession(true));
 
                         // multiProfile is deliberately not mirrored onto the clients: with it set,
                         // DefaultSecurityLogic carries on past an authenticated direct client to the
@@ -251,7 +261,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
 
                         String sessionCookieName = legendConfig.getSessionTokenName() != null ? legendConfig.getSessionTokenName() : defaultSessionCookieName;
                         // Resolved eagerly so an invalid value fails startup; pac4j would silently write Lax.
-                        String sessionCookieSameSite = SessionToken.sameSitePolicy(legendConfig.getSessionTokenSameSite());
+                        String sessionCookieSameSite = SessionToken.sameSitePolicy(
+                                StringUtils.isEmpty(legendConfig.getSessionTokenSameSite()) ? defaultSessionTokenSameSite : legendConfig.getSessionTokenSameSite());
                         if (legendConfig.getHazelcastSession() != null && legendConfig.getHazelcastSession().isEnabled())
                         {
                             HazelcastSessionStore hazelcastSessionStore = new HazelcastSessionStore(
@@ -351,19 +362,16 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     }
 
     /**
-     * pac4j 6 overloads setAuthorizationGenerators on List and on varargs, which Jackson rejects as
-     * conflicting setters; hiding the varargs one leaves the List setter. The Config pac4j 6 added to
-     * BaseClient is wired by this bundle, never read from configuration, so Jackson is kept out of it.
+     * The Config pac4j 6 added to BaseClient is wired by this bundle, never read from configuration, so
+     * Jackson is kept out of it.
      *
      * <p>Must extend {@link Pac4jMixins.BaseClientMixin}: addMixIn replaces rather than merges the
-     * mixin dropwizard-pac4j has already registered, and its {@code @JsonProperty} on the List
-     * overload is what stops authorizationGenerators entries from being silently dropped.
+     * mixin dropwizard-pac4j has already registered. Its annotations resolve the setAuthorizationGenerators
+     * overloads: the varargs one is ignored, and the {@code @JsonProperty} on the List one is what stops
+     * authorizationGenerators entries from being silently dropped.
      */
     abstract static class IgnoreClientConfigMixin extends Pac4jMixins.BaseClientMixin
     {
-        @JsonIgnore
-        public abstract void setAuthorizationGenerators(AuthorizationGenerator... authorizationGenerators);
-
         @JsonIgnore
         public abstract Config getConfig();
 

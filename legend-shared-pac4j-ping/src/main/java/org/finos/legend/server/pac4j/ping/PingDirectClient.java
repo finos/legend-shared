@@ -73,7 +73,18 @@ public class PingDirectClient extends DirectBearerAuthClient
             // OidcProfileCreator needs an OidcClient, which this is not. The throwaway client is only
             // dereferenced on the authorization-code flow, never on the bearer path.
             this.oidcProfileCreator =
-                    new OidcProfileCreator(this.oidcConfiguration, new OidcClient(this.oidcConfiguration));
+                    new OidcProfileCreator(this.oidcConfiguration, new OidcClient(this.oidcConfiguration))
+                    {
+                        @Override
+                        protected void internalInit(boolean forceReinit)
+                        {
+                            // Here, on the first bearer request, because it fetches the discovery document;
+                            // nothing else initialises the configuration. Never forced: a forced init
+                            // replaces the proxy-aware resource retriever.
+                            configuration.init();
+                            super.internalInit(forceReinit);
+                        }
+                    };
         }
 
         // ALWAYS_VALIDATE is not "no validation": it passes the token to OidcProfileCreator, whose

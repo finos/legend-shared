@@ -22,10 +22,17 @@ import org.pac4j.core.exception.CredentialsException;
 public class LocalKerberosClient extends DirectClient
 {
   private static final String X_FORWARDED_FOR_HEADER = "x-forwarded-for";
+  private static final String FORWARDED_HEADER = "forwarded";
 
-  private static String getRealRemoteAddress(WebContext context)
+  /**
+   * A forwarded request is never local: the forwarding headers are set by the caller, and Dropwizard's
+   * useForwardedHeaders makes Jetty take the remote address from them.
+   */
+  private static boolean isLocal(WebContext context, jakarta.servlet.http.HttpServletRequest request)
   {
-      return context.getRequestHeader(X_FORWARDED_FOR_HEADER).orElseGet(context::getRemoteAddr);
+      return context.getRequestHeader(X_FORWARDED_FOR_HEADER).isEmpty()
+          && context.getRequestHeader(FORWARDED_HEADER).isEmpty()
+          && request.getLocalAddr().equals(request.getRemoteAddr());
   }
 
   @Override
@@ -36,7 +43,7 @@ public class LocalKerberosClient extends DirectClient
         {
           JEEContext jeeContext = (JEEContext) ctx.webContext();
           jakarta.servlet.http.HttpServletRequest request = jeeContext.getNativeRequest();
-          if (!request.getLocalAddr().equals(getRealRemoteAddress(ctx.webContext())))
+          if (!isLocal(ctx.webContext(), request))
           {
             throw new CredentialsException("LocalKerberosClient only works with local requests");
           }

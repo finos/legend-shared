@@ -35,7 +35,10 @@ public class KerberosProfile extends org.pac4j.kerberos.profile.KerberosProfile
 {
 
     private static final Logger logger = LoggerFactory.getLogger(KerberosProfile.class);
-    private static final long serialVersionUID = -8691865551996919736L;
+    // Not the pre-pac4j-6 value (-8691865551996919736L): pac4j 6 changed BasicUserProfile's external form
+    // without changing its serialVersionUID, so a pac4j 4 node must fail on this class's descriptor, which
+    // it treats as no session, instead of throwing a ClassCastException from readExternal.
+    private static final long serialVersionUID = 6302746591845067220L;
     private Subject serviceSubject;
     private Subject subject;
     // pac4j 6's KerberosProfile no longer takes or exposes the GSSContext, so it is held here.

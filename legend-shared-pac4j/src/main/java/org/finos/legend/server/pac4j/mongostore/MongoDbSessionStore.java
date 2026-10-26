@@ -15,6 +15,7 @@
 package org.finos.legend.server.pac4j.mongostore;
 
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
 import org.bson.Document;
 import org.finos.legend.server.pac4j.LegendPac4jBundle;
@@ -33,17 +34,23 @@ import java.security.GeneralSecurityException;
 import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class MongoDbSessionStore extends HttpSessionStore
 {
     private static final Logger logger = LoggerFactory.getLogger(MongoDbSessionStore.class);
     private static final String CREATED_FIELD = "created";
     private static final String ID_FIELD = "_id";
+    /** Prefix of the request attributes caching, per session id, whether the collection holds that session. */
+    private static final String STORED_ATTRIBUTE_PREFIX = MongoDbSessionStore.class.getName() + ".stored.";
     private final MongoCollection<Document> userSessions;
     private final SessionCrypt sessionCrypt;
     private final int maxSessionLength;
@@ -98,9 +105,53 @@ public class MongoDbSessionStore extends HttpSessionStore
         this.sessionTokenName = sessionTokenName;
     }
 
+    private SessionToken resolveSsoKey(WebContext context)
+    {
+        return SessionToken.resolveFromContextByIds(this.sessionTokenName, context, candidates ->
+        {
+            Set<UUID> stored = storedSessionIds(candidates);
+            candidates.forEach(candidate -> rememberStored(context, candidate, stored.contains(candidate.getSessionId())));
+            return stored;
+        });
+    }
+
+    private Set<UUID> storedSessionIds(List<SessionToken> candidates)
+    {
+        List<String> ids = candidates.stream()
+                .map(candidate -> UuidUtils.toHexString(candidate.getSessionId()))
+                .collect(Collectors.toList());
+        return this.subjectExecutor.execute(() ->
+        {
+            Set<UUID> stored = new HashSet<>();
+            for (Document doc : userSessions.find(Filters.in(ID_FIELD, ids)).projection(new Document(ID_FIELD, 1)))
+            {
+                stored.add(UuidUtils.fromHexString(doc.getString(ID_FIELD)));
+            }
+            return stored;
+        });
+    }
+
+    private boolean hasStoredSession(WebContext context, SessionToken token)
+    {
+        Optional<Object> known = context.getRequestAttribute(STORED_ATTRIBUTE_PREFIX + UuidUtils.toHexString(token.getSessionId()));
+        if (known.isPresent())
+        {
+            return (Boolean) known.get();
+        }
+        boolean stored = this.subjectExecutor.execute(
+                () -> userSessions.find(getSearchSpec(token)).projection(new Document(ID_FIELD, 1)).first()) != null;
+        rememberStored(context, token, stored);
+        return stored;
+    }
+
+    private static void rememberStored(WebContext context, SessionToken token, boolean stored)
+    {
+        context.setRequestAttribute(STORED_ATTRIBUTE_PREFIX + UuidUtils.toHexString(token.getSessionId()), stored);
+    }
+
     private SessionToken getOrCreateSsoKey(WebContext context)
     {
-        SessionToken token = SessionToken.fromContext(this.sessionTokenName, context);
+        SessionToken token = resolveSsoKey(context);
         if (token == null)
         {
             token = createSsoKey(context);
@@ -110,16 +161,99 @@ public class MongoDbSessionStore extends HttpSessionStore
 
     private SessionToken createSsoKey(WebContext context)
     {
-        SessionToken token;
-        token = SessionToken.generate();
-        token.saveInContext(this.sessionTokenName, context, maxSessionLength, this.sameSitePolicy);
-        SessionToken finalToken = token;
+        return createSsoKey(context, SessionToken.generate(), new Document());
+    }
+
+    private SessionToken createSsoKey(WebContext context, SessionToken token, Document data)
+    {
+        token.issueInContext(this.sessionTokenName, context, maxSessionLength, this.sameSitePolicy);
         this.subjectExecutor.execute((PrivilegedAction<Void>) () ->
         {
-            userSessions.insertOne(getSearchSpec(finalToken).append(CREATED_FIELD, new Date()));
+            Document session = getSearchSpec(token).append(CREATED_FIELD, new Date());
+            session.putAll(data);
+            userSessions.insertOne(session);
             return null;
         });
+        rememberStored(context, token, true);
         return token;
+    }
+
+    /**
+     * Called at sign-in, before the profile is written. Moves the session to a new token, unless this request
+     * minted it, so a token obtained or planted before sign-in does not carry the profile. The old row is
+     * emptied only if this request could decrypt it: otherwise the cookie pairs someone else's session id
+     * with a wrong key, and emptying it would log them out.
+     *
+     * <p>The HttpSession is renewed too: get() reads it first, so a JSESSIONID planted before sign-in would
+     * carry the profile even under a new token.
+     */
+    @Override
+    public boolean renewSession(WebContext context)
+    {
+        if (!SessionToken.isDestroyedInContext(this.sessionTokenName, context))
+        {
+            SessionToken token = resolveSsoKey(context);
+            if (token != null && !token.isIssuedInContext(this.sessionTokenName, context))
+            {
+                rotate(context, token);
+            }
+        }
+        return renewExistingHttpSession(context);
+    }
+
+    private void rotate(WebContext context, SessionToken token)
+    {
+        Document doc = this.subjectExecutor.execute(() -> userSessions.find(getSearchSpec(token)).first());
+        if (doc == null)
+        {
+            createSsoKey(context);
+            return;
+        }
+        Map<String, byte[]> data = new LinkedHashMap<>();
+        boolean undecryptable = false;
+        for (Map.Entry<String, Object> field : doc.entrySet())
+        {
+            if (!ID_FIELD.equals(field.getKey()) && field.getValue() instanceof String)
+            {
+                try
+                {
+                    data.put(field.getKey(), sessionCrypt.fromCryptedString((String) field.getValue(), token));
+                } catch (GeneralSecurityException e)
+                {
+                    undecryptable = true;
+                    break;
+                }
+            }
+        }
+        // A row with nothing to decrypt, e.g. one created by getSessionId(ctx, true), proves nothing: any key
+        // would pass.
+        boolean owned = !undecryptable && !data.isEmpty();
+        SessionToken rotated = SessionToken.generate();
+        Document moved = new Document();
+        if (owned)
+        {
+            try
+            {
+                for (Map.Entry<String, byte[]> field : data.entrySet())
+                {
+                    moved.append(field.getKey(), sessionCrypt.toCryptedString(field.getValue(), rotated));
+                }
+            } catch (GeneralSecurityException e)
+            {
+                logger.warn("Unable to move session data to the rotated session token", e);
+                moved = new Document();
+            }
+        }
+        createSsoKey(context, rotated, moved);
+        if (owned)
+        {
+            // Emptied, not deleted: a request still carrying the old token, sent before this response
+            // arrived, would otherwise find no row and expire the cookie by name, deleting the new one.
+            // The TTL index removes the row.
+            Document unset = new Document();
+            data.keySet().forEach(field -> unset.append(field, ""));
+            this.subjectExecutor.execute(() -> userSessions.updateOne(getSearchSpec(token), new Document("$unset", unset)));
+        }
     }
 
     private Document getSearchSpec(SessionToken token)
@@ -130,13 +264,30 @@ public class MongoDbSessionStore extends HttpSessionStore
     @Override
     public Optional<String> getSessionId(WebContext context, boolean createSession)
     {
-        // pac4j 6 passes createSession=false on paths that must stay side-effect free (matchers,
-        // bypassed paths, logout); minting a token there leaves a cookie and a Mongo row behind.
+        if (SessionToken.isDestroyedInContext(this.sessionTokenName, context))
+        {
+            return super.getSessionId(context, false);
+        }
         if (createSession)
         {
             getOrCreateSsoKey(context);
+            return super.getSessionId(context, true);
         }
-        return super.getSessionId(context, createSession);
+        // pac4j 6 passes createSession=false on paths that must stay side-effect free (matchers,
+        // bypassed paths, logout); minting a token there leaves a cookie and a Mongo row behind.
+        // A session reached by its SSO cookie alone still exists, so that ProfileManager.removeProfiles
+        // clears it. The answer is the HttpSession id where there is one; otherwise the SSO session id,
+        // because creating an HttpSession to answer would leave one, and a JSESSIONID cookie, behind on
+        // every node the user's logout or CSRF check reaches.
+        Optional<String> httpSessionId = super.getSessionId(context, false);
+        if (httpSessionId.isPresent())
+        {
+            return httpSessionId;
+        }
+        SessionToken token = resolveSsoKey(context);
+        return token != null && hasStoredSession(context, token)
+                ? Optional.of(UuidUtils.toHexString(token.getSessionId()))
+                : Optional.empty();
     }
 
     @Override
@@ -147,12 +298,13 @@ public class MongoDbSessionStore extends HttpSessionStore
         {
             // Must not mint a token: pac4j 6 ProfileManager.retrieveAll calls get() directly on
             // every request, including anonymous ones, without asking for a session id first.
-            final SessionToken token = SessionToken.fromContext(this.sessionTokenName, context);
+            final SessionToken token = resolveSsoKey(context);
             if (token == null)
             {
                 return Optional.empty();
             }
             Document doc = this.subjectExecutor.execute(() -> userSessions.find(getSearchSpec(token)).first());
+            rememberStored(context, token, doc != null);
             if (doc != null)
             {
                 String serialized = doc.getString(key);
@@ -163,7 +315,14 @@ public class MongoDbSessionStore extends HttpSessionStore
                         res =
                                 serializationHelper.deserializeFromBytes(
                                         sessionCrypt.fromCryptedString(serialized, token));
-                    } catch (GeneralSecurityException | RuntimeException e)
+                    } catch (GeneralSecurityException e)
+                    {
+                        // A wrong key, not unreadable data: the cookie pairs this session id with a key
+                        // that did not encrypt it. Evicting here would let anyone who knows a session id
+                        // log its owner out. A wrong key that happens to unpad yields bytes without the
+                        // serialization header, which JavaSerializer turns into null, not an exception.
+                        logger.warn("Unable to decrypt session data for key {}", key, e);
+                    } catch (RuntimeException e)
                     {
                         // RuntimeException is deliberate: pac4j 6 dropped a field from the
                         // Externalizable BasicUserProfile without changing its serialVersionUID, so a
@@ -193,7 +352,7 @@ public class MongoDbSessionStore extends HttpSessionStore
                 token.removeFromContext(this.sessionTokenName, context, this.sameSitePolicy); //force the token to expire because it doesn't match any credential in session store.
             }
         }
-        else if (SessionToken.fromContext(this.sessionTokenName, context) == null)
+        else if (!SessionToken.isDestroyedInContext(this.sessionTokenName, context) && resolveSsoKey(context) == null)
         {
             // if res is not null, this means we still have an active Session but an expired SSO cookie
             // we need to recreate one and add it to the context request/response
@@ -209,6 +368,10 @@ public class MongoDbSessionStore extends HttpSessionStore
     @Override
     public void set(WebContext context, String key, Object value)
     {
+        if (SessionToken.isDestroyedInContext(this.sessionTokenName, context))
+        {
+            return;
+        }
         if (value instanceof Serializable)
         {
             final SessionToken token = getOrCreateSsoKey(context);
@@ -230,9 +393,14 @@ public class MongoDbSessionStore extends HttpSessionStore
     @Override
     public boolean destroySession(WebContext context)
     {
-        final SessionToken token = getOrCreateSsoKey(context);
-        token.saveInContext(this.sessionTokenName, context, 0, this.sameSitePolicy);
-        this.subjectExecutor.execute(() -> userSessions.deleteMany(getSearchSpec(token)));
+        // Not getOrCreateSsoKey: logout without a session must not mint a token and a Mongo row.
+        final SessionToken token = resolveSsoKey(context);
+        if (token != null)
+        {
+            token.destroyInContext(this.sessionTokenName, context, this.sameSitePolicy);
+            this.subjectExecutor.execute(() -> userSessions.deleteMany(getSearchSpec(token)));
+            rememberStored(context, token, false);
+        }
         return super.destroySession(context);
     }
 

@@ -23,6 +23,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import org.finos.legend.server.pac4j.internal.HttpSessionStore;
 import org.finos.legend.server.pac4j.sessionutil.SessionToken;
+import org.finos.legend.server.pac4j.sessionutil.UuidUtils;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.core.context.session.SessionStore;
 import org.slf4j.Logger;
@@ -77,35 +78,96 @@ public class HazelcastSessionStore extends HttpSessionStore
         }
     }
 
+    private SessionToken resolveSsoKey(WebContext context)
+    {
+        // containsKey, not get: it does not deserialize the value, which fails for an older pac4j's session.
+        return SessionToken.resolveFromContext(this.sessionTokenName, context,
+                candidate -> hazelcastMap.containsKey(candidate.getSessionId()));
+    }
+
     private SessionToken getOrCreateSsoKey(WebContext context)
     {
-        SessionToken token = SessionToken.fromContext(this.sessionTokenName, context);
+        SessionToken token = resolveSsoKey(context);
         if (token == null)
         {
-            token = createSsoKey(context);
+            token = createSsoKey(context, new HashMap<>());
         }
         return token;
     }
 
-    private SessionToken createSsoKey(WebContext context)
+    private SessionToken createSsoKey(WebContext context, Map<String, Object> hazelcastSessionData)
     {
         SessionToken token = SessionToken.generate();
-        token.saveInContext(this.sessionTokenName, context, -1, this.sameSitePolicy);
-        Map<String, Object> hazelcastSessionData = new HashMap<>();
+        token.issueInContext(this.sessionTokenName, context, -1, this.sameSitePolicy);
         hazelcastMap.put(token.getSessionId(), hazelcastSessionData);
         return token;
+    }
+
+    /**
+     * Called at sign-in, before the profile is written. Moves the session to a new token, unless this request
+     * minted it, so a token obtained or planted before sign-in does not carry the profile. An HttpSession,
+     * which this store never creates, is renewed only where there is one.
+     */
+    @Override
+    public boolean renewSession(WebContext context)
+    {
+        if (!SessionToken.isDestroyedInContext(this.sessionTokenName, context))
+        {
+            SessionToken token = resolveSsoKey(context);
+            if (token != null && !token.isIssuedInContext(this.sessionTokenName, context))
+            {
+                rotate(context, token);
+            }
+        }
+        return renewExistingHttpSession(context);
+    }
+
+    private void rotate(WebContext context, SessionToken token)
+    {
+        Map<String, Object> hazelcastSessionData;
+        try
+        {
+            hazelcastSessionData = hazelcastMap.get(token.getSessionId());
+        }
+        catch (RuntimeException e)
+        {
+            if (!isUnreadableFormat(e))
+            {
+                throw e;
+            }
+            hazelcastSessionData = null;
+        }
+        createSsoKey(context, hazelcastSessionData == null ? new HashMap<>() : new HashMap<>(hazelcastSessionData));
+        // delete(), not remove(): see destroySession.
+        hazelcastMap.delete(token.getSessionId());
     }
 
     @Override
     public Optional<String> getSessionId(WebContext context, boolean createSession)
     {
-        // pac4j 6 passes createSession=false on paths that must stay side-effect free (matchers,
-        // bypassed paths, logout); minting a token there leaves a cookie and a map entry behind.
+        if (SessionToken.isDestroyedInContext(this.sessionTokenName, context))
+        {
+            return super.getSessionId(context, false);
+        }
         if (createSession)
         {
             getOrCreateSsoKey(context);
+            return super.getSessionId(context, true);
         }
-        return super.getSessionId(context, createSession);
+        // pac4j 6 passes createSession=false on paths that must stay side-effect free (matchers,
+        // bypassed paths, logout); minting a token there leaves a cookie and a map entry behind.
+        // A session reached by its SSO cookie alone still exists, so that ProfileManager.removeProfiles
+        // clears it. The answer is the HttpSession id where there is one; otherwise the SSO session id,
+        // so answering creates nothing.
+        Optional<String> httpSessionId = super.getSessionId(context, false);
+        if (httpSessionId.isPresent())
+        {
+            return httpSessionId;
+        }
+        SessionToken token = resolveSsoKey(context);
+        return token != null && hazelcastMap.containsKey(token.getSessionId())
+                ? Optional.of(UuidUtils.toHexString(token.getSessionId()))
+                : Optional.empty();
     }
 
     @Override
@@ -113,7 +175,7 @@ public class HazelcastSessionStore extends HttpSessionStore
     {
         // Must not mint a token: pac4j 6 ProfileManager.retrieveAll calls get() directly on every
         // request, including anonymous ones, without asking for a session id first.
-        SessionToken token = SessionToken.fromContext(this.sessionTokenName, context);
+        SessionToken token = resolveSsoKey(context);
         if (token == null)
         {
             return Optional.empty();
@@ -152,6 +214,8 @@ public class HazelcastSessionStore extends HttpSessionStore
             return Optional.empty();
         }
 
+        // An evicted session carries on under its id. A token this store never issued is adopted the same
+        // way, which is safe because sign-in rotates it (see renewSession).
         hazelcastMap.putIfAbsent(sessionId, new HashMap<>());
         return Optional.empty();
     }
@@ -173,6 +237,10 @@ public class HazelcastSessionStore extends HttpSessionStore
     @Override
     public void set(WebContext context, String key, Object value)
     {
+        if (SessionToken.isDestroyedInContext(this.sessionTokenName, context))
+        {
+            return;
+        }
         SessionToken token = getOrCreateSsoKey(context);
         UUID sessionId = token.getSessionId();
 
@@ -210,11 +278,15 @@ public class HazelcastSessionStore extends HttpSessionStore
     @Override
     public boolean destroySession(WebContext context)
     {
-        SessionToken token = getOrCreateSsoKey(context);
-        token.saveInContext(this.sessionTokenName, context, 0, this.sameSitePolicy);
-        // delete(), not remove(): remove() returns, and so deserializes, the previous value, which
-        // throws for a session written by an older pac4j and would break logout.
-        hazelcastMap.delete(token.getSessionId());
+        // Not getOrCreateSsoKey: logout without a session must not mint a token and a map entry.
+        SessionToken token = resolveSsoKey(context);
+        if (token != null)
+        {
+            token.destroyInContext(this.sessionTokenName, context, this.sameSitePolicy);
+            // delete(), not remove(): remove() returns, and so deserializes, the previous value, which
+            // throws for a session written by an older pac4j and would break logout.
+            hazelcastMap.delete(token.getSessionId());
+        }
         return super.destroySession(context);
     }
 
