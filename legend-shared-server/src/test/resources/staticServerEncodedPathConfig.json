@@ -1,0 +1,35 @@
+{
+  "server": {
+    "type": "simple",
+    "applicationContextPath": "/",
+    "adminContextPath": "/admin",
+    "connector": {
+      "type": "http",
+      "port": 0
+    }
+  },
+  "uiPath": "/ui",
+  "html5Router": true,
+  "pac4j": {
+    "mongoUri": "overridden by the test",
+    "mongoDb": "legend",
+    "alwaysUseSessionStorage": true,
+    "clients": [
+      {
+        "org.pac4j.core.client.direct.AnonymousClient": {}
+      }
+    ],
+    "mongoSession": {
+      "enabled": true,
+      "collection": "userSessions"
+    }
+  },
+  "logging": {
+    "level": "WARN",
+    "appenders": [
+      {
+        "type": "console"
+      }
+    ]
+  }
+}

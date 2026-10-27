@@ -122,10 +122,10 @@ public class Server extends Application<org.finos.legend.server.shared.staticser
             sessionHandler.setSessionCookie(staticServerConfiguration.getSessionCookie());
         }
         environment.servlets().setSessionHandler(sessionHandler);
-        makeSessionCookieSecure(environment.getApplicationContext().getServletContext());
+        makeSessionCookieSecure(environment.getApplicationContext().getServletContext(), staticServerConfiguration.getSessionCookieSameSite());
     }
 
-    private void makeSessionCookieSecure(ServletContext servletContext)
+    private void makeSessionCookieSecure(ServletContext servletContext, HttpCookie.SameSite sameSite)
     {
         SessionCookieConfig sessionCookieConfig = servletContext.getSessionCookieConfig();
         if (sessionCookieConfig != null)
@@ -133,8 +133,8 @@ public class Server extends Application<org.finos.legend.server.shared.staticser
             sessionCookieConfig.setSecure(true);
             sessionCookieConfig.setHttpOnly(true);
             // HttpCookie.SAME_SITE_ATTRIBUTE is the cookie attribute name "SameSite", not a context-attribute key.
-            sessionCookieConfig.setAttribute(HttpCookie.SAME_SITE_ATTRIBUTE, "Strict");
+            sessionCookieConfig.setAttribute(HttpCookie.SAME_SITE_ATTRIBUTE, sameSite.getAttributeValue());
         }
-        servletContext.setAttribute(HttpCookieUtils.SAME_SITE_DEFAULT_ATTRIBUTE, "STRICT");
+        servletContext.setAttribute(HttpCookieUtils.SAME_SITE_DEFAULT_ATTRIBUTE, sameSite.name());
     }
 }

@@ -17,8 +17,10 @@ package org.finos.legend.server.shared.staticserver;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.dropwizard.core.Configuration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.eclipse.jetty.http.HttpCookie;
 import org.finos.legend.server.pac4j.LegendPac4jConfiguration;
 
 @SuppressWarnings({"unused", "FieldMayBeFinal"})
@@ -27,6 +29,7 @@ public class StaticServerConfiguration extends Configuration
   // This can be set to avoid Jetty session cookie name collision between multiple servers running on `localhost` during development
   // See https://stackoverflow.com/questions/16789495/two-applications-on-the-same-server-use-the-same-jsessionid
   private String sessionCookie;
+  private HttpCookie.SameSite sessionCookieSameSite = HttpCookie.SameSite.STRICT;
   private String uiPath;
   private boolean html5Router;
 
@@ -42,6 +45,26 @@ public class StaticServerConfiguration extends Configuration
   public String getSessionCookie()
   {
     return sessionCookie;
+  }
+
+  /**
+   * The SameSite of the session cookie, and the default for other cookies set through the servlet API.
+   * Strict unless configured. The SSO token cookie takes {@code pac4j.sessionTokenSameSite} instead.
+   *
+   * <p>A Strict session cookie is not sent when an identity provider on another site redirects back to the
+   * login callback, so the callback cannot find the login state it saved; Lax is sent on that redirect.
+   */
+  public HttpCookie.SameSite getSessionCookieSameSite()
+  {
+    return sessionCookieSameSite;
+  }
+
+  public void setSessionCookieSameSite(String sameSite)
+  {
+    this.sessionCookieSameSite = Arrays.stream(HttpCookie.SameSite.values())
+        .filter(value -> sameSite != null && value.getAttributeValue().equalsIgnoreCase(sameSite.trim()))
+        .findFirst()
+        .orElseThrow(() -> new IllegalArgumentException("sessionCookieSameSite must be Strict, Lax or None, not '" + sameSite + "'"));
   }
 
   public String getUiPath()

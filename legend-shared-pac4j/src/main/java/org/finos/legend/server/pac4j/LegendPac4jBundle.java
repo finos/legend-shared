@@ -359,6 +359,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
         configurationSourceProvider = bootstrap.getConfigurationSourceProvider();
         objectMapper = bootstrap.getObjectMapper();
         objectMapper.addMixIn(BaseClient.class, IgnoreClientConfigMixin.class);
+        // Dropwizard builds the configuration factory from a copy of this mapper, after every bundle's initialize
+        objectMapper.registerModule(new ForwardedHeadersDefaultModule());
     }
 
     /**

@@ -47,6 +47,13 @@ public class ChainFixingFilterHandler extends ServletHandler
     this.setBeans(servletHandler.getBeans());
     this.setServlets(servletHandler.getServlets());
     this.setServletMappings(servletHandler.getServletMappings());
+    this.setListeners(servletHandler.getListeners());
+    this.setDecodeAmbiguousURIs(servletHandler.isDecodeAmbiguousURIs());
+    this.setEnsureDefaultServlet(servletHandler.isEnsureDefaultServlet());
+    this.setStartWithUnavailable(servletHandler.isStartWithUnavailable());
+    this.setAllowDuplicateMappings(servletHandler.isAllowDuplicateMappings());
+    this.setFilterChainsCached(servletHandler.isFilterChainsCached());
+    this.setMaxFilterChainsCacheSize(servletHandler.getMaxFilterChainsCacheSize());
   }
 
   public static void apply(
