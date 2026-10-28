@@ -62,13 +62,16 @@ Bump with `mvn versions:set-property -Dproperty=<prop> -DnewVersion=<v>`.
 
 - **Tag:** `<repo-name>-<version>`, e.g. `legend-engine-4.143.1`, `legend-shared-0.37.1`.
   Built in the workflows as `${{ github.event.repository.name }}-${{ inputs.releaseVersion }}`.
-- **Release branch:** `release-legend-release-<STACK-VERSION>` — the *Legend stack*
+- **Release branch:** `legend-release-<STACK-VERSION>` — the *Legend stack*
   number, NOT the repo's own artifact version. `legend-engine` on
   `release-legend-release-4.100` carries engine version `4.143.x`; `legend-sdlc`
   on `release-legend-release-4.99` carries sdlc version `0.232.x`. Never derive
-  one from the other.
-- **Backport label:** `backport release-legend-release-<STACK-VERSION>`, created by
-  `create-release-branch.yml`. Applying it to a merged master PR opens the backport PR.
+  one from the other. Older release branches were named
+  `release-legend-release-<STACK-VERSION>`; they keep that name, so check which
+  one exists (`git ls-remote --heads origin '*legend-release-<STACK-VERSION>'`).
+- **Backport label:** `backport <release-branch>`, e.g.
+  `backport legend-release-<STACK-VERSION>`, created by `create-release-branch.yml`.
+  Applying it to a merged master PR opens the backport PR.
 - **Central coordinate URL:**
   `https://repo1.maven.org/maven2/<groupId with dots as slashes>/<artifactId>/<version>/<artifactId>-<version>.pom`
   A `200` means the version is published and **immutable** — that version number is burned.

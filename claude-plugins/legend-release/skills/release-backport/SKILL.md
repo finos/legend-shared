@@ -19,11 +19,12 @@ label conventions.
 
 ## Preferred route: the label
 
-`create-release-branch.yml` creates a label `backport release-legend-release-<stack-version>`
-for each release branch. Applying it to a **merged master PR** opens the backport
-PR automatically via `backport.yml`:
+`create-release-branch.yml` creates a label `backport <release-branch>` (e.g.
+`backport legend-release-<stack-version>`; older branches are
+`release-legend-release-<stack-version>`) for each release branch. Applying it to a
+**merged master PR** opens the backport PR automatically via `backport.yml`:
 ```bash
-gh pr edit <pr> --add-label "backport release-legend-release-<stack-version>"
+gh pr edit <pr> --add-label "backport <release-branch>"
 ```
 Use this when the fix is a merged master PR. Note the known limitation in
 `backport.yml`: adding a second backport label later re-evaluates *all* labels
