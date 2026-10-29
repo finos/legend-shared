@@ -54,7 +54,7 @@ For each repo in order:
 
 Each repo has its **own independent artifact version** — engine `4.143.x`, sdlc
 `0.232.x`, depot `2.96.x`, pure `5.97.x`, shared `0.37.x`. The release *branch*
-name carries the Legend **stack** number (`release-legend-release-4.100`), which
+name carries the Legend **stack** number (`legend-release-<stack-version>`), which
 is unrelated to any of them. Never derive one from the other; read each repo's
 root pom for its current version and increment the patch unless told otherwise.
 
