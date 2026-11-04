@@ -405,6 +405,33 @@ public class LegendSecurityLogicTest
 
     }
 
+    /**
+     * Blank authorizers must reach pac4j as "none": left blank, pac4j computes its default (CSRF check, for an indirect
+     * client), which rejects every POST/PUT/PATCH/DELETE because nothing here generates a CSRF token.
+     */
+    @Test
+    public void testPerform_MultiProfile_FalseOrNull_BlankAuthorizersDefaultToNone() throws Exception
+    {
+        SecurityGrantedAccessAdapter adapter = mock(SecurityGrantedAccessAdapter.class);
+        doReturn(mock(Object.class)).when(legendSecurityLogic).callParentPerform(any(), any(), any(), any(), any(), any());
+
+        Boolean[] multiProfileValues = {false, null};
+        String[][] authorizersAndExpected = {{null, "none"}, {"", "none"}, {"  ", "none"}, {"custom", "custom"}};
+        List<String> expected = new ArrayList<>();
+        for (Boolean multiProfile : multiProfileValues)
+        {
+            legendSecurityLogic.setMultiProfile(multiProfile != null && multiProfile);
+            for (String[] pair : authorizersAndExpected)
+            {
+                legendSecurityLogic.perform(config, adapter, "AnonymousClient", pair[0], "matchers", null);
+                expected.add(pair[1]);
+            }
+        }
+
+        ArgumentCaptor<String> authorizers = ArgumentCaptor.forClass(String.class);
+        verify(legendSecurityLogic, times(expected.size())).callParentPerform(any(), any(), any(), authorizers.capture(), any(), any());
+        assertEquals(expected, authorizers.getAllValues());
+    }
 
     @Test
     public void testPerform_MultiProfile_BrowserCall_WithoutConstrainedKerberosFlowAttribute() throws Exception
