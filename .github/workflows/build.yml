@@ -62,11 +62,6 @@ jobs:
     - name: Download deps and plugins
       run: mvn de.qaware.maven:go-offline-maven-plugin:resolve-dependencies
 
-    - name: Collect Workflow Telemetry
-      uses: runforesight/workflow-telemetry-action@v1
-      with:
-        theme: dark
-
     - name: Build + Test
       run: mvn install javadoc:javadoc -Dmaven.test.failure.ignore=true
 
