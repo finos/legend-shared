@@ -44,7 +44,7 @@ public class LegendSecurityLogic<R, C extends WebContext> extends DefaultSecurit
         if (!multiProfile)
         {
             LOGGER.debug("MultiProfile turned off falling back to default handling");
-            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, authorizers, matchers, inputMultiProfile, parameters);
+            return callParentPerform(context, config, securityGrantedAccessAdapter, httpActionAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, inputMultiProfile, parameters);
         }
         if (nonBrowserCall(context))
         {
