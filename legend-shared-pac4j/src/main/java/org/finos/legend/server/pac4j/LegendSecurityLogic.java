@@ -95,7 +95,7 @@ public class LegendSecurityLogic extends DefaultSecurityLogic
         if (!this.multiProfile)
         {
             LOGGER.debug("MultiProfile turned off falling back to default handling");
-            return callParentPerform(config, securityGrantedAccessAdapter, clients, authorizers, matchers, parameters);
+            return callParentPerform(config, securityGrantedAccessAdapter, clients, CommonHelper.isBlank(authorizers) ? "none" : authorizers, matchers, parameters);
         }
         if (nonBrowserCall(context))
         {
