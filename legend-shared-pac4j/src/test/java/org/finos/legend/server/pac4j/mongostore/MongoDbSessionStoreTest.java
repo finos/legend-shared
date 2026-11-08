@@ -209,6 +209,30 @@ public class MongoDbSessionStoreTest
     }
 
     @Test
+    public void aSessionOnAParentHostStaysOutOfASubdomainsSignIn()
+    {
+        SessionStoreTestUtil.testASessionOnAParentHostStaysOutOfASubdomainsSignIn(store);
+    }
+
+    @Test
+    public void signInReplacesALegacyDomainCookie()
+    {
+        SessionStoreTestUtil.testSignInReplacesALegacyDomainCookie(store);
+    }
+
+    @Test
+    public void logoutExpiresALegacyDomainCookie()
+    {
+        SessionStoreTestUtil.testLogoutExpiresALegacyDomainCookie(store, STORE_HAS_SESSION);
+    }
+
+    @Test
+    public void aFreshSessionSetsOneHostOnlyCookie()
+    {
+        SessionStoreTestUtil.testAFreshSessionSetsOneHostOnlyCookie(store);
+    }
+
+    @Test
     public void aPlantedHttpSessionDoesNotCarryTheProfile()
     {
         assertPlantedHttpSessionDoesNotCarryTheProfile(false);

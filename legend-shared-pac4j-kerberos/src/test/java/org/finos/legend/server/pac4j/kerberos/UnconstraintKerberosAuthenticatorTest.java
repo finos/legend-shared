@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.pac4j.jee.context.JEEContext;
 import org.pac4j.core.context.CallContext;
+import org.pac4j.core.exception.BadCredentialsException;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.kerberos.credentials.KerberosCredentials;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -186,6 +187,32 @@ public class UnconstraintKerberosAuthenticatorTest
             verify(mokcedWebContext).getPath();
             verify(mokcedWebContext).getNativeRequest();
             verify(mockedContext).acceptSecContext(eq(spnegoToken), eq(0), eq(spnegoToken.length));
+        }
+    }
+
+    @Test
+    public void testNoDelegationWithoutARedirectHostIsChallengedAgain() throws Exception
+    {
+        UnconstraintKerberosAuthenticator noRedirect = new UnconstraintKerberosAuthenticator("service@REALM", "/test/service/keytab", null);
+        GSSManager mockedManager = mock(GSSManager.class);
+        GSSCredential mockedAcceptCred = mock(GSSCredential.class);
+        GSSContext mockedContext = mock(GSSContext.class);
+        GSSName mockedGSSName = mock(GSSName.class);
+        JEEContext webContext = new JEEContext(new MockHttpServletRequest(), new MockHttpServletResponse());
+        try (MockedStatic<GSSManager> gssManagerMockedStatic = mockStatic(GSSManager.class))
+        {
+            gssManagerMockedStatic.when(GSSManager::getInstance).thenReturn(mockedManager);
+            when(mockedManager.createCredential(any(), anyInt(), (Oid) any(), anyInt())).thenReturn(mockedAcceptCred);
+            when(mockedManager.createContext(mockedAcceptCred)).thenReturn(mockedContext);
+            when(mockedContext.acceptSecContext(any(), eq(0), anyInt())).thenReturn(new byte[] {10, 20, 30});
+            when(mockedContext.getCredDelegState()).thenReturn(false);
+            when(mockedContext.getSrcName()).thenReturn(mockedGSSName);
+            when(mockedGSSName.toString()).thenReturn("mockUser@REALM");
+
+            assertThrows(BadCredentialsException.class,
+                    () -> noRedirect.validate(new CallContext(webContext, null), new KerberosCredentials(new byte[] {1, 2, 3})));
+
+            assertEquals("Negotiate", webContext.getResponseHeader("WWW-Authenticate").orElse(null));
         }
     }
 

@@ -44,12 +44,19 @@ public class SessionStoreTestUtil {
     /**
      * pac4j writes a raw Set-Cookie header rather than calling HttpServletResponse.addCookie,
      * so MockHttpServletResponse.getCookies() does not see the cookie.
+     *
+     * <p>Leaves out a cookie with a Domain: the store only sets host-only cookies, and expires the Domain cookie of
+     * earlier releases besides, which the tests using a {@link BrowserCookieJar} cover.
      */
     public static Cookie[] responseCookies(MockHttpServletResponse response)
     {
         List<Cookie> cookies = new ArrayList<>();
         for (String header : response.getHeaders("Set-Cookie"))
         {
+            if (header.toLowerCase().contains("; domain="))
+            {
+                continue;
+            }
             String[] attributes = header.split(";");
             String[] nameAndValue = attributes[0].split("=", 2);
             Cookie cookie = new Cookie(nameAndValue[0].trim(), nameAndValue.length > 1 ? nameAndValue[1].trim() : "");
@@ -325,6 +332,89 @@ public class SessionStoreTestUtil {
 
         assertEquals(0, response.getHeaders("Set-Cookie").size());
         assertEquals("alice", profiles(store, token).get(0).getId());
+    }
+
+    /**
+     * Two hosts sharing the store, one a subdomain of the other, signed in to in turn in one browser: the
+     * subdomain's sign-in saves the state of an indirect client's redirect, which its callback, on another node,
+     * must find.
+     */
+    public static void testASessionOnAParentHostStaysOutOfASubdomainsSignIn(HttpSessionStore store)
+    {
+        String parent = "exec.example.com";
+        String subdomain = "authv2.exec.example.com";
+        BrowserCookieJar browser = new BrowserCookieJar();
+
+        MockHttpServletResponse parentSignIn = new MockHttpServletResponse();
+        signIn(browser.request(parent, parentSignIn), store, true, profile("A"));
+        browser.receive(parent, parentSignIn);
+
+        MockHttpServletResponse subdomainSignIn = new MockHttpServletResponse();
+        JEEContext subdomainContext = browser.request(subdomain, subdomainSignIn);
+        signIn(subdomainContext, store, true, profile("B"));
+        store.set(subdomainContext, "redirectState", "state-1");
+        browser.receive(subdomain, subdomainSignIn);
+
+        assertEquals("the callback finds the state saved before the redirect", "state-1",
+                store.get(browser.request(subdomain, new MockHttpServletResponse()), "redirectState").orElse(null));
+        assertEquals("the parent host's session is left alone", Arrays.asList("A"),
+                clientNames(new ProfileManager(browser.request(parent, new MockHttpServletResponse()), store).getProfiles()));
+        assertEquals(Arrays.asList("B"),
+                clientNames(new ProfileManager(browser.request(subdomain, new MockHttpServletResponse()), store).getProfiles()));
+    }
+
+    /**
+     * Earlier releases set the cookie with Domain=&lt;server name&gt;, which a browser keeps apart from the host-only
+     * cookie. Left in place after a sign-in, it would be sent ahead of the new cookie and resolve to the session
+     * the sign-in moved away from.
+     */
+    public static void testSignInReplacesALegacyDomainCookie(HttpSessionStore store)
+    {
+        String host = "exec.example.com";
+        BrowserCookieJar browser = new BrowserCookieJar();
+        browser.addDomainCookie("LegendSSOTest", login(store, "testValue"), host);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        signIn(browser.request(host, response), store, false, profile("A"));
+        browser.receive(host, response);
+
+        List<String> sent = browser.valuesSentTo(host, "LegendSSOTest");
+        assertEquals("only the new cookie is left", 1, sent.size());
+        assertEquals(Arrays.asList("A"), clientNames(profiles(store, sent.get(0))));
+        assertEquals("the session's data moves with it", "testValue",
+                store.get(browser.request(host, new MockHttpServletResponse()), "testKey").orElse(null));
+    }
+
+    public static void testLogoutExpiresALegacyDomainCookie(HttpSessionStore store, Predicate<String> storeHasSession)
+    {
+        String host = "exec.example.com";
+        String token = login(store, "testValue");
+        BrowserCookieJar browser = new BrowserCookieJar();
+        browser.addDomainCookie("LegendSSOTest", token, host);
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        store.destroySession(browser.request(host, response));
+        browser.receive(host, response);
+
+        assertFalse(storeHasSession.test(token));
+        assertTrue(browser.valuesSentTo(host, "LegendSSOTest").isEmpty());
+    }
+
+    public static void testAFreshSessionSetsOneHostOnlyCookie(HttpSessionStore store)
+    {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        store.set(new JEEContext(new MockHttpServletRequest(), response), "testKey", "testValue");
+
+        List<String> headers = response.getHeaders("Set-Cookie");
+        assertEquals("no request cookie, so no legacy cookie to expire", 1, headers.size());
+        assertFalse(headers.get(0), headers.get(0).toLowerCase().contains("domain="));
+    }
+
+    private static List<String> clientNames(List<UserProfile> profiles)
+    {
+        List<String> names = new ArrayList<>();
+        profiles.forEach(p -> names.add(p.getClientName()));
+        return names;
     }
 
     public static void signIn(JEEContext context, HttpSessionStore store, boolean multiProfile, UserProfile... profiles)

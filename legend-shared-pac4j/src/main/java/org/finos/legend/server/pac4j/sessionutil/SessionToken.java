@@ -244,14 +244,19 @@ public class SessionToken
         saveInContext(cookieName, context, ttl, DEFAULT_SAME_SITE_POLICY);
     }
 
+    /**
+     * Sets a host-only cookie, without a Domain: one with Domain=&lt;server name&gt; also goes to every subdomain,
+     * where a Legend app sharing the session store would take this session for its own and, signing in, move it
+     * to a token of its own.
+     */
     public void saveInContext(String cookieName, WebContext context, int ttl, String sameSitePolicy)
     {
         Cookie cookie = toCookie(cookieName, sameSitePolicy);
-        cookie.setDomain(context.getServerName());
         cookie.setPath("/");
         cookie.setHttpOnly(true);
         cookie.setMaxAge(ttl);
         context.addResponseCookie(cookie);
+        expireLegacyCookie(cookieName, context, sameSitePolicy);
         context.setRequestAttribute(cookieName, cookie.getValue());
     }
 
@@ -291,6 +296,26 @@ public class SessionToken
     private void expireCookie(String cookieName, WebContext context, String sameSitePolicy)
     {
         Cookie cookie = toCookie(cookieName, sameSitePolicy);
+        cookie.setPath("/");
+        cookie.setHttpOnly(true);
+        cookie.setMaxAge(0);
+        context.addResponseCookie(cookie);
+        expireLegacyCookie(cookieName, context, sameSitePolicy);
+    }
+
+    /**
+     * Expires the cookie earlier releases set, with Domain=&lt;server name&gt;. A browser keeps it apart from the
+     * host-only cookie and sends both, oldest first, so left in place it would hide the new cookie behind the
+     * session it replaced. Only a request carrying a cookie of this name can have it.
+     */
+    private static void expireLegacyCookie(String cookieName, WebContext context, String sameSitePolicy)
+    {
+        if (context.getRequestCookies().stream().noneMatch(c -> c.getName().equals(cookieName)))
+        {
+            return;
+        }
+        Cookie cookie = new Cookie(cookieName, "");
+        cookie.setSameSitePolicy(sameSitePolicy);
         cookie.setDomain(context.getServerName());
         cookie.setPath("/");
         cookie.setHttpOnly(true);
