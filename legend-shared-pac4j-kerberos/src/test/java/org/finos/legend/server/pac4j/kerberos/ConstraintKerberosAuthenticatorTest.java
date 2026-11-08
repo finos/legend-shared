@@ -20,6 +20,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.pac4j.core.context.CallContext;
+import org.pac4j.core.exception.BadCredentialsException;
 import org.pac4j.core.context.WebContext;
 import org.pac4j.jee.context.JEEContext;
 import org.pac4j.kerberos.credentials.KerberosCredentials;
@@ -183,6 +184,35 @@ public class ConstraintKerberosAuthenticatorTest
             verify(mokcedWebContext).setResponseHeader(eq("WWW-Authenticate"),
                     argThat(h -> h.startsWith("Negotiate " + Base64.getEncoder().encodeToString(responseToken))));
             verify(mockedContext).acceptSecContext(eq(spnegoToken), eq(0), eq(spnegoToken.length));
+        }
+    }
+
+    @Test
+    public void testNoDelegationIsChallengedAgain() throws Exception
+    {
+        GSSManager mockedManager = mock(GSSManager.class);
+        GSSCredential mockedAcceptCred = mock(GSSCredential.class);
+        GSSContext mockedContext = mock(GSSContext.class);
+        GSSName mockedGSSName = mock(GSSName.class);
+        JEEContext webContext = new JEEContext(new MockHttpServletRequest(), new MockHttpServletResponse());
+        try (MockedStatic<GSSManager> gssManagerMockedStatic = mockStatic(GSSManager.class))
+        {
+            gssManagerMockedStatic.when(GSSManager::getInstance).thenReturn(mockedManager);
+            when(mockedManager.createCredential(any(), anyInt(), (Oid) any(), anyInt())).thenReturn(mockedAcceptCred);
+            when(mockedManager.createContext(mockedAcceptCred)).thenReturn(mockedContext);
+            when(mockedContext.acceptSecContext(any(), eq(0), anyInt())).thenReturn(new byte[] {10, 20, 30});
+            when(mockedContext.isEstablished()).thenReturn(false).thenReturn(true);
+            when(mockedContext.getCredDelegState()).thenReturn(false);
+            when(mockedContext.getSrcName()).thenReturn(mockedGSSName);
+            when(mockedGSSName.toString()).thenReturn("mockUser@REALM");
+            Subject fakeSubject = new Subject();
+            fakeSubject.getPrincipals().add(new KerberosPrincipal("mockUser@REALM"));
+            doReturn(fakeSubject).when(delegationKerberosAuth).getServiceSubject();
+
+            assertThrows(BadCredentialsException.class,
+                    () -> delegationKerberosAuth.validate(new CallContext(webContext, null), new KerberosCredentials(new byte[] {1, 2, 3})));
+
+            assertEquals("Negotiate", webContext.getResponseHeader("WWW-Authenticate").orElse(null));
         }
     }
 

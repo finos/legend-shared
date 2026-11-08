@@ -44,4 +44,18 @@ final class NegotiateResponseHeader
         // token rather than the empty value DirectClient.checkCredentials left there.
         webContext.setResponseHeader(HttpConstants.AUTHENTICATE_HEADER, value);
     }
+
+    /**
+     * Asks the client to negotiate again, after a ticket this service could not validate. Only through the
+     * context: {@link JEEContext} writes it for the 4xx pac4j then sends, and a request another client goes on
+     * to authenticate must not carry a challenge with no token.
+     *
+     * <p>pac4j 6 blanks {@code WWW-Authenticate} once credentials have been extracted, where pac4j 4 left the
+     * {@code Negotiate} that {@code DirectKerberosClient} sets before extracting them, so a rejected ticket would
+     * otherwise be answered with a 401 that has no challenge.
+     */
+    static void challenge(WebContext webContext)
+    {
+        webContext.setResponseHeader(HttpConstants.AUTHENTICATE_HEADER, "Negotiate");
+    }
 }

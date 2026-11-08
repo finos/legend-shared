@@ -125,6 +125,7 @@ public class ConstraintKerberosAuthenticator implements Authenticator
         catch (CredentialsException e)
         {
             LOGGER.error("validate failed {}", e.getMessage());
+            NegotiateResponseHeader.challenge(webContext);
             throw e;
         }
         catch (Exception e)
@@ -137,6 +138,7 @@ public class ConstraintKerberosAuthenticator implements Authenticator
                 message = message + ": " + exMessage;
             }
             LOGGER.error("Validate failed: {}",message,cause);
+            NegotiateResponseHeader.challenge(webContext);
             throw new BadCredentialsException(message, cause);
         }
         return Optional.of(rawCredentials);

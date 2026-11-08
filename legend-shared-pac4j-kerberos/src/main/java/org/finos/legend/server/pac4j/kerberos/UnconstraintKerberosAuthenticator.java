@@ -131,6 +131,7 @@ public class UnconstraintKerberosAuthenticator implements Authenticator
         catch (CredentialsException e)
         {
             LOGGER.error("validate failed {}", e.getMessage());
+            NegotiateResponseHeader.challenge(webContext);
             throw e;
         }
         catch (TemporaryRedirectAction e)
@@ -147,6 +148,7 @@ public class UnconstraintKerberosAuthenticator implements Authenticator
                 message = message + ": " + exMessage;
             }
             LOGGER.error("Validate failed:  {} {}",message,cause);
+            NegotiateResponseHeader.challenge(webContext);
             throw new BadCredentialsException(message, cause);
         }
         return Optional.of(rawCredentials);
