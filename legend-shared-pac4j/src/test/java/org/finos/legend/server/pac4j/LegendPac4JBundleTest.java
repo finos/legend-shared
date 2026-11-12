@@ -22,6 +22,7 @@ import io.dropwizard.core.setup.Environment;
 import org.eclipse.jetty.ee10.servlet.FilterHolder;
 import org.eclipse.jetty.ee10.servlet.ServletHandler;
 import org.finos.legend.server.pac4j.hazelcaststore.HazelcastSessionStore;
+import org.finos.legend.server.pac4j.internal.RequestBodyDrainingHttpActionAdapter;
 import org.junit.Test;
 import org.pac4j.core.client.BaseClient;
 import org.pac4j.core.client.Client;
@@ -52,6 +53,20 @@ public class LegendPac4JBundleTest
     Config builtConfig = factory.build();
     assertEquals("/test/callback", builtConfig.getClients().getCallbackUrl());
     assertEquals(config.getClients(), builtConfig.getClients().getClients());
+  }
+
+  @Test
+  public void pac4jReadsTheRestOfTheRequestBodyBeforeAnswering()
+  {
+    LegendPac4jConfiguration config = new LegendPac4jConfiguration();
+    config.setCallbackPrefix("/test");
+    config.setClients(ImmutableList.<Client>of(new TestClient()));
+
+    Config builtConfig = new LegendPac4jBundle<>(c -> config)
+            .getPac4jFactory(new Configuration()).build();
+
+    assertTrue(String.valueOf(builtConfig.getHttpActionAdapter()),
+            builtConfig.getHttpActionAdapter() instanceof RequestBodyDrainingHttpActionAdapter);
   }
 
   /**
