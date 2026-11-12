@@ -32,6 +32,7 @@ import org.bson.Document;
 import org.eclipse.jetty.ee10.servlet.FilterMapping;
 import org.finos.legend.server.pac4j.hazelcaststore.HazelcastSessionStore;
 import org.finos.legend.server.pac4j.internal.AcceptHeaderAjaxRequestResolver;
+import org.finos.legend.server.pac4j.internal.RequestBodyDrainingHttpActionAdapter;
 import org.finos.legend.server.pac4j.internal.SecurityFilterHandler;
 import org.finos.legend.server.pac4j.internal.UsernameFilter;
 import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
@@ -258,6 +259,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                         config.setMatchers(matchers);
                         config.setSecurityLogic(legendSecurityLogic);
                         config.setCallbackLogic(new LegendCallbackLogic(multiProfile));
+                        // pac4j answers before reading the request body, which Jetty 12 turns into a reset
+                        config.setHttpActionAdapter(new RequestBodyDrainingHttpActionAdapter(config.getHttpActionAdapter()));
 
                         String sessionCookieName = legendConfig.getSessionTokenName() != null ? legendConfig.getSessionTokenName() : defaultSessionCookieName;
                         // Resolved eagerly so an invalid value fails startup; pac4j would silently write Lax.
