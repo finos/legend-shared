@@ -17,6 +17,7 @@ package org.finos.legend.server.pac4j;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.hazelcast.core.HazelcastInstance;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -84,6 +85,7 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     private SessionStore legendSessionStore;
     private final Function<C, LegendPac4jConfiguration> configSupplier;
     private final Function<C, Supplier<Subject>> subjectSupplierSupplier;
+    private final Function<C, HazelcastInstance> hazelcastInstanceSupplier;
     private ConfigurationSourceProvider configurationSourceProvider;
     private ObjectMapper objectMapper;
 
@@ -101,8 +103,17 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier,
                                Function<C, Supplier<Subject>> subjectSupplierSupplier)
     {
+        this(configSupplier, subjectSupplierSupplier, null);
+    }
+
+    @SuppressWarnings("WeakerAccess")
+    public LegendPac4jBundle(Function<C, LegendPac4jConfiguration> configSupplier,
+                             Function<C, Supplier<Subject>> subjectSupplierSupplier,
+                             Function<C, HazelcastInstance> hazelcastInstanceSupplier)
+    {
         this.configSupplier = configSupplier;
         this.subjectSupplierSupplier = subjectSupplierSupplier;
+        this.hazelcastInstanceSupplier = hazelcastInstanceSupplier;
     }
 
     /**
@@ -158,6 +169,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
         final SubjectExecutor subjectExecutor = new SubjectExecutor(
                 Objects.isNull(this.subjectSupplierSupplier) ? null : this.subjectSupplierSupplier.apply(configuration));
 
+
+
         MongoDatabase db = null;
         if (StringUtils.isNotEmpty(legendConfig.getMongoDb()) && StringUtils.isNotEmpty(legendConfig.getMongoUri()))
         {
@@ -165,7 +178,14 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
             db = subjectExecutor.execute(() -> client.getDatabase(legendConfig.getMongoDb()));
         }
 
+        HazelcastInstance hazelcastInstance = null;
+        if (legendConfig.getHazelcastSession() != null && legendConfig.getHazelcastSession().isClientOnly())
+        {
+            hazelcastInstance = hazelcastInstanceSupplier.apply(configuration);
+        }
+
         final MongoDatabase finalDb = db;
+        final HazelcastInstance finalHazelcastInstance = hazelcastInstance;
 
         final AcceptHeaderAjaxRequestResolver ajaxRequestResolver = new AcceptHeaderAjaxRequestResolver();
         ajaxRequestResolver.setAddRedirectionUrlAsHeader(true);
@@ -267,6 +287,8 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
                         {
                             HazelcastSessionStore hazelcastSessionStore = new HazelcastSessionStore(
                                     legendConfig.getHazelcastSession().getConfigFilePath(),
+                                    legendConfig.getHazelcastSession().isClientOnly(),
+                                    finalHazelcastInstance,
                                     ImmutableMap.of(
                                             JEEContext.class, new JEESessionStore(),
                                             JaxRsContext.class, ServletSessionStore.INSTANCE,
