@@ -29,11 +29,11 @@ import org.pac4j.core.context.session.SessionStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.InvalidClassException;
 import java.io.Serializable;
 import java.io.UncheckedIOException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -43,6 +43,8 @@ public class HazelcastSessionStore extends HttpSessionStore
 {
     private static final Logger logger = LoggerFactory.getLogger(HazelcastSessionStore.class);
 
+    private static final String SESSION_STORE_MAP_NAME = "session-store";
+
     private final IMap<UUID, Map<String, Object>> hazelcastMap;
     private String sessionTokenName;
     private String sameSitePolicy = SessionToken.DEFAULT_SAME_SITE_POLICY;
@@ -50,28 +52,39 @@ public class HazelcastSessionStore extends HttpSessionStore
     public HazelcastSessionStore(String hazelcastConfigFilePath,
                                  Map<Class<? extends WebContext>, SessionStore> underlyingStores, String sessionTokenName)
     {
+        this(hazelcastConfigFilePath, false, null, underlyingStores, sessionTokenName);
+    }
+
+    public HazelcastSessionStore(String hazelcastConfigFilePath, boolean clientOnly, HazelcastInstance hazelcastInstance,
+                                 Map<Class<? extends WebContext>, SessionStore> underlyingStores, String sessionTokenName)
+    {
         super(underlyingStores);
         this.sessionTokenName = sessionTokenName;
         try
         {
-            FileSystemYamlConfig fileConfig = new FileSystemYamlConfig(hazelcastConfigFilePath);
-            HazelcastInstance hazelcastInstance = Hazelcast.getOrCreateHazelcastInstance(fileConfig);
-
-            Collection<MapConfig> mapConfigs = fileConfig.getMapConfigs().values();
-            Optional<MapConfig> optionalMapConfig = mapConfigs.stream().findFirst();
-            if (mapConfigs.size() == 1)
+            if (clientOnly)
             {
-                MapConfig hazelcastMapConfig = optionalMapConfig.get();
-                this.hazelcastMap = hazelcastInstance.getMap(hazelcastMapConfig.getName());
-
+                // cannot easily do a client side check of the session store map's configuration
+                this.hazelcastMap = hazelcastInstance.getMap(SESSION_STORE_MAP_NAME);
             }
             else
             {
-                throw new IllegalStateException(
-                        "The Hazelcast config needs to include exactly one Map Configuration");
+                FileSystemYamlConfig fileConfig = new FileSystemYamlConfig(hazelcastConfigFilePath);
+                HazelcastInstance embeddedInstance = Hazelcast.getOrCreateHazelcastInstance(fileConfig);
+
+                MapConfig hazelcastMapConfig = fileConfig.getMapConfigs().get(SESSION_STORE_MAP_NAME);
+                if (hazelcastMapConfig != null)
+                {
+                    this.hazelcastMap = embeddedInstance.getMap(SESSION_STORE_MAP_NAME);
+                }
+                else
+                {
+                    throw new IllegalStateException(
+                            "The Hazelcast config needs to include a map configuration for the session store with the name: " + SESSION_STORE_MAP_NAME);
+                }
             }
         }
-        catch (FileNotFoundException e)
+        catch (IOException e)
         {
             throw new UncheckedIOException(
                     "Failed to find Hazelcast config file in specified path: " + hazelcastConfigFilePath, e);

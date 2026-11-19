@@ -413,6 +413,7 @@ public final class LegendPac4jConfiguration
     public static class HazelcastSessionConfiguration
     {
         private boolean enabled;
+        private boolean clientOnly;
         private String configFilePath;
 
         public boolean isEnabled()
@@ -428,6 +429,21 @@ public final class LegendPac4jConfiguration
         private void defaultEnabled(boolean enabled)
         {
             this.enabled = this.enabled || enabled;
+        }
+
+        public boolean isClientOnly()
+        {
+            return clientOnly;
+        }
+
+        public void setClientOnly(boolean clientOnly)
+        {
+            this.clientOnly = clientOnly;
+        }
+
+        private void defaultClientOnly(boolean clientOnly)
+        {
+            this.clientOnly = this.clientOnly || clientOnly;
         }
 
         public String getConfigFilePath()
@@ -451,6 +467,7 @@ public final class LegendPac4jConfiguration
         private void defaults(HazelcastSessionConfiguration other)
         {
             this.defaultEnabled(other.isEnabled());
+            this.defaultClientOnly(other.isClientOnly());
             this.defaultConfigFilePath(other.getConfigFilePath());
         }
     }
