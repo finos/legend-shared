@@ -2,6 +2,7 @@
 //      https://github.com/opentracing-contrib/java-jaxrs/blob/master/opentracing-jaxrs2/src/main/java/io/opentracing/contrib/jaxrs2/server/ServerHeadersExtractTextMap.java
 //
 // Forked only to move it to jakarta.ws.rs: opentracing-jaxrs2 has no jakarta release.
+// Header iteration is lazy to avoid building a flattened map for each extraction.
 // Delete this fork if it ever ships one, or when this module migrates to OpenTelemetry.
 
 package org.finos.legend.opentracing.jaxrs2;
@@ -9,9 +10,8 @@ package org.finos.legend.opentracing.jaxrs2;
 import io.opentracing.propagation.TextMap;
 import jakarta.ws.rs.core.MultivaluedMap;
 
-import java.util.HashMap;
+import java.util.AbstractMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 public class ServerHeadersExtractTextMap implements TextMap
@@ -23,19 +23,18 @@ public class ServerHeadersExtractTextMap implements TextMap
         this.headers = headers;
     }
 
+    /**
+     * Iterates over the first value of each non-empty header without copying the headers.
+     * The backing headers must not be modified during iteration.
+     */
     @Override
     public Iterator<Map.Entry<String, String>> iterator()
     {
-        Map<String, String> flattened = new HashMap<>();
-        for (Map.Entry<String, List<String>> entry : headers.entrySet())
-        {
-            List<String> values = entry.getValue();
-            if (values != null && !values.isEmpty())
-            {
-                flattened.put(entry.getKey(), values.get(0));
-            }
-        }
-        return flattened.entrySet().iterator();
+        return headers.entrySet().stream()
+                .filter(entry -> entry.getValue() != null && !entry.getValue().isEmpty())
+                .<Map.Entry<String, String>>map(entry ->
+                        new AbstractMap.SimpleImmutableEntry<>(entry.getKey(), entry.getValue().get(0)))
+                .iterator();
     }
 
     @Override
