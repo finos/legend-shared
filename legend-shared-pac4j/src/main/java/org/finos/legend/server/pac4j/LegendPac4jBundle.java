@@ -35,6 +35,7 @@ import org.finos.legend.server.pac4j.hazelcaststore.HazelcastSessionStore;
 import org.finos.legend.server.pac4j.internal.AcceptHeaderAjaxRequestResolver;
 import org.finos.legend.server.pac4j.internal.RequestBodyDrainingHttpActionAdapter;
 import org.finos.legend.server.pac4j.internal.SecurityFilterHandler;
+import org.finos.legend.server.pac4j.internal.UserLoggingRequestLogFactory;
 import org.finos.legend.server.pac4j.internal.UsernameFilter;
 import org.finos.legend.server.pac4j.kerberos.SubjectExecutor;
 import org.finos.legend.server.pac4j.mongostore.MongoDbSessionStore;
@@ -148,6 +149,9 @@ public class LegendPac4jBundle<C extends Configuration> extends Pac4jBundle<C> i
     @Override
     public Pac4jFactory getPac4jFactory(C configuration)
     {
+        // Here because Pac4jBundle.run, which calls this before the server is built, is final.
+        UserLoggingRequestLogFactory.useForDefaultRequestLog(configuration);
+
         LegendPac4jConfiguration legendConfig = configSupplier.apply(configuration);
 
         try
